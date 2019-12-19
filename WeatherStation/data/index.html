@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" charset="UTF-8">
+		<title>Weatherstation MkII</title>
+        <link rel="stylesheet" href="css/basic.css"/>
+ 
+	</head>
+	<body onload="pageLoad()">
+		<a href="javascript:openMenu()" class="menuOpenBtn">&#9776;</a>
+		<div id="menu" class="menu">
+			<a href="javascript:closeMenu()" class="menuCloseBtn">x</a>
+			<h1 class="menuLbl">Menu</h1>
+            <a class="menuBtn" id="MainPageBtn" href="javascript:showMainPage()">Main page</a>
+			<a class="menuBtn" id="WiFiSettingsBtn" href="javascript:showWiFiSettings()">WiFi settings</a>
+			<a class="menuBtn" id="restartBtn" href="javascript:restart()">Restart</a>
+		</div>
+		
+		<div class="content">
+            <div id="MainPage" class="views grid">
+        
+                <H1><label style="/*! margin-left:50%; */display: block;text-align: center;">Weatherstation MkII</label></H1><br>
+                 <canvas id="remotescreen" width="480" height="320"></canvas>
+                       
+                
+            </div>
+                        
+			<div id="WiFiSettings" class="views grid">
+				<div>
+					<table>
+						<thead>
+							<tr>
+								<th colspan="2">Network settings</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td>SSID</td><td><select id="ssid"></select><br><button onclick="getSSIDList()">Refresh</button></td>
+							</tr>
+							<tr>
+								<td>Password</td><td><input type="password" id="pass"></td>
+							</tr>
+							<tr>
+								<td colspan="1"><button onclick="setWiFiSettings(); return false;">Connect</button></td><td><button onclick="clearWiFiSettings(); return false;">Clear WiFi Settings</button></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+				<div>
+					<table>
+						<thead>
+							<tr>
+								<th>Current network configuration</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td id="currentSSID"></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+			<div id="notification" class="notification">
+			</div>
+		</div>
+        
+	</body>
+
+
+    
+	<script>
+        
+        var wifi_scan_results = null;
+        var wifi_clean_ssid_list = null;
+        
+        var RemoteScreenSocket = null;
+		function pageLoad() {
+        showMainPage(); 
+        var host = window.location.hostname;
+        var port = 81;
+        RemoteScreenSocket = new WebSocket("ws://"+host+":"+port);
+        RemoteScreenSocket.binaryType = 'arraybuffer';
+        RemoteScreenSocket.onmessage = TileDecoder;
+        document.getElementById('remotescreen').onmousemove =  canvas_mouseover ;
+        document.getElementById('remotescreen').onmousedown= canvas_mousedown;
+        document.getElementById('remotescreen').onmouseup=canvas_mouseup;
+                    
+		}
+        
+       function onlyUnique(value, index, self) { 
+            return self.indexOf(value) === index;
+       }
+
+		//get a list of available SSIDs
+		function getSSIDList() {
+			openNotification("Getting network names...", 0);
+			sendRequest("getSSIDList", getSSIDListHandler);
+		}
+		function getSSIDListHandler(data) {
+			openNotification("Done");
+			setTimeout(closeNotification, 1000);
+			if (data == null)
+				return;
+			wifi_scan_results = JSON.parse(data);
+            
+            /* We cleanup the list and remove double entrys here */
+            wifi_clean_ssid_list=[];
+            for(var x=0;x<wifi_scan_results.Networks.length;x++){
+             wifi_clean_ssid_list.push( wifi_scan_results.Networks[x].SSID );  
+            }
+            wifi_clean_ssid_list = wifi_clean_ssid_list.filter(onlyUnique);
+            
+            
+            var list = document.getElementById("ssid");
+			list.innerHTML = "";
+			if (wifi_scan_results.ScanCount == 0) {
+				list.innerHTML = "<option value='0'>-</option>";
+				return;
+			}
+			for (var i = 0; i < wifi_clean_ssid_list.length; i++) {
+				list.innerHTML += "<option value='" + wifi_clean_ssid_list[i] + "'>" + wifi_clean_ssid_list[i] + "</option>";
+			}
+            
+            
+		}
+
+		//get and set wifi settings
+		function setWiFiSettings() {
+			var ssid = document.getElementById("ssid").value;
+			var pass = document.getElementById("pass").value;
+			console.log("ssid: " + ssid + ", pass: " + pass);
+			var request = "setWiFiSettings?ssid=" + ssid + "&pass=" + pass;
+			sendRequest(request, openNotification);
+		}
+		function getWiFiSettings() {
+			openNotification("Getting data...", 0);
+			sendRequest("getWiFiSettings", getWiFiSettingsHandler);
+		}
+		function getWiFiSettingsHandler(data) {
+			obj = JSON.parse(data);
+            if(obj.SSID != ""){
+             document.getElementById("currentSSID").innerHTML = "SSID: " + obj.SSID +"<br> Channel: "+obj.CHANNEL+"<br>RSSI: "+obj.RSSI+"dBm";
+            }else{
+                document.getElementById("currentSSID").innerHTML = "No network configured";
+            }
+			
+		}
+		
+		
+	
+  
+        
+		
+        function showMainPage(){
+        
+            showView("MainPage");
+          
+            
+        
+        }
+        
+        function testAlarm() {
+			sendRequest("testAlarm", openNotification);
+		}
+		
+		function sendRequest(addr, func = null) {
+			console.log("requesting: " + addr);
+			requestPending = true;
+			var xhr = new XMLHttpRequest();
+			//xhr.timeout = 5000; //ms
+			xhr.open("GET", addr, true);
+			xhr.onload = function() {
+				console.log("Request finished");
+				requestPending = false;
+				if (func != null)
+					func(this.responseText);
+			}
+			xhr.onerror = function() {
+				console.log("Request finished");
+				requestPending = false;
+				console.log("error");
+			}
+			xhr.ontimeout = function() {
+				console.log("Request finished");
+				requestPending = false;
+				console.log("timeout");
+			}
+			xhr.send();
+		}
+
+		//open and close the main menu
+		function openMenu() {
+			document.getElementById("menu").classList.add("open");
+		}
+		function closeMenu() {
+			document.getElementById("menu").classList.remove("open");
+		}
+
+		//show and hide the notification bar
+		function openNotification(msg, timeout=2500) {
+			document.getElementById("notification").innerHTML = msg;
+			document.getElementById("notification").classList.add("open");
+			if (timeout != 0)
+				setTimeout(closeNotification, timeout);
+		}
+		function closeNotification() {
+			document.getElementById("notification").classList.remove("open");
+		}
+
+
+		//enable alarm cb
+		function enableAlarm() {
+			var cb = document.getElementById("alarmEnabled").checked;
+			document.getElementById("alarmLevelRow").style.display = (cb ? "" : "none");
+		}
+
+		//show the wifi settings data
+		
+		function showWiFiSettings() {
+			showView("WiFiSettings");
+			getWiFiSettings();
+            getSSIDList();
+		}
+		
+        function restart() {
+			sendRequest("restart", openNotification);
+		}
+		
+		
+		function showView(view) {
+            Array.from(document.getElementsByClassName("views")).forEach(function(v) {v.style.display = "none";});
+			document.getElementById(view).style.display = "";
+			Array.from(document.getElementsByClassName("menuBtn")).forEach(function(b) {b.classList.remove("active")});
+			document.getElementById(view + "Btn").classList.add("active");
+
+		}
+		
+		
+        
+       
+       
+        
+        
+        
+        
+     
+          
+        function clearWiFiSettings(){
+            var ssid ="";
+			var pass = "";
+			console.log("Clear WiFi Settings");
+			var request = "setWiFiSettings?ssid=" + ssid + "&pass=" + pass;
+			sendRequest(request, openNotification);
+        }
+        
+
+        
+  
+        
+
+        
+
+        
+     
+        
+
+        
+        
+       
+        
+        function httpGetAsync(theUrl, callback)
+        {
+            var xmlHttp = new XMLHttpRequest();
+            xmlHttp.onreadystatechange = function() { 
+                if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+                if(callback != null){
+                    callback(xmlHttp.responseText);
+                }
+            }
+            xmlHttp.open("GET", theUrl, true); // true for asynchronous 
+            xmlHttp.send(null);
+        }
+        
+        function sendData(url,data) {       
+          var XHR = new XMLHttpRequest();
+          var urlEncodedData = "";
+          var urlEncodedDataPairs = [];
+          var name;
+
+          for(name in data) {
+            urlEncodedDataPairs.push(encodeURIComponent(data[name].key) + '=' + encodeURIComponent(data[name].value));
+          }
+
+          urlEncodedData = urlEncodedDataPairs.join('&').replace(/%20/g, '+');
+
+          XHR.addEventListener('load', function(event) {
+            /*   */
+          });
+
+          XHR.addEventListener('error', function(event) {
+            alert('Oops! Something goes wrong.');
+          });
+
+          XHR.open('POST', url);
+          XHR.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+          XHR.send(urlEncodedData);
+          
+        }
+                
+        function leftPad(num, size) {
+            var s = num+"";
+            while (s.length < size) s = "0" + s;
+            return s;
+        }
+
+		
+
+function TileDecoder( event) {
+  var canvas = document.getElementById('remotescreen');
+  var ctx = canvas.getContext('2d');
+
+  var littleEndian = true;
+  var data = event.data;
+  var dv = new DataView(data);
+  var colorformat = dv.getUint16(0,littleEndian);
+  var x1 =  dv.getInt16(2,littleEndian);
+  var y1 =  dv.getInt16(4, littleEndian);
+  var x2 =  dv.getInt16(6, littleEndian);
+  var y2 =  dv.getInt16(8, littleEndian);
+  
+  var lines = ( y2 -y1 +1 );
+  var pixel_per_line = ( x2 - x1 +1 );
+  
+  var colorpixel =  lines * pixel_per_line ;
+  var imagedata = ctx.createImageData(pixel_per_line,lines);
+  var blue = 0;
+  var green = 0;
+  var red = 0;
+  var offset = 0;
+  var pixelindex =0;
+  for( var y = 0 ; y < (y2 - y1 +1) ;y++){
+  
+      for(var x = 0 ; x < ( x2 - x1 +1) ; x++ ) {
+    
+        offset = ( ( ( pixel_per_line * y * 1 ) + x *1  ) +10 );
+        color = dv.getUint8( offset ,littleEndian); 
+        
+       if( colorformat == 1 ){
+        
+        blue = ( color & (0xC0) ) >>> 6; //5
+        green = ( color & (0x38) ) >>> 3; //6
+        red =  ( color & (0x07) ) >>> 0; //5
+        
+        
+        pixelindex = ( (y) * pixel_per_line + ( x) ) * 4;
+        
+        
+        imagedata.data[pixelindex]   = blue<<6;
+        imagedata.data[pixelindex+1]   = green<<5;
+        imagedata.data[pixelindex+2]   = red<<5;
+        imagedata.data[pixelindex+3]   = 255;       
+       }
+       
+       if( colorformat == 0){
+         for(var x = 0 ; x < ( x2 - x1 +1) ; x++ ) {
+    
+        offset = ( ( ( pixel_per_line * y * 2 ) + x *2  ) +10 );
+        color = dv.getUint16( offset ,littleEndian); 
+        blue = ( color & (0xF800) ) >>> 11; //5
+        green = ( color & (0x07E0) ) >>> 5; //6
+        red =  ( color & (0x001F) ) >>> 0; //5
+      
+        pixelindex = ( (y) * pixel_per_line + ( x) ) * 4;
+        imagedata.data[pixelindex]   = ( blue * 527 + 23 ) >> 6;
+        imagedata.data[pixelindex+1]   = ( green * 259 + 33 ) >> 6;
+        imagedata.data[pixelindex+2]   = ( red * 527 + 23 ) >> 6;
+        imagedata.data[pixelindex+3]   = 255;       
+        
+      }
+       
+       }
+        
+        
+      }
+  }
+      
+  ctx.putImageData(imagedata , x1 , y1 );
+  
+  
+}
+
+
+var mousedown = false;
+
+function canvas_mouseover( e ){
+
+ if( mousedown == true ) {
+  var pos = getMousePos( document.getElementById('myCanvas') , e);
+  
+  // 2 byte x, 2 byte y , 1 byte pressed
+  var buffer = new ArrayBuffer(5);
+  var dv = new DataView(buffer);
+  dv.setUint16(0, pos.x,true );
+  dv.setUint16(2, pos.y,true );
+  dv.setUint8(4, mousedown,true );
+  
+  
+  
+  /* we send new data to the server */
+  RemoteScreenSocket.send( buffer ); 
+
+ }
+}
+
+function canvas_mousedown( e ){
+ mousedown = true;
+ 
+ var pos = getMousePos( document.getElementById('myCanvas') , e);
+  
+  // 2 byte x, 2 byte y , 1 byte pressed
+  var buffer = new ArrayBuffer(5);
+  var dv = new DataView(buffer);
+  dv.setUint16(0, pos.x,true );
+  dv.setUint16(2, pos.y,true );
+  dv.setUint8(4, mousedown,true );
+   RemoteScreenSocket.send( buffer ); 
+}
+
+function canvas_mouseup( e ){
+ mousedown = false;
+ 
+ var pos = getMousePos( document.getElementById('myCanvas') , e);
+  
+  // 2 byte x, 2 byte y , 1 byte pressed
+  var buffer = new ArrayBuffer(5);
+  var dv = new DataView(buffer);
+  dv.setUint16(0, pos.x,true );
+  dv.setUint16(2, pos.y,true );
+  dv.setUint8(4, mousedown,true );
+   RemoteScreenSocket.send( buffer ); 
+}
+
+function getMousePos(canvas, evt) {
+    var canvas = document.getElementById('remotescreen');
+    var rect = canvas.getBoundingClientRect();
+    return {
+      x: evt.clientX - rect.left,
+      y: evt.clientY - rect.top
+    };
+}  
+		
+	</script>
+     
+</html>
