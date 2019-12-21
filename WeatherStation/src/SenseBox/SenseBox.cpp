@@ -26,26 +26,90 @@ SenseBoxUpload::begin( bool usehttps){
 
 void SenseBoxUpload::WriteMapping( void ){
   //This will just convert the Mapping to JSON and write it to the local filesystem
-   File file = SPIFFS.open("/mapping.json", FILE_WRITE);
-    const size_t capacity = JSON_ARRAY_SIZE(64) + JSON_OBJECT_SIZE(1) + 64*JSON_OBJECT_SIZE(3);
+   File file = SPIFFS.open("/SenseBoxMapping.json", FILE_WRITE);
+    const size_t capacity = JSON_ARRAY_SIZE(64) + JSON_OBJECT_SIZE(1) + 64*JSON_OBJECT_SIZE(3)+(64*16);
     DynamicJsonDocument doc(capacity);
 
-    JsonArray Mapping = doc.createNestedArray("Mapping");
-    for(uint32_t i=0;i<( sizeof(MappingTable) / sizeof( MappingTable[0] )  );i++){
-            JsonObject MappingObj = Mapping.createNestedObject();
-            MappingObj["Bus"] = (uint8_t)(MappingTable[i].Bus);
-            MappingObj["ValueType"] = (uint8_t)(MappingTable[i].ValueType);
-            MappingObj["Channel"] = (uint8_t)(MappingTable[i].ChannelIDX);;
+    JsonArray SenseboxMapping = doc.createNestedArray("Mapping");
+    for(uint32_t i=0;i<( sizeof(Mapping) / sizeof( Mapping[0] )  );i++){
+            JsonObject MappingObj = SenseboxMapping.createNestedObject();
+            MappingObj["Enabled"] = Mapping[i].enable;
+            MappingObj["Channel"] = Mapping[i].StationChannelIdx;
+            if(sizeof(Mapping[i].SenseBoxSensorID)>1){
+              Mapping[i].SenseBoxSensorID[(sizeof(Mapping[i].SenseBoxSensorID)-1)]=0; //Just to terminate the string propper
+              MappingObj["Key"] = Strig(Mapping[i].SenseBoxSensorID);
+            } else {
+              MappingObj["Key"] = "";
+            }
     }
     serializeJson(doc, file);
-
-
-
 }
 
 void SenseBoxUpload::ReadMapping( void ){
 
+//Config will be stored as JSON String on SPIFFS
+    //This makes mapping more complicated but will easen web access
+    if(SPIFFS.exists("/SenseBoxMapping.json")){
+        File file = SPIFFS.open("/SenseBoxMapping.json");
+        //We need to read the file into the ArduinoJson Parser
+         /*
+        ReadBufferingStream bufferingStream(file, 64);
+        deserialzeJson(doc, bufferingStream);
+        */
+        
+        const size_t capacity = JSON_ARRAY_SIZE(64) + JSON_OBJECT_SIZE(1) + 64*JSON_OBJECT_SIZE(3) + 1580;
+        DynamicJsonDocument doc(capacity);
+        deserializeJson(doc, file);
+        JsonArray SenseboxMapping = doc["Mapping"];
+        for(uint8_t i=0;i<( sizeof(Mapping) / sizeof( Mapping[0] );i++){
+            JsonObject MappingObj = SenseboxMapping[i];
+           
+            Mapping[i].enable =MappingObj["Enabled"];
+            Mapping[i].StationChannelIdx = MappingObj["Channel"];
+            String Key = MappingObj["Key"];
+
+            if(Key.lenght()<32){
+              Mapping[i].SenseBoxSensorID = Key.c_str();
+            } else {
+              Mapping[i].SenseBoxSensorID[0]=0;
+            }
+
+        }
+    } else {
+        //We need to create a blank mapping scheme
+        for(uint32_t i=0;i<( sizeof(Mapping) / sizeof( Mapping[0] )  );i++){
+              Mapping[i].enable;
+              Mapping[i].StationChannelIdx;
+            for(uint8_t i=0; i< sizeof(Mapping[i].SenseBoxSensorID);i++){
+              Mapping[i].SenseBoxSensorID[i]=0;
+            }
+         }
+         WriteMapping();
+    }
+
 }
+
+void WriteSettings(){
+
+    File file = SPIFFS.open("/SenseBoxSetting.json", FILE_WRITE);
+    const size_t capacity = JSON_ARRAY_SIZE(64) + JSON_OBJECT_SIZE(1) + 64*JSON_OBJECT_SIZE(3)+(64*16);
+    DynamicJsonDocument doc(capacity);
+
+    serializeJson(doc, file);
+
+
+}
+
+void ReadSettings(){
+
+      if(SPIFFS.exists("/SenseBoxSetting.json")){
+        File file = SPIFFS.open("/SenseBoxSetting.json");
+      }
+
+      
+
+}
+
 
 
 bool postdata() {
