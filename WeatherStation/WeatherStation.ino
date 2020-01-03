@@ -25,13 +25,28 @@
 //  IO09 : TX1 ( Particle Sensor )
 //  IO10 : RX1 ( Particle Sensor )
 //
+//  ESP32 Arduino Core requiered
+//
 //  Librarys requiered:
-// 
+//
+//  - LiquidCrystal_I2C ( https://github.com/johnrickman/LiquidCrystal_I2C )
+//  - eHaJo Absolut Pressure AddOn by Hannes Jochriem ( https://github.com/ehajo/WSEN-PADS )
+//  - LoraWAN-MAC-in-C library ( https://github.com/mcci-catena/arduino-lmic )
+//  - Adafruit Unified Sensors
+//  - Adafruit BME280 Library
+//  - Adafruit VEML6070 Library
+//  - Adafruit VEML6075 Library
+//  - Adafruit TSL2561 Library
+//  - Adafruit TSL2591 Library
+//  - Adafruit BusIO
+//  - Time by Michael Margolis
+//  - AdrduinoJson 6.x 
+//  - PubSubclient by Nick o'Leary
+//  - NTP Client Lib
+//  - OneWire by Paul Stoffregen ( https://github.com/PaulStoffregen/OneWire )
 //****************************************************************************
 #include <Arduino.h>
 #include "FS.h"
-#include "SD.h"
-#include "SPI.h"
 #include <Wire.h> 
 #include <LiquidCrystal_I2C.h>
 #include "SPIFFS.h"
@@ -46,6 +61,11 @@
 #include "./src/InternalSensors/InternalSensors.h"
 #include "./src/TimeCore/timecore.h"
 #include "./wifi_net.h"
+
+#include "./src/SenseBox/SenseBox.h"
+#include "./src/ThinkSpeak/thinkspeak.h"
+
+#include "./src/sdcard/sdcard_if.h"
 
 #include "./datastore.h"
 
@@ -80,7 +100,6 @@
 #define USERBTN0             ( 0 )
 
 
- SPIClass SDSPI(HSPI);
  lorawan LORAWAN;
 
 
@@ -91,8 +110,13 @@
 
 LiquidCrystal_I2C lcd(0x27,20,4);  // set the LCD address to 0x27 for a 16 chars and 2 line display
 Timecore TimeCore;
+SenseBoxUpload SenseBox;
+ThinkspeakUpload ThinkSpeak;
+
 
 void DataLoggingTask(void* param);
+bool ReadSensorData(float* data ,uint8_t ch);
+void SDCardDataLog( void );
 
 void setup_iopins( void ){
   // Every pin that is just IO will be defined here 
@@ -101,25 +125,11 @@ void setup_iopins( void ){
 
 }
 
-void setup_sdcard( void ){
-  
-  SDSPI.begin(SD_SCK, SD_MISO, SD_MOSI, -1);
-  if(false == SD.begin(SD_CS0, SDSPI) ){
-    Serial.println("SD-Card mount failed");
-  } else {
-    Serial.println("SD-Card mounted at '\\SD' ");
-  }
-}
-
-
-
-
-
 void setup() {
   Serial.begin(115200);
   datastoresetup();
   setup_iopins();
-  setup_sdcard();
+  setup_sdcard(SD_SCK ,SD_MISO, SD_MOSI, SD_CS0 );
   //We also need to mount the SPIFFS
   if(!SPIFFS.begin(true)){
       Serial.println("An Error has occurred while mounting SPIFFS");
@@ -152,10 +162,18 @@ void setup() {
   SensorMapping.RegisterInternalSensors(&IntSensors);
   SensorMapping.RegisterI2CBus(&TwoWireSensors);
   SensorMapping.RegisterUartSensors(&PMSensor);
-
   //
   SensorMapping.begin();
+  //We need to setup the Dataloggin parts now
+  SenseBox.begin();
+  SenseBox.RegisterDataAccess( ReadSensorData );
+  ThinkSpeak.begin();
+  ThinkSpeak.RegisterDataAccess( ReadSensorData );
+  //Next is the SD-Card access, and this is a bit tricky
+  
+  //As also other parts use the card, if arround to log data
 
+  //Last will be the MQTT Part for now
 
     xTaskCreatePinnedToCore(
                     DataLoggingTask,   /* Function to implement the task */
@@ -168,6 +186,11 @@ void setup() {
 
 
 
+}
+
+
+bool ReadSensorData(float* data ,uint8_t ch){
+  return SensorMapping.ReadMappedValue(data,ch);
 }
 
 
@@ -189,6 +212,7 @@ void loop() {
 
 
 /* Datalogging intervall can for the network only set global */
+/* This is a generic test function */
 void DataLoggingTask(void* param){
   //We will force a mapping for the internal sensors here , just for testing
   VALUEMAPPING::SensorElementEntry_t Element;
@@ -225,88 +249,6 @@ void DataLoggingTask(void* param){
     }
   vTaskDelay(10000); //10s delay
   }
-
-
-
 }
 
 
-
-void NetworkDataLogging( void ){
-
-  //This will do the data logging to the configured channels
-  /*Currently we have 
-    - MQTT
-    - Sensbox
-    - ThingsNetwork
-    - TTN ( LoRaWAN , RFM95W )
-  */
-  /* Logging will be called for all possible network sinks at the same time */
-
-  /* We need to grab the configured channel mapping 
-     Channels are 0-255 and mapped to a sensror value 
-
-
-
-
-}
-
-void SDCardDataLogging( void ){
-  /* 
-    The SD-Card can log at a different intervall than the Network Sinks 
-    We need to impliment a mutex as also faild network write attemps are 
-    stored on the sd card 
-  */
-  bool CardMounted = false ;
-  uint32_t timestamp = TimeCore.GetUTC( );
-  datum_t Date = TimeCore.ConvertToDatum( timestamp );
-
-  //File format will be CSV ( comma seperated vales as in RFC4180 )
-  if( SD.cardSize() != CARD_NONE ){
-    //Card seems still to be mounted
-    CardMounted= true;
-  } else {
-    //We try to mount the card again 
-    if ( false == SD.begin(SD_CS0, SDSPI) ){
-      //We can't mount the card
-      CardMounted=false; 
-    } else {
-      //Card is mounted, try to write data
-      CardMounted=false;
-    }
-  }
-
-  if(false == CardMounted){
-    return; //That is all we can do for now 
-  }
-
-  File file;
-  //Filename is : YYYY-MM-DD.CSV
-  //We need to grab the timestamp if possible
-  String FileName = "";//String(Date.year) + "-" String(Date.month) +"-" + String(Date.day) + "-Log.csv";
-  String RootPath = "\\SD\\";
-  String Path = RootPath + "\\" + FileName;
-  //We will write to the card till 5Mb of space is left
-  //Filename should be DataLog 0 to x
-  if( 5000000 > ( SD.totalBytes() - SD.usedBytes() ) ){   
-    
-    if(true == SD.exists(Path) ){
-      file = SD.open("\\SD\\DataLog.csv", FILE_APPEND);
-      if(file){
-        //Okay we can write
-      } else {
-        return; 
-      }
-    } else {
-
-      file = SD.open("\\SD\\", FILE_WRITE);
-      if(file){
-        //Okay we can write
-      } else {
-        return;
-      }
-    }
-  } else {
-    return; // Out of space 
-  }
-}

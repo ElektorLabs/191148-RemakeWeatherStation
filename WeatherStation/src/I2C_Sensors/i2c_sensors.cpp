@@ -7,11 +7,18 @@
 - VEML6075
 - TSL2591
 */
+#include "../i2c_access/i2c_access.h"
 #include "i2c_sensors.h"
 
 I2C_Sensors::I2C_Sensors( int scl, int sda ){
    SDA = sda;
    SCL = scl;
+   xI2C_Semaphore = xSemaphoreCreateMutex();
+   if( xI2C_Semaphore == NULL )
+   {
+        //This is bad!
+        abort();
+   }
 }
 
 I2C_Sensors::~I2C_Sensors( void ){
@@ -25,6 +32,7 @@ void I2C_Sensors::begin( void ){
     //100kHz max for the wire, may reduced to 10kHz......
     Wire.begin(SDA,SCL,100000);
     //We fist look for the BME280 at address 0x77 / 0x76 
+    i2c_lock_bus();
     if( true == bme280.begin( BME280_ADDRESS ) ){
         Serial.println("BME found @ 0x77");
         DeviceOnBus[BME280]=true;
@@ -37,16 +45,20 @@ void I2C_Sensors::begin( void ){
         DeviceOnBus[BME280]=false;
     }
     //Next is to check for the WSEN-PAD
-    if(true == wsen_pads.begin(WSEN_PADS_ONESHOT, 1) ){
+    wsen_pads.setAddress(1); // SAO standard 1 for power safe
+    if(true == wsen_pads.begin(WSEN_PADS_ONESHOT ) ){
        Serial.println("WSEN-PAD found @ 0x5D"); 
         DeviceOnBus[WSEN_PADS] = true;
 
-    } else if( true == wsen_pads.begin(WSEN_PADS_ONESHOT, 0) ) {
-        Serial.println("WSEN-PAD found @ 0x5C");
-        DeviceOnBus[WSEN_PADS] = true;
     } else {
-        Serial.println("No WSEN-PAD found");
-        DeviceOnBus[WSEN_PADS] = false;
+        wsen_pads.setAddress(0);
+        if( true == wsen_pads.begin(WSEN_PADS_ONESHOT ) ) {
+            Serial.println("WSEN-PAD found @ 0x5C");
+            DeviceOnBus[WSEN_PADS] = true;
+        } else {
+            Serial.println("No WSEN-PAD found");
+            DeviceOnBus[WSEN_PADS] = false;
+        }
     }
 
     Wire.beginTransmission( 0x38 );
@@ -86,7 +98,7 @@ void I2C_Sensors::begin( void ){
     }
 
 
-
+    i2c_unlock_bus();
 }
 
 
@@ -401,45 +413,50 @@ String I2C_Sensors::GetChannelName(SensorType_t Sensor , uint8_t channel){
 
 float I2C_Sensors::GetValue( DATAUNITS::MessurmentValueType_t Type, uint8_t channel  ){
     float value = NAN;
-    
-    switch( Type ){
+    //We need at this point to aquiere a mutex as only on task at a time can access the i2c bus */
+    if( xSemaphoreTake( xI2C_Semaphore, portMAX_DELAY ) == pdTRUE )
+    {
+        i2c_lock_bus();
+        switch( Type ){
 
-        case DATAUNITS::TEMPERATURE:{
+            case DATAUNITS::TEMPERATURE:{
 
-            value = GetTemperature( channel );
+                value = GetTemperature( channel );
 
-        } break;
+            } break;
 
-        case  DATAUNITS::HUMIDITY:{
+            case  DATAUNITS::HUMIDITY:{
 
-            value = GetHumidity( channel );
+                value = GetHumidity( channel );
 
-        } break;
+            } break;
 
-        case  DATAUNITS::PRESSURE:{
+            case  DATAUNITS::PRESSURE:{
 
-            value = GetPressure( channel );
+                value = GetPressure( channel );
 
-        } break;
+            } break;
 
-        case  DATAUNITS::UV_LIGHT:{
+            case  DATAUNITS::UV_LIGHT:{
 
-            value = GetUVALevel( channel );
+                value = GetUVALevel( channel );
 
-        } break;
+            } break;
 
-        case  DATAUNITS::LIGHT:{
-            
-            value = GetLightLevel( channel );
+            case  DATAUNITS::LIGHT:{
+                
+                value = GetLightLevel( channel );
 
-        } break;
+            } break;
 
-        default:{
-            value = NAN;
-        } break;
+            default:{
+                value = NAN;
+            } break;
 
+        }
+        i2c_unlock_bus();
+        xSemaphoreGive( xI2C_Semaphore );
     }
-
     return value;
 
 }
