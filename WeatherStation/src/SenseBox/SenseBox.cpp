@@ -311,7 +311,7 @@ void SenseBoxUpload::UploadTaskFnc(void* params){
     if( false == xSemaphoreTake( TaskData->CfgSem, WaitTime ) ){
       //No Configchange at all we can simpy upload the data 
       //If WiFi is in Start-Stop-mode activate it now.......
-
+      Serial.println("SenseBox: Prepare Upload ( enter code here )");
 
     } else {
       //We have a configchange 

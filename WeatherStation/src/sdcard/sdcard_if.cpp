@@ -37,6 +37,51 @@ void sdcard_mound(){
   }
 }
 
+
+//We need a few parameter
+SemaphoreHandle_t SDCfgSem;
+void SDCardLoging( void* param){
+  bool LoggingEnable = true ;
+  uint16_t Interval = 5;
+
+  //sainity checks
+  if(SDCfgSem == nullptr){
+    //We need a semaphore here !
+    SDCfgSem = xSemaphoreCreateMutex();
+  }
+
+  //Config for the logging will be stored also in a json file
+  //We need to read it if it is existing
+
+  while(1 == 1){
+
+    //We need to load the ionterval for the logging
+    //We run in minutes
+    if( ){
+      Interval= *60*1000;
+      if(Interval<1){
+        Interval=60*1000; //1 Minute min Time;
+      }
+    } else {
+      Interval = portMAX_DELAY;
+    }
+    if( false == xSemaphoreTake( SDCfgSem, Interval ) ){
+      //No Configchange at all we can simpy upload the data 
+      Serial.println("SD Card: Prepare save ( enter code here )");
+    } else {
+      //We have a configchange 
+      Serial.println("SD Card: Config changed, apply settings");
+
+    }
+
+
+  }
+
+
+
+}
+
+
 void SDCardDataLog( void ){
   
   /* 
