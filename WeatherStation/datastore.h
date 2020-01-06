@@ -20,12 +20,13 @@ typedef struct{
 
 typedef struct {
   bool enable;
-  char mqttservename[129];
+  char mqttservername[129];
   uint16_t mqttserverport;
   char mqttusername[129];
   char mqttpassword[129];
   char mqtttopic[501];
   char mqtthostname[65];
+  uint16_t mqtttxintervall;
 }mqttsettings_t; /*956 byte */
 
 typedef struct{

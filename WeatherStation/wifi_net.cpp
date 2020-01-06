@@ -1,4 +1,5 @@
 #include <esp_wifi.h>
+#include <esp_wps.h>
 #include <WiFi.h>
 #include <Ticker.h>
 
@@ -7,14 +8,26 @@
 #include "webserver_fnc.h"
 #include "wifi_net.h"
 
+#define ESP_WPS_MODE      WPS_TYPE_PBC
+#define ESP_MANUFACTURER  "ESPRESSIF"
+#define ESP_MODEL_NUMBER  "ESP32"
+#define ESP_MODEL_NAME    "ESPRESSIF IOT"
+#define ESP_DEVICE_NAME   "ESP STATION"
+
 String APSSID = "ESP32 XX:XX:XX";
 
 String ssid ="";
 String pass="";
 
+static esp_wps_config_t wps_config;
+static wifi_config_t wifi_conf;
+
 void (*scandone_cb[4]) (void)={NULL,};
 
+bool StarStopeMode = false;
+
 /* Function prototypes */
+String wpspin2string(uint8_t a[]);
 void configureSoftAP( bool use_wifi_config );
 bool connectWiFi( void );
 void connectioTask( void *);
@@ -25,6 +38,7 @@ void configureServer( void );
 String WiFiGetStatus( void );
 SemaphoreHandle_t xConnectTaskDoneSem=NULL;
 SemaphoreHandle_t xConTaskStartMtx=NULL;
+SemaphoreHandle_t xConnections=NULL;
 
 Ticker AutoReconnect; 
 
@@ -62,10 +76,9 @@ Ticker AutoReconnect;
 
 
 
-void WiFiEvent(WiFiEvent_t event)
+void WiFiEvent(WiFiEvent_t event, system_event_info_t info)
 {
     //Serial.printf("[WiFi-event] event: %d\n", event);
-
     switch (event) {
         case SYSTEM_EVENT_WIFI_READY: 
             //Serial.println("WiFi interface ready");
@@ -79,7 +92,7 @@ void WiFiEvent(WiFiEvent_t event)
             }
             break;
         case SYSTEM_EVENT_STA_START:
-            //Serial.println("WiFi client started");
+            Serial.println("Station Mode Started");
             break;
         case SYSTEM_EVENT_STA_STOP:
             //Serial.println("WiFi clients stopped");
@@ -95,23 +108,42 @@ void WiFiEvent(WiFiEvent_t event)
             //Serial.println("Authentication mode of access point has changed");
             break;
         case SYSTEM_EVENT_STA_GOT_IP:
-            //Serial.print("Obtained IP address: ");
-            //Serial.println(WiFi.localIP());
+              Serial.println("Connected to :" + String(WiFi.SSID()));
+              Serial.print("Got IP: ");
+              Serial.println(WiFi.localIP());
             break;
         case SYSTEM_EVENT_STA_LOST_IP:
             //Serial.println("Lost IP address and IP address is reset to 0");
             break;
         case SYSTEM_EVENT_STA_WPS_ER_SUCCESS:
-            //Serial.println("WiFi Protected Setup (WPS): succeeded in enrollee mode");
+            Serial.println("WPS Successfull, stopping WPS and connecting to: " + String(WiFi.SSID()));
+            esp_wifi_wps_disable();
+            delay(10);
+            esp_wifi_get_config(WIFI_IF_STA,&wifi_conf);
+            //We save the config and start the reconnectio task from here 
+            credentials_t c;
+            strncpy((char*)c.ssid, (char*)wifi_conf.sta.ssid,  sizeof(c.ssid) );
+            strncpy((char*)c.pass, (char*)wifi_conf.sta.password,  sizeof(c.pass) );
+            write_credentials(c);
+            delay(1);
+            //Start the WiFi Connection Task
+            WiFiClientEnable(true); //Force WiFi on 
+            WiFiForceAP(false); //Diable Force AP
+            _ReconnectWiFi(true);
+            //We should be good to go now ....          
             break;
         case SYSTEM_EVENT_STA_WPS_ER_FAILED:
-            //Serial.println("WiFi Protected Setup (WPS): failed in enrollee mode");
+            Serial.println("WiFi Protected Setup (WPS): failed in enrollee mode");
+            esp_wifi_wps_disable();
             break;
         case SYSTEM_EVENT_STA_WPS_ER_TIMEOUT:
-            //Serial.println("WiFi Protected Setup (WPS): timeout in enrollee mode");
+            Serial.println("WPS Timedout, retrying");
+            esp_wifi_wps_disable();
             break;
         case SYSTEM_EVENT_STA_WPS_ER_PIN:
-            //Serial.println("WiFi Protected Setup (WPS): pin code in enrollee mode");
+            Serial.println("WiFi Protected Setup (WPS): pin code in enrollee mode");
+            Serial.println("WPS_PIN = " + wpspin2string(info.sta_er_pin.pin_code));
+            break;
             break;
         case SYSTEM_EVENT_AP_START:
             //Serial.println("WiFi access point started");
@@ -123,7 +155,8 @@ void WiFiEvent(WiFiEvent_t event)
             //Serial.println("Client connected");
             break;
         case SYSTEM_EVENT_AP_STADISCONNECTED:
-            //Serial.println("Client disconnected");
+            Serial.println("Disconnected from station, attempting reconnection");
+            WiFi.reconnect();
             break;
         case SYSTEM_EVENT_AP_STAIPASSIGNED:
             //Serial.println("Assigned IP address to client");
@@ -149,7 +182,46 @@ void WiFiEvent(WiFiEvent_t event)
         case SYSTEM_EVENT_ETH_GOT_IP:
             //Serial.println("Obtained IP address");
             break;
-    }}
+    }
+}
+//WPS Functions 
+void wpsInitConfig(){
+  wps_config.crypto_funcs = &g_wifi_default_wps_crypto_funcs;
+  wps_config.wps_type = ESP_WPS_MODE;
+  strcpy(wps_config.factory_info.manufacturer, ESP_MANUFACTURER);
+  strcpy(wps_config.factory_info.model_number, ESP_MODEL_NUMBER);
+  strcpy(wps_config.factory_info.model_name, ESP_MODEL_NAME);
+  strcpy(wps_config.factory_info.device_name, ESP_DEVICE_NAME);
+}
+
+String wpspin2string(uint8_t a[]){
+  char wps_pin[9];
+  for(int i=0;i<8;i++){
+    wps_pin[i] = a[i];
+  }
+  wps_pin[8] = '\0';
+  return (String)wps_pin;
+}
+
+void WPS_Start(){
+  //This will only work is the statio is not connected to a wifi and also not configured to do so
+
+  //Disable wifi 
+  WiFi.mode(WIFI_OFF);
+  delay(10);
+  WiFi.onEvent(WiFiEvent);
+  WiFi.mode(WIFI_MODE_STA);
+
+  Serial.println("Starting WPS");
+
+  wpsInitConfig();
+  esp_wifi_wps_enable(&wps_config);
+  esp_wifi_wps_start(0);
+  //Next is to wait what the driver will tell us....
+}
+
+
+
 
 void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
 {
@@ -383,6 +455,7 @@ void initWiFi( bool forceAP, bool force_openap) {
 
 xConnectTaskDoneSem = xSemaphoreCreateBinary();
 xConTaskStartMtx=xSemaphoreCreateMutex();
+xConnections = xSemaphoreCreateCounting(16,0);
 xSemaphoreGive( xConTaskStartMtx );
 /* Setup WiFi Events */
 WiFi.onEvent(WiFiEvent);
@@ -454,6 +527,10 @@ bool connectWiFi( void  ) {
 
 }
 
+void ReconnectWiFi ( void ){
+  _ReconnectWiFi();
+}
+
 /**************************************************************************************************
  *    Function      : ReconnectWiFi
  *    Description   : trys to establish a WiFi connection
@@ -461,7 +538,7 @@ bool connectWiFi( void  ) {
  *    Output        : none
  *    Remarks       : connect the esp to a wifi network
  **************************************************************************************************/
-void ReconnectWiFi( void  ) {
+void _ReconnectWiFi( bool ConnectToApOnly  ) {
   static wifi_connect_param_t params;
   if( xConnectTaskDoneSem == NULL ){
     /* WiFi not initialized ? */
@@ -496,7 +573,11 @@ void ReconnectWiFi( void  ) {
       StartWiFiConnect( &params );
     }
   } else {
-    configureSoftAP(true);
+    if(false == ConnectToApOnly){
+      configureSoftAP(true);
+    } else {
+      //Reconnect failed !
+    }
   }
 
 }
@@ -562,7 +643,7 @@ void StartDelayedReconnect( void ){
 
 }
 /**************************************************************************************************
- *    Function      : getQuality
+ *    Function      : WiFigetQuality
  *    Description   : Gets the Signalquality
  *    Input         : none 
  *    Output        : none
@@ -571,7 +652,7 @@ void StartDelayedReconnect( void ){
                       Returns a number between 0 and 100 if WiFi is connected.
                       Returns -1 if WiFi is disconnected.
  **************************************************************************************************/
-int getQuality() {
+int WiFigetQuality() {
   if (WiFi.status() != WL_CONNECTED)
     return -1;
   int dBm = WiFi.RSSI();
@@ -730,3 +811,55 @@ void GetWiFiConnectionInfo( wifi_connection_info_t* ConnectionInfo){
 
 }
 
+
+bool RequestWiFiConnection( void ){ //This will give a semaphore as the connection is needed
+  //We need to also lock this sequence.....
+  if( xSemaphoreGive( xConnections ) != pdTRUE ){
+    //Strange 
+  } 
+  //We put our lock on the wifi :-)
+  if( WiFi.status() != WL_CONNECTED ){
+    //WiFi is not connected so we need to reconnect it if possible...
+    _ReconnectWiFi(true);
+    if( WiFi.status() != WL_CONNECTED ){
+      if(false ==  xSemaphoreTake( xConnections, ( TickType_t ) 0 ) )
+      {
+        //Strange and should not happen!
+      }
+      return false; //Can't connect!
+    }
+    return true;
+  }
+  return true;
+}
+
+void ReleaseWiFiConnection( void ){ //This will remove a semaphore as the connection can be shut down
+      
+      if(false ==  xSemaphoreTake( xConnections, ( TickType_t ) 0 ) )
+      {
+        //Strange and should not happen!
+      }
+      if(uxSemaphoreGetCount( xConnections) <= 0 ){
+        //We can shutdown the WiFi for now ....
+        if(false != StarStopeMode ){
+          WiFiStop();
+          WiFiForceSleep();
+        }
+      }
+         
+}
+
+
+void EnableStartStopMode( bool ena ){
+  StarStopeMode=ena;
+  if(false == ena) {
+    ReconnectWiFi();
+  } else {
+    if(uxSemaphoreGetCount( xConnections) <= 0 ){
+        //We can shutdown the WiFi for now ....
+        WiFiStop();
+        WiFiForceSleep();
+    }
+  }
+  
+}

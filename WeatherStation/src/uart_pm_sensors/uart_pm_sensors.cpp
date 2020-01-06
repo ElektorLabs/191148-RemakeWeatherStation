@@ -8,6 +8,10 @@ UART_PM_Sensors::UART_PM_Sensors( int16_t rx, int16_t tx  ){
     //Depending on the sensor we will choose which driver to use
     TX = tx;
     RX = rx;
+    xUARTSemaphore = xSemaphoreCreateMutex();
+    if(NULL == xUARTSemaphore){
+        abort();
+    }
 }
 
 UART_PM_Sensors::~UART_PM_Sensors( void ){
@@ -76,45 +80,48 @@ bool UART_PM_Sensors::GetParticleCount( float* value, UART_PM_Sensors::ParticleS
   float p25 = 0, p10 = 0;
   uint16_t up25, up10;
   float result = 0;
-
-    switch( SelectedDriver ){
-        case SENSOR_SDS011:{
-            if(SDS011device!=nullptr){
-                SDS011device-> setSleepMode(false);
-                SDS011device->getData(&p25, &p10);
-                SDS011device-> setSleepMode(true);
-                reading_ok = true;
-            }
-        } break;
-
-        case SENSOR_HPM115S0:{
-            if(HPMA115S0device != nullptr){
-                reading_ok=HPMA115S0device->ReadMesurement(&up25, &up10);
-            }
-        } break;
-
-        default:{
-            Serial.println("Invaild driver selected");
-        }
-    }
-    if(true == reading_ok){
-        switch( ps ){
-            case  PM2_5:{
-                result = p25;
+    if( xSemaphoreTake( xUARTSemaphore, portMAX_DELAY  ) == pdTRUE )
+    {
+        switch( SelectedDriver ){
+            case SENSOR_SDS011:{
+                if(SDS011device!=nullptr){
+                    SDS011device-> setSleepMode(false);
+                    SDS011device->getData(&p25, &p10);
+                    SDS011device-> setSleepMode(true);
+                    reading_ok = true;
+                }
             } break;
 
-            case PM10:{
-                result = p10;
+            case SENSOR_HPM115S0:{
+                if(HPMA115S0device != nullptr){
+                    reading_ok=HPMA115S0device->ReadMesurement(&up25, &up10);
+                }
             } break;
-        }
-    }
 
+            default:{
+                Serial.println("Invaild driver selected");
+            }
+        }
+        if(true == reading_ok){
+            switch( ps ){
+                case  PM2_5:{
+                    result = p25;
+                } break;
+
+                case PM10:{
+                    result = p10;
+                } break;
+            }
+        }
+        xSemaphoreGive( xUARTSemaphore );
+    }
     return reading_ok;
 
  }
 
 void UART_PM_Sensors::suspend( void ){
-     
+     if( xSemaphoreTake( xUARTSemaphore, portMAX_DELAY  ) == pdTRUE )
+    { 
      switch( SelectedDriver ){
         case SENSOR_SDS011:{ 
           if(SDS011device!=nullptr){
@@ -131,9 +138,13 @@ void UART_PM_Sensors::suspend( void ){
             Serial.println("Invaild driver selected");
         } break;
     }
+     xSemaphoreGive( xUARTSemaphore );
+    }
 }
 
 void UART_PM_Sensors::wakeup( void ){
+     if( xSemaphoreTake( xUARTSemaphore, portMAX_DELAY  ) == pdTRUE )
+    {
     switch( SelectedDriver ){
         case SENSOR_SDS011:{ 
           if(SDS011device!=nullptr){
@@ -149,6 +160,8 @@ void UART_PM_Sensors::wakeup( void ){
         default:{
             Serial.println("Invaild driver selected");
         } break;
+    }
+     xSemaphoreGive( xUARTSemaphore );
     }
 
 }

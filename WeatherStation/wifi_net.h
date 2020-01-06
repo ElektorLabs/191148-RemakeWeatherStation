@@ -46,17 +46,24 @@ typedef struct {
   uint16_t LastScanWiFiNetworksFound(  void );
   bool GetScanResultOfIDX( wifi_scan_result_t* result, uint8_t index);
   void NetworkLoopTask( void );
+  void EnableStartStopMode( bool ena );
 
-  void ReconnectWiFi( void  );
+  void ReconnectWiFi ( void );
+  void _ReconnectWiFi( bool ConnectToApOnly = false  ); //Generic function to restart WiFi
 
-  
   bool RegisterCbWiFiScanDone( void (*cb_ptr)(void) );
   bool DeleteCbWiFiScanDone( void (*cb_ptr)(void) );
+
+  bool RequestWiFiConnection( void ); //This will give a semaphore as the connection is needed
+  void ReleaseWiFiConnection( void ); //This will remove a semaphore as the connection can be shut down
+
 
   bool ConnetToAP(const char* AP_SSID, const char* AP_PASS ); //Blocking Connect / Reconnect to a AP 
   void StartWiFiConnect( wifi_connect_param_t* parameter );
   void GetWiFiConnectionInfo( wifi_connection_info_t* ConnectionInfo);
   uint8_t WiFiRSSItoPercent(int16_t dBm);
+  int WiFigetQuality( void );
 
- 
+
+
 #endif

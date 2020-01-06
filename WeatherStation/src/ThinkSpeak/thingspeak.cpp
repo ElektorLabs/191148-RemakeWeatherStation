@@ -3,27 +3,24 @@
 #include "SPIFFS.h"
 #include "sslCertificate.h"
 #include "../../wifi_net.h"
-#include "SenseBox.h"
+#include "thinkspeak.h"
 
 
 
-
-SenseBoxUpload::SenseBoxUpload( void ){
+ThinkspeakUpload::ThinkspeakUpload( void ){
 
   //For the Upload we also use a mapping table but limit the amount of data currently to 16 entrys
   //For every entry we have a internal channel no and also a senseBoxID at hand ( hopfully )
 
-}
-
-SenseBoxUpload::~SenseBoxUpload( void ){
 
 }
 
-void SenseBoxUpload::begin( bool usehttps){
-  
-  this->usesecure = usehttps;
-  
-  
+ThinkspeakUpload::~ThinkspeakUpload( void ){
+
+}
+
+void ThinkspeakUpload::begin(  bool usehttps ){
+  usesecure = usehttps;
   TaskData.obj=this;
   TaskData.CfgSem = xSemaphoreCreateMutex();
   
@@ -32,13 +29,11 @@ void SenseBoxUpload::begin( bool usehttps){
 
   client = new WiFiClient();
   clientS = new WiFiClientSecure();
-  if(true == usehttps){
-    clientS->setCACert(ssl_sb_certificate);
-  }
-
+  clientS->setCACert(ssl_ts_certificate);
+  
   xTaskCreate(
                     UploadTaskFnc,          /* Task function. */
-                    "SenseBoxUpload",        /* String with name of task. */
+                    "ThinkspeakUpload",        /* String with name of task. */
                     10000,            /* Stack size in bytes. */
                     &TaskData,             /* Parameter passed as input of the task */
                     1,                /* Priority of the task. */
@@ -46,13 +41,14 @@ void SenseBoxUpload::begin( bool usehttps){
 
 }
 
-void SenseBoxUpload::RegisterDataAccess(SenseBoxUpload::DataAccesFnc Fnc){
+void ThinkspeakUpload::RegisterDataAccess(ThinkspeakUpload::DataAccesFnc Fnc){
   DaFnc = Fnc; //Register the pointer...
 }
 
-void SenseBoxUpload::WriteMapping( void ){
+
+void ThinkspeakUpload::WriteMapping( void ){
   //This will just convert the Mapping to JSON and write it to the local filesystem
-   File file = SPIFFS.open("/SenseBoxMapping.json", FILE_WRITE);
+   File file = SPIFFS.open("/ThinkspeakMapping.json", FILE_WRITE);
     const size_t capacity = JSON_ARRAY_SIZE(64) + JSON_OBJECT_SIZE(1) + 64*JSON_OBJECT_SIZE(3)+(64*16);
     DynamicJsonDocument doc(capacity);
 
@@ -60,23 +56,17 @@ void SenseBoxUpload::WriteMapping( void ){
     for(uint32_t i=0;i<( sizeof(Mapping) / sizeof( Mapping[0] )  );i++){
             JsonObject MappingObj = SenseboxMapping.createNestedObject();
             MappingObj["Enabled"] = Mapping[i].enable;
-            MappingObj["Channel"] = Mapping[i].StationChannelIdx;
-            if(sizeof(Mapping[i].SenseBoxSensorID)>1){
-              Mapping[i].SenseBoxSensorID[(sizeof(Mapping[i].SenseBoxSensorID)-1)]=0; //Just to terminate the string propper
-              MappingObj["Key"] = String(Mapping[i].SenseBoxSensorID);
-            } else {
-              MappingObj["Key"] = "";
-            }
+            MappingObj["Channel"] = Mapping[i].StationChannelIdx;            
     }
     serializeJson(doc, file);
 }
 
-void SenseBoxUpload::ReadMapping( void ){
+void ThinkspeakUpload::ReadMapping( void ){
 
 //Config will be stored as JSON String on SPIFFS
     //This makes mapping more complicated but will easen web access
-    if(SPIFFS.exists("/SenseBoxMapping.json")){
-        File file = SPIFFS.open("/SenseBoxMapping.json");
+    if(SPIFFS.exists("/ThinkspeakMapping.json")){
+        File file = SPIFFS.open("/ThinkspeakMapping.json");
         //We need to read the file into the ArduinoJson Parser
          /*
         ReadBufferingStream bufferingStream(file, 64);
@@ -92,30 +82,19 @@ void SenseBoxUpload::ReadMapping( void ){
            
             Mapping[i].enable =MappingObj["Enabled"];
             Mapping[i].StationChannelIdx = MappingObj["Channel"];
-            String Key = MappingObj["Key"];
-
-            if(Key.length()<32){
-              strncpy(Mapping[i].SenseBoxSensorID,Key.c_str(),sizeof(Mapping[i].SenseBoxSensorID));
-            } else {
-              Mapping[i].SenseBoxSensorID[0]=0;
-            }
-
         }
     } else {
         //We need to create a blank mapping scheme
         for(uint32_t i=0;i<( sizeof(Mapping) / sizeof( Mapping[0] )  );i++){
               Mapping[i].enable;
               Mapping[i].StationChannelIdx;
-            for(uint8_t i=0; i< sizeof(Mapping[i].SenseBoxSensorID);i++){
-              Mapping[i].SenseBoxSensorID[i]=0;
-            }
          }
          WriteMapping();
     }
 
 }
 
-void SenseBoxUpload::WriteSettings(){
+void ThinkspeakUpload::WriteSettings(){
 
 /*
 {
@@ -125,11 +104,11 @@ void SenseBoxUpload::WriteSettings(){
 }
 */
 
-    File file = SPIFFS.open("/SenseBoxSetting.json", FILE_WRITE);
+    File file = SPIFFS.open("/ThinkspeakSetting.json", FILE_WRITE);
     const size_t capacity = JSON_ARRAY_SIZE(64) + JSON_OBJECT_SIZE(1) + 64*JSON_OBJECT_SIZE(3)+(64*16);
     DynamicJsonDocument doc(capacity);
 
-    doc["SenseboxID"] = String(Settings.SenseBoxID); //SensboxID needed for the upload
+    doc["ThinkspeakAPIKey"] = String(Settings.ThingspealAPIKey); //SensboxID needed for the upload
     doc["UploadInterval"] = Settings.UploadInterval; //Interval in minutes for new data
     doc["Enabled"] = Settings.Enabled; //If the uplaod is enabled or not 
     serializeJson(doc, file);
@@ -137,20 +116,21 @@ void SenseBoxUpload::WriteSettings(){
 
 }
 
-void SenseBoxUpload::ReadSettings(){
+void ThinkspeakUpload::ReadSettings(){
     const size_t capacity = JSON_ARRAY_SIZE(64) + JSON_OBJECT_SIZE(1) + 64*JSON_OBJECT_SIZE(3)+(64*16);
     DynamicJsonDocument doc(capacity);
-      if(SPIFFS.exists("/SenseBoxSetting.json")){
-        File file = SPIFFS.open("/SenseBoxSetting.json");
+
+      if(SPIFFS.exists("/ThinkspeakSetting.json")){
+        File file = SPIFFS.open("/ThinkspeakSetting.json");
         deserializeJson(doc, file);
         
-        const char* SenseboxID = doc["SenseboxID"]; 
+        const char* SenseboxID = doc["ThinkspeakAPIKey"]; 
         int UploadInterval = doc["UploadInterval"]; 
         bool Enabled = doc["Enabled"];
 
         //Sainity checks 
-        strncpy(Settings.SenseBoxID,SenseboxID,sizeof(Settings.SenseBoxID));
-        Settings.SenseBoxID[sizeof(Settings.SenseBoxID)-1]=0;
+        strncpy(Settings.ThingspealAPIKey,SenseboxID,sizeof(Settings.ThingspealAPIKey));
+        Settings.ThingspealAPIKey[sizeof(Settings.ThingspealAPIKey)-1]=0;
 
         if(UploadInterval<=0){
           UploadInterval=1;
@@ -166,8 +146,8 @@ void SenseBoxUpload::ReadSettings(){
 
       } else {
         //We generate an empty file
-         for(uint32_t i=0;i<sizeof(Settings.SenseBoxID)-1;i++){
-          Settings.SenseBoxID[i]=0;
+         for(uint32_t i=0;i<sizeof(Settings.ThingspealAPIKey)-1;i++){
+          Settings.ThingspealAPIKey[i]=0;
         }
         Settings.UploadInterval=1; //Interval in minutes for new data
         Settings.Enabled=false; //If the uplaod is enabled or not 
@@ -180,55 +160,57 @@ void SenseBoxUpload::ReadSettings(){
 
 
 
-bool SenseBoxUpload::PostData(  SenseBoxUpload* obj ) {
-  WiFiClient* clientptr=nullptr;
+bool ThinkspeakUpload::PostData(  ThinkspeakUpload* obj ) {
+  WiFiClient* clientptr = nullptr;
+  String thingspeakApi = String(obj->Settings.ThingspealAPIKey);
+
   if(false == obj->Settings.Enabled){
-    Serial.println("SenseBox upload disabled");
+    Serial.println("Thinkspeak upload disabled");
     return false;
   }
-  if (0 == obj->Settings.SenseBoxID[0]) {
-    Serial.println("SenseBoxID not set");
+  if (0 == obj->Settings.ThingspealAPIKey[0]) {
+    Serial.println("Thinkspeak API Key not set");
     return false;
-  }
-  Serial.println("Start Uploading to SenseBox");
+  } 
+  Serial.println("Start Uploading to Thinkspeak");
   
   //As we still use the HTTP POST we need to generate the POST String
-  String csv;
-  
+  String thingspeakHost = "api.thingspeak.com";
+  String thingspeakUrl = "/update";
+  thingspeakUrl += "?api_key=" + thingspeakApi;
+  uint8_t added_fields=0;
   for(uint32_t i=0;i<( sizeof(obj->Mapping) / sizeof( obj->Mapping[0] )  );i++){
-    if( (true==obj->Mapping[i].enable) && ( 0 != obj->Mapping[i].SenseBoxSensorID[0] ) ){
+    if( (true==obj->Mapping[i].enable) ){
       //Next is a try to read the data from the sensors
       float value = NAN;
       if(obj->DaFnc != nullptr ){
         if(true == obj->DaFnc(&value, obj->Mapping[i].StationChannelIdx) ){
           //Okay we got a reading, we add the data to the sting
-          csv+= String(obj->Mapping[i].SenseBoxSensorID)+","+String(value)+"\n\r";
+           thingspeakUrl += "&field" + String(i) + "=" + String(value); 
+           added_fields++;
         } else {
           //We have a mapping problem at all.....
-          Serial.printf("SensBox upload: Requested Channel %i : No Mapped  for Stationchanne %i", i, obj->Mapping[i].StationChannelIdx);
+          Serial.printf(" Thinkspeak upload: Requested Channel %i : No Mapped  for Stationchanne %i", i, obj->Mapping[i].StationChannelIdx);
         }
       } else {
-        Serial.printf("SensBox upload: Requested Channel %i : no DataSource", i, obj->Mapping[i].StationChannelIdx);
+        Serial.printf(" Thinkspeak upload: Requested Channel %i : no DataSource", i, obj->Mapping[i].StationChannelIdx);
       }
         
     }
 
   }
   //This is for debug only
-  Serial.println("Current CSV String:");
-  Serial.println(csv);
+  Serial.println("Current URL String:");
+  Serial.println(thingspeakUrl);
   Serial.println("# End of String #");
   //Sainity check if we have any data
-  if (csv == "") {
-    Serial.println("Sensor API: Keys not set, Channels all disabled or mapping broken");
+  if (0 ==added_fields) {
+    Serial.println("Thinkspeak API: Channels all disabled or mapping broken");
     return false;
   }
   
-  String senseBoxHost = "api.opensensemap.org";
-  String senseBoxUrl = "/boxes/" + String(obj->Settings.SenseBoxID) + "/data";
-  String headers = "Content-Type: text/csv\r\n";
-  headers += "Connection: close\r\n";
-  headers += "Content-Length: " + String(csv.length()) + "\r\n";
+  Serial.println("Uploading to thingspeak");  
+ 
   if(true == obj->usesecure){
       clientptr=obj->clientS;
   } else {
@@ -238,26 +220,25 @@ bool SenseBoxUpload::PostData(  SenseBoxUpload* obj ) {
   if(false == RequestWiFiConnection() ){
     //We need to write the CSV to a file and log the error....
     return false;
-
   } else {
-    String resp = SenseBoxUpload::performRequest(clientptr, senseBoxHost, senseBoxUrl, 443, "POST", headers, csv);
-    //We should check the response....
+
+    String resp ="";
+    if(true==obj->usesecure){
+      resp = performRequest(false, thingspeakHost, thingspeakUrl,443);
+    } else {
+      resp = performRequest(false, thingspeakHost, thingspeakUrl);
+    }
     ReleaseWiFiConnection();
-    return true;
-
+    return (resp != "" && !resp.startsWith("0"));
   }
-
-  
 
 }
 
 //request the specified url of the specified host
-String SenseBoxUpload::performRequest(WiFiClient* c , String host, String url, int port , String method , String headers , String data ) {
+String ThinkspeakUpload::performRequest(WiFiClient* c , String host, String url, int port , String method , String headers , String data ) {
+  
   Serial.println("Connecting to host '" + host + "' on port " + String(port));
-  if(false == c->connect(host.c_str(), port)){
-    //Something went wrong.....
-    return "";
-  } //default ports: http: port 80, https: 443
+  c->connect(host.c_str(), port); //default ports: http: port 80, https: 443
   String request = method + " " + url + " HTTP/1.1\r\n" +
                    "Host: " + host + "\r\n" +
                    headers + "\r\n";
@@ -286,12 +267,10 @@ String SenseBoxUpload::performRequest(WiFiClient* c , String host, String url, i
   return response;
 }
 
-
-
-void SenseBoxUpload::UploadTaskFnc(void* params){
+void ThinkspeakUpload::UploadTaskFnc(void* params){
   uint32_t WaitTime = portMAX_DELAY;
   TaskData_t* TaskData = (TaskData_t*) params;
-  Serial.println("Sensbox UploadTask started");
+  Serial.println("Thinkspeak UploadTask started");
   while(1==1){
 
 
@@ -310,12 +289,10 @@ void SenseBoxUpload::UploadTaskFnc(void* params){
     }
     if( false == xSemaphoreTake( TaskData->CfgSem, WaitTime ) ){
       //No Configchange at all we can simpy upload the data 
-      //If WiFi is in Start-Stop-mode activate it now.......
-      Serial.println("SenseBox: Prepare Upload ( enter code here )");
-
+      Serial.println("Thinkspeak: Prepare Upload ( insert code here )");
     } else {
       //We have a configchange 
-      Serial.println("SenseBox: Config changed, apply settings");
+      Serial.println("Thinkspeak: Config changed, apply settings");
 
     }
 
@@ -325,4 +302,20 @@ void SenseBoxUpload::UploadTaskFnc(void* params){
 
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

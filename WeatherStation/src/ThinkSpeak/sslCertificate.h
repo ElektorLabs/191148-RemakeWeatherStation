@@ -1,7 +1,7 @@
-#ifndef SSLCERTIFICATE_H
-#define SSLCERTIFICATE_H
+#ifndef _TS_SSLCERTIFICATE_H
+#define _TS_SSLCERTIFICATE_H
 
-const char* ssl_sb_certificate= \
+const char* ssl_ts_certificate = \
   "-----BEGIN CERTIFICATE-----\n" \
   "MIIEkjCCA3qgAwIBAgIQCgFBQgAAAVOFc2oLheynCDANBgkqhkiG9w0BAQsFADA/\n" \
   "MSQwIgYDVQQKExtEaWdpdGFsIFNpZ25hdHVyZSBUcnVzdCBDby4xFzAVBgNVBAMT\n" \

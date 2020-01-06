@@ -3,41 +3,20 @@
 #include <WiFi.h>
 #include <WiFiClient.h>
 #include <WiFiClientSecure.h>
-#include "datastore.h"
-#include "WindSensor.h"
-#include "RainSensor.h"
+#include "../../datastore.h" //May this also is moved to a file in JSON format on SPIFFS
+#include "../ValueMapping/ValueMapping.h"
 
 /* on header as last one */
 #include "mqtt_task.h"
 
 
 #define hourMs 3600000 //ms (60 * 60 * 1000 ms)
-/* This is bad as variables with global scope are sign of a bad architecture */
 
-extern float windSpeedAvg ;
-extern float windDirAvg ;
-extern int windDir; //degrees
-extern float windSpeed; //m/s
-extern float rainAmountAvg ;
-extern float temperature; //*C
-extern float humidity; //%
-extern float pressure; //hPa
-extern int16_t uv_level ;
-extern float lux_level ;
-extern float PM10; //particle size: 10 um or less
-extern float PM25; //particle size: 2.5 um or less
-
-extern WindSensor ws;
-extern RainSensor rs;
-
-extern float batteryVoltage; //v
-extern float batteryCharging;
-
-
-WiFiClient espClient;                       // WiFi ESP Client  
+//We need to check if even MQTT Secure is possible
+WiFiClient espClient;                           // WiFi ESP Client  
 PubSubClient mqttclient(espClient);             // MQTT Client 
 TaskHandle_t MQTTTaskHandle = NULL;
-
+VALUEMAPPING* Mapping=nullptr;
 typedef enum {
   vt_u8=0,
   vt_i8,
@@ -71,6 +50,9 @@ typedef struct{
 void callback(char* topic, byte* payload, unsigned int length);
 void SendIoBrokerSingleMSG(mqttsettings_t* settings,const char* subtopic, const MQTT_Value_t value);
 void MQTT_Task( void* prarm );
+void MQTTRegisterMappingAccess(VALUEMAPPING* Mp){
+Mapping = Mp;
+}
 
 void MQTTTaskStart( void ){
 /* This will created the MQTT task pinned to core 1 with prio 1 */
@@ -86,27 +68,28 @@ void MQTTTaskStart( void ){
 }
 
 void MQTT_Task( void* prarm ){
-   DynamicJsonDocument  root(2048);
+   DynamicJsonDocument  root(4096);
    String JsonString = "";
    uint32_t ulNotificationValue;
    int32_t last_message = millis();
-   mqttsettings_t Settings = eepread_mqttsettings();
+   mqttsettings_t Settings = read_mqttsettings();
                          
    Serial.println("MQTT Thread Start");
    mqttclient.setCallback(callback);             // define Callback function
+   bool IOBrokerMode = false;
    while(1==1){
 
-   /* if settings have changed we need to inform this task that a reload and reconnect is requiered */ 
-   if(Settings.enable != false){
-    ulNotificationValue = ulTaskNotifyTake( pdTRUE, 0 );
-   } else {
-    Serial.println("MQTT disabled, going to sleep");
-    if(true == mqttclient.connected() ){
-        mqttclient.disconnect();
-    }
-    ulNotificationValue = ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
-    Serial.println("MQTT awake from sleep");
-   }
+      /* if settings have changed we need to inform this task that a reload and reconnect is requiered */ 
+      if(Settings.enable != false){
+        ulNotificationValue = ulTaskNotifyTake( pdTRUE, 0 );
+      } else {
+        Serial.println("MQTT disabled, going to sleep");
+        if(true == mqttclient.connected() ){
+            mqttclient.disconnect();
+        }
+        ulNotificationValue = ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
+        Serial.println("MQTT awake from sleep");
+      }
 
    if( ulNotificationValue&0x01 != 0 ){
       Serial.println("Reload MQTT Settings");
@@ -114,11 +97,11 @@ void MQTT_Task( void* prarm ){
       if(true == mqttclient.connected() ){
         mqttclient.disconnect();
       }
-      Settings = eepread_mqttsettings();
+      Settings = read_mqttsettings();
    }
 
    if(Settings.enable != false ) {
-  
+
        if(!mqttclient.connected()) {             
             /* sainity check */
             if( (Settings.mqttserverport!=0) && (Settings.mqttservername[0]!=0) && ( Settings.enable != false ) ){
@@ -138,93 +121,62 @@ void MQTT_Task( void* prarm ){
             uint32_t intervall_end = last_message +( Settings.mqtttxintervall * 1000 );
             if( ( Settings.mqtttxintervall > 0) && ( intervall_end  <  millis() ) ){
               last_message=millis();
-              if(false == Settings.useIoBrokerMsgStyle)
+
+              if( false == IOBrokerMode)//if(false == Settings.useIoBrokerMsgStyle)
               {
               /* if we run in json mode we need to bulld the object */
-                Serial.println("Send JSON Payload");  
-                JsonString="";
-                root.clear();
-                /* Every minute we send a new set of data to the mqtt channel */
-                JsonObject data = root.createNestedObject("data");            
-                JsonObject data_wind = data.createNestedObject("wind");
-                data_wind["direction"] = windDir*45;
-                data_wind["speed"] = windSpeed*3.6;
-                data["rain"] =  rs.getRainAmount(true) * hourMs / Settings.mqtttxintervall ;
-                data["temperature"] = temperature;
-                data["humidity"] = humidity;
-                data["airpressure"] = pressure;
-                data["PM2_5"] = PM25;
-                data["PM10"] = PM10;
-                data["Lux"] = lux_level;
-                data["UV"] = uv_level;
-                
-                JsonObject station = root.createNestedObject("station");
-                station["battery"] = batteryVoltage;
-                station["charging"] = batteryCharging;
-                serializeJson(root,JsonString);
-                
-                if ( 0 == mqttclient.publish(Settings.mqtttopic, JsonString.c_str())){
-                    Serial.println("MQTT pub failed");  
+                if(Mapping != nullptr){
+                  Serial.println("Send JSON Payload");  
+                  JsonString="";
+                  root.clear();
+                  JsonArray data = root.createNestedArray("data");
+                  for(uint8_t i=0;i<64;i++){
+                      float value = NAN;
+                      if(false == Mapping->ReadMappedValue(&value,i)){
+                          Serial.printf("MQTT Channel %i not mapped\n\r",i);                        
+                      } else {
+                        Serial.printf("MQTT Channel %i Value %f",i,value );
+                        String name = Mapping->GetSensorNameByChannel(i);
+                        Serial.println(name);
+                        JsonObject dataobj = data.createNestedObject();
+                        dataobj["channel"] = i;
+                        dataobj["value"] = value;
+                        dataobj["name"] = name;
+
+                      }
+                  }
+                  
+                  /* Every minute we send a new set of data to the mqtt channel */
+                  serializeJson(root,JsonString);
+                  if ( 0 == mqttclient.publish(Settings.mqtttopic, JsonString.c_str())){
+                      Serial.println("MQTT pub failed");  
+                  }
                 }
 
-              } else /* If we run in IO Broker mode */ {
-                Serial.println("Send for IOBroker");  
-                MQTT_Value_t Tx_Value ;
-                
-                Tx_Value.Type=vt_u16;
-                Tx_Value.Value.u16=windDir*45; 
-                SendIoBrokerSingleMSG(&Settings,"/Weather/Direction",Tx_Value);
-                mqttclient.loop();                            // loop on client
-                
-                Tx_Value.Type=vt_u16;
-                Tx_Value.Value.u16=windSpeed*3.6; 
-                SendIoBrokerSingleMSG(&Settings,"/Weather/Speed",Tx_Value);
-                mqttclient.loop();                            // loop on client
-                
-                Tx_Value.Type=vt_flt;
-                Tx_Value.Value.flt=rs.getRainAmount(true) * hourMs / Settings.mqtttxintervall; 
-                SendIoBrokerSingleMSG(&Settings,"/Weather/Rain",Tx_Value);
-                mqttclient.loop();  
-                                          // loop on client
-                Tx_Value.Type=vt_flt;
-                Tx_Value.Value.flt=temperature;
-                SendIoBrokerSingleMSG(&Settings,"/Weather/Temperature",Tx_Value);
-                mqttclient.loop();                            // loop on client
-
-                Tx_Value.Type=vt_flt;
-                Tx_Value.Value.flt=humidity;
-                SendIoBrokerSingleMSG(&Settings,"/Weather/Humidity",Tx_Value);
-                mqttclient.loop();                            // loop on client               
-               
-                Tx_Value.Type=vt_flt;
-                Tx_Value.Value.flt=pressure;
-                SendIoBrokerSingleMSG(&Settings,"/Weather/Airpressure",Tx_Value);
-                mqttclient.loop();                            // loop on client
-
-                Tx_Value.Type=vt_u32;
-                Tx_Value.Value.u32=PM25;
-                SendIoBrokerSingleMSG(&Settings,"/Weather/PM2_5",Tx_Value);
-                mqttclient.loop();                            // loop on client
-                
-                Tx_Value.Type=vt_u32;
-                Tx_Value.Value.u32=PM10;
-                SendIoBrokerSingleMSG(&Settings,"/Weather/PM10",Tx_Value);
-                mqttclient.loop();                            // loop on client
-               
-                Tx_Value.Type=vt_flt;
-                Tx_Value.Value.flt=batteryVoltage;
-                SendIoBrokerSingleMSG(&Settings,"/Station/battery",Tx_Value);
-                mqttclient.loop();                            // loop on client
-                
-                Tx_Value.Type=vt_bool;
-                Tx_Value.Value.bl=batteryCharging;
-                SendIoBrokerSingleMSG(&Settings,"/Station/charging",Tx_Value);
-                mqttclient.loop();                            // loop on client
+                } else /* If we run in IO Broker mode */ {
+                if(Mapping != nullptr){
+                  Serial.println("Send for IOBroker");  
+                  MQTT_Value_t Tx_Value ;
+                  Tx_Value.Type=vt_flt;
+                    for(uint8_t i=0;i<64;i++){
+                      float value = NAN;
+                      if(false == Mapping->ReadMappedValue(&value,i)){
+                          Serial.printf("MQTT Channel %i not mapped\n\r",i);                        
+                      } else {
+                          Tx_Value.Value.flt = value;
+                          String ChannelName = "/Weather/Channel"+String(i);
+                          SendIoBrokerSingleMSG(&Settings,ChannelName.c_str(),Tx_Value);
+                          mqttclient.loop();                            // loop on client
+                      }
+                }
               }
+              
             }
        }
-       vTaskDelay( 100/portTICK_PERIOD_MS );
+      
    } 
+  }
+  vTaskDelay( 100/portTICK_PERIOD_MS );
  }
 }
 

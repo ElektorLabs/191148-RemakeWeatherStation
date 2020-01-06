@@ -87,7 +87,7 @@
         };
 
         void SDS011_TEST( void ); //As the sensor seems not good....       
-     
+        SemaphoreHandle_t xUARTSemaphore = NULL;
        
 
     };

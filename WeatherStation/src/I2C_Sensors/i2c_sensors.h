@@ -49,20 +49,8 @@ class I2C_Sensors{
         
         void begin();
         /* We can have multiple channesl for each value, how to handle this? */
-        float GetUVALevel( uint8_t channelidx );
-        float GetUVBLevel( uint8_t channelidx );
-        float GetLightLevel( uint8_t channelidx);
-        float GetTemperature( uint8_t channelidx );
-        float GetPressure( uint8_t channelidx );
-        float GetHumidity( uint8_t channelidx );
-
+        /* This is kind of obsolete and will be removed with the next driver arch update */
         /* We generate a list with known sensors for a given value */
-        void GetBrigtnessChannels( SensorUnitInfo_t** List, uint8_t* ListCapacity );
-        void GetUVChannels( SensorUnitInfo_t** List, uint8_t* ListCapacity );
-        void GetTemperatureChannels ( SensorUnitInfo_t** List, uint8_t* ListCapacity );
-        void GetPressureChannels( SensorUnitInfo_t** List, uint8_t* ListCapacity );
-        void GetHumidutyChannels( SensorUnitInfo_t** List, uint8_t* ListCapacity );
-
         /* We need to provide a mapping to the outside and also sensornames */
         bool GetIsSensorOnBus( SensorType_t Sensor );
         uint8_t GetChannelIndex(SensorType_t Sensor );
@@ -87,7 +75,18 @@ class I2C_Sensors{
        
         EHAJO_WSEN_PADS wsen_pads;
 
-       
+        float GetUVALevel( uint8_t channelidx );
+        float GetUVBLevel( uint8_t channelidx );
+        float GetLightLevel( uint8_t channelidx);
+        float GetTemperature( uint8_t channelidx );
+        float GetPressure( uint8_t channelidx );
+        float GetHumidity( uint8_t channelidx );
+
+        void GetBrigtnessChannels( SensorUnitInfo_t** List, uint8_t* ListCapacity );
+        void GetUVChannels( SensorUnitInfo_t** List, uint8_t* ListCapacity );
+        void GetTemperatureChannels ( SensorUnitInfo_t** List, uint8_t* ListCapacity );
+        void GetPressureChannels( SensorUnitInfo_t** List, uint8_t* ListCapacity );
+        void GetHumidutyChannels( SensorUnitInfo_t** List, uint8_t* ListCapacity );
 
         bool DeviceOnBus[SENSOR_TYPE_CNT]={false,};
         const String  SensorNames[SENSOR_TYPE_CNT ]={
@@ -123,7 +122,9 @@ class I2C_Sensors{
              {.Sensor=TSL2561,.Type=DATAUNITS::LIGHT,.ChannelID=0},
              {.Sensor=TSL2591,.Type=DATAUNITS::LIGHT,.ChannelID=1},
         };
-
+        
+        SemaphoreHandle_t xI2C_Semaphore;
+        
 
        
 
