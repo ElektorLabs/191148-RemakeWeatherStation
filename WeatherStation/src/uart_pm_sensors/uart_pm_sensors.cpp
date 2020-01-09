@@ -69,7 +69,52 @@ void UART_PM_Sensors::begin( HardwareSerial &_hwserial, SerialSensorDriver_t dev
          } break;
 
         default:{
-            Serial.println("HW not supported");  
+            Serial.println("Starting auto detect");
+             _hwserial.begin( 9600, SERIAL_8N1 , RX , TX);
+             Serial.print("Configure SDS011: ");
+           
+            SDS011device = new SDS011( _hwserial );   
+            if (SDS011device->setSleepMode(1) ){
+                if(true == SDS011device->setMode(SDS_SET_QUERY)){
+                    Serial.println("Query Mode");
+                    SensorDetected=true;
+                    SelectedDriver = SENSOR_SDS011;
+                    break;
+                } else {
+                    Serial.println("failed");
+                    delete SDS011device;
+                    SDS011device=nullptr;   
+                }
+                
+            } else {
+                Serial.println("failed");
+                delete SDS011device;
+                SDS011device=nullptr;   
+            }
+
+             Serial.print("Configure HPM115S0-XXX:");
+             HPMA115S0device = new HPMA115S0( _hwserial );
+             HPMA115S0device->begin( );
+             if(false == HPMA115S0device->StopAutoSend() ){
+                Serial.println(" failed");
+                delete HPMA115S0device;
+                HPMA115S0device = nullptr;
+             } else {
+                 if( false == HPMA115S0device->StartMesurment() ){
+                     Serial.println(" failed");
+                     delete HPMA115S0device;
+                     HPMA115S0device = nullptr;
+                 } else {
+                     Serial.println(" Autosend disabled, sensor active");
+                     SensorDetected=true;
+                      SelectedDriver = SENSOR_HPM115S0;
+                      break;
+                 }
+             }
+            SensorDetected=false;
+            SelectedDriver = NONE;
+
+
          } break;
 
     }

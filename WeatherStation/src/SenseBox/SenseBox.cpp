@@ -69,6 +69,7 @@ void SenseBoxUpload::WriteMapping( void ){
             }
     }
     serializeJson(doc, file);
+    file.close();
 }
 
 void SenseBoxUpload::ReadMapping( void ){
@@ -110,6 +111,7 @@ void SenseBoxUpload::ReadMapping( void ){
               Mapping[i].SenseBoxSensorID[i]=0;
             }
          }
+         Serial.println("SenseBoxUpload: Write blank config");
          WriteMapping();
     }
 
@@ -133,6 +135,7 @@ void SenseBoxUpload::WriteSettings(){
     doc["UploadInterval"] = Settings.UploadInterval; //Interval in minutes for new data
     doc["Enabled"] = Settings.Enabled; //If the uplaod is enabled or not 
     serializeJson(doc, file);
+    file.close();
 
 
 }
@@ -312,7 +315,7 @@ void SenseBoxUpload::UploadTaskFnc(void* params){
       //No Configchange at all we can simpy upload the data 
       //If WiFi is in Start-Stop-mode activate it now.......
       Serial.println("SenseBox: Prepare Upload ( enter code here )");
-
+      PostData(TaskData->obj);
     } else {
       //We have a configchange 
       Serial.println("SenseBox: Config changed, apply settings");

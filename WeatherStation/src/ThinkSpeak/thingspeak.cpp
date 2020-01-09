@@ -89,6 +89,7 @@ void ThinkspeakUpload::ReadMapping( void ){
               Mapping[i].enable;
               Mapping[i].StationChannelIdx;
          }
+         Serial.println("ThinkspeakUpload: Write blank config");
          WriteMapping();
     }
 
@@ -290,6 +291,7 @@ void ThinkspeakUpload::UploadTaskFnc(void* params){
     if( false == xSemaphoreTake( TaskData->CfgSem, WaitTime ) ){
       //No Configchange at all we can simpy upload the data 
       Serial.println("Thinkspeak: Prepare Upload ( insert code here )");
+      PostData(TaskData->obj);
     } else {
       //We have a configchange 
       Serial.println("Thinkspeak: Config changed, apply settings");

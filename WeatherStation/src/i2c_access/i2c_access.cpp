@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <Wire.h>
 static SemaphoreHandle_t xI2CBus_Semaphore = nullptr;
 void i2c_lock_bus( void ){
    
@@ -11,6 +12,7 @@ void i2c_lock_bus( void ){
     } else {
         //Strange ...
     }
+    Wire.flush(); //This will prevent misshaps on the i2c bus
 }
 
 void i2c_unlock_bus( void ){
@@ -20,4 +22,5 @@ void i2c_unlock_bus( void ){
     } else {
         xSemaphoreGive( xI2CBus_Semaphore );
     }
+    Wire.flush(); //This will prevent misshaps on the i2c bus
 }

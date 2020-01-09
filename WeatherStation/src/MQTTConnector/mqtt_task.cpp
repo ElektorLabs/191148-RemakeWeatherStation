@@ -3,7 +3,6 @@
 #include <WiFi.h>
 #include <WiFiClient.h>
 #include <WiFiClientSecure.h>
-#include "../../datastore.h" //May this also is moved to a file in JSON format on SPIFFS
 #include "../ValueMapping/ValueMapping.h"
 
 /* on header as last one */
@@ -65,6 +64,10 @@ void MQTTTaskStart( void ){
    &MQTTTaskHandle,
    1);
 
+}
+
+mqttsettings_t GetMQTTSettings( void ){
+  return read_mqttsettings();
 }
 
 void MQTT_Task( void* prarm ){

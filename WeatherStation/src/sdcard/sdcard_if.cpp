@@ -1,5 +1,7 @@
 #include "SD.h"
 #include "SPI.h"
+#include "SPIFFS.h"
+#include <ArduinoJson.h>
 
 #include "sdcard_if.h"
 
@@ -9,11 +11,24 @@ int16_t CS_Pin = -1;
 bool card_eject = false;
 VALUEMAPPING* DataMapping = nullptr;
 
+//We need a few parameter
+SemaphoreHandle_t SDCfgSem;
+
+SemaphoreHandle_t SDCardAccessSem;
+
+
+bool LogEnable = false;
+uint16_t LogInterval = 15;
+
+void SDCardDataLog( void );
+void SDCardLoging( void* param);
+void SdCardLog_WriteConfig( void );
+
 void SDCardRegisterMappingAccess(VALUEMAPPING* Mapping){
   DataMapping = Mapping;
 }
 
-void register_timecore( Timecore* TC){
+void SDCardRegisterTimecore( Timecore* TC){
   TimeCorePtr=TC;
 }
 
@@ -22,55 +37,168 @@ void setup_sdcard( int8_t sd_sck_pin , int8_t sd_miso_pin, int8_t sd_mosi_pin, i
   SDSPI.begin(sd_sck_pin, sd_miso_pin, sd_mosi_pin, -1);
   CS_Pin=sd_cs_pin;
   card_eject = true; //Card not mounted
+  SDCardAccessSem  = xSemaphoreCreateBinary();
+  if(nullptr == SDCardAccessSem){
+    abort();
+  }
+  xSemaphoreGive(SDCardAccessSem);
+  SDCfgSem = xSemaphoreCreateBinary();
+  if( nullptr == SDCfgSem){
+    abort();
+  }
+  //We also start the Logging Task if requiered.....
+  xTaskCreate(
+                    SDCardLoging,          /* Task function. */
+                    "SDCardLogging",        /* String with name of task. */
+                    20000,            /* Stack size in bytes. */
+                    NULL,             /* Parameter passed as input of the task */
+                    1,                /* Priority of the task. */
+                    NULL);            /* Task handle */
+
+
 }
 
 void sdcard_umount(){
+    if (false == xSemaphoreTake(SDCardAccessSem, portMAX_DELAY ) ){
+      return;
+    } 
     card_eject = true;
     SD.end();
+     Serial.println("SD-Card ejected");
+    xSemaphoreGive(SDCardAccessSem);
+
 }
 
-void sdcard_mound(){
+void sdcard_mount(){
+    if (false == xSemaphoreTake(SDCardAccessSem, portMAX_DELAY )){
+      return;
+    } 
+    SD.end();
     if(false == SD.begin(CS_Pin, SDSPI) ){
     Serial.println("SD-Card mount failed");
+     card_eject = true;
   } else {
     Serial.println("SD-Card mounted at '\\SD' ");
+    card_eject = false;
+  }
+  xSemaphoreGive(SDCardAccessSem);
+}
+
+bool sdcard_getmounted( void ){
+  if(  card_eject == true){
+    return false;
+  } else {
+    return true;
   }
 }
 
+void sdcard_log_enable( bool ena){
+      LogEnable = ena;
+      SdCardLog_WriteConfig();
+}
 
-//We need a few parameter
-SemaphoreHandle_t SDCfgSem;
+void sdcard_log_int( uint16_t interval){
+      LogInterval = interval;
+      SdCardLog_WriteConfig();
+}
+
+bool sdcard_log_getenable( void ){
+  return LogEnable;
+}
+
+uint16_t sdcard_log_getinterval( void ){
+  return LogInterval;
+}
+
+void sdcard_log_writesettings(bool ena, uint16_t interval){
+   LogEnable = ena;
+   LogInterval = interval;
+   SdCardLog_WriteConfig();
+}
+
+void SdCardLog_WriteConfig( void ){
+    //This will just convert the Mapping to JSON and write it to the local filesystem
+    Serial.println("Write /sdcardlog.json ");
+    File file = SPIFFS.open("/sdcardlog.json", FILE_WRITE);
+    const size_t capacity = JSON_ARRAY_SIZE(64) + JSON_OBJECT_SIZE(1) + 64*JSON_OBJECT_SIZE(3)+(64*16);
+    DynamicJsonDocument doc(capacity);
+    
+    doc["enabled"] = LogEnable;
+    doc["interval"] = LogInterval;
+
+    serializeJson(doc, file);
+    file.close();
+    if(nullptr != SDCfgSem){
+      xSemaphoreGive(SDCfgSem);
+    }
+}
+
+void SDCardLog_ReadConfig( void ){
+
+//Config will be stored as JSON String on SPIFFS
+    //This makes mapping more complicated but will easen web access
+    if(SPIFFS.exists("/sdcardlog.json")){
+        File file = SPIFFS.open("/sdcardlog.json");
+        //We need to read the file into the ArduinoJson Parser
+         /*
+        ReadBufferingStream bufferingStream(file, 64);
+        deserialzeJson(doc, bufferingStream);
+        */
+        
+        const size_t capacity = JSON_ARRAY_SIZE(64) + JSON_OBJECT_SIZE(1) + 64*JSON_OBJECT_SIZE(3) + 1580;
+        DynamicJsonDocument doc(capacity);
+        deserializeJson(doc, file);
+        doc["enabled"] = false;
+        doc["interval"] = 15; //Log every 15 minutes
+        file.close();
+        
+    } else {
+        LogEnable = false;
+        LogInterval = 15;
+        SdCardLog_WriteConfig();
+      //We need to create a default config
+    }
+
+}
+
+
+
+
 void SDCardLoging( void* param){
   bool LoggingEnable = true ;
-  uint16_t Interval = 5;
+  uint32_t Interval = portMAX_DELAY;
 
   //sainity checks
   if(SDCfgSem == nullptr){
     //We need a semaphore here !
-    SDCfgSem = xSemaphoreCreateMutex();
+    SDCfgSem = xSemaphoreCreateBinary();
   }
 
   //Config for the logging will be stored also in a json file
   //We need to read it if it is existing
-
+  xSemaphoreGive(SDCfgSem);
+  
   while(1 == 1){
 
     //We need to load the ionterval for the logging
     //We run in minutes
-    if( ){
-      Interval= *60*1000;
+    if( LoggingEnable == true ){
+      Interval= LogInterval*1000;
       if(Interval<1){
-        Interval=60*1000; //1 Minute min Time;
+        Interval=10*1000; //1 Minute min Time;
       }
     } else {
       Interval = portMAX_DELAY;
+      Serial.println("SDLog: Entering Sleep");
     }
     if( false == xSemaphoreTake( SDCfgSem, Interval ) ){
       //No Configchange at all we can simpy upload the data 
       Serial.println("SD Card: Prepare save ( enter code here )");
+      SDCardDataLog();
     } else {
       //We have a configchange 
       Serial.println("SD Card: Config changed, apply settings");
+      SDCardLog_ReadConfig();
 
     }
 
@@ -89,7 +217,19 @@ void SDCardDataLog( void ){
     We need to impliment a mutex as also faild network write attemps are 
     stored on the sd card 
   */
+  if(nullptr == DataMapping){
+    Serial.println("No Datasource registred");
+    return;
+  }
+
+  if (false == xSemaphoreTake(SDCardAccessSem, 5)){
+    Serial.println("SD Card Semaphore locked");
+    return;
+  } 
+ 
   if(true == card_eject){
+      xSemaphoreGive(SDCardAccessSem);
+      Serial.println("SD Card not mounted");
       return; //We won't try to mount the card!
   }
   
@@ -104,84 +244,101 @@ void SDCardDataLog( void ){
   
   }
 
-
-
-  //File format will be CSV ( comma seperated vales as in RFC4180 )
-  if( SD.cardSize() != CARD_NONE ){
-    //Card seems still to be mounted
-    CardMounted= true;
+  if(true == card_eject){
+    CardMounted=false;
   } else {
-    //We try to mount the card again 
-    if ( false == SD.begin(CS_Pin, SDSPI) ){
-      //We can't mount the card
-      CardMounted=false; 
-    } else {
-      //Card is mounted, try to write data
-      CardMounted=true;
-    }
+    CardMounted=true;
   }
 
   if(false == CardMounted){
+    xSemaphoreGive(SDCardAccessSem);
+    Serial.println("SD Card not connected, leave");
     return; //That is all we can do for now 
   }
 
   File file;
   //Filename is : YYYY-MM-DD.CSV
   //We need to grab the timestamp if possible
-  String FileName = String(Date.year) + "-" +  String(Date.month) + "-" + String(Date.day) + "-Log.csv";
-  String RootPath = "\\SD\\";
-  String Path = RootPath + "\\" + FileName;
+  char DateString[11]; 
+  char TimeString[10];
+  snprintf(DateString, sizeof(DateString),"%4d-%02d-%02d",Date.year,Date.month,Date.day);
+  snprintf(TimeString, sizeof(TimeString),"%02d:%02d:%02d", Date.hour, Date.minute, Date.second);
+  String FileName = String(DateString) + "-Log.csv";
+  String RootPath = "";
+  String Path = RootPath + "/" + FileName;
+  
   //We will write to the card till 5Mb of space is left
   //Filename should be DataLog 0 to x
-  if( 5000000 > ( SD.totalBytes() - SD.usedBytes() ) ){   
-    
+  uint64_t BytesFree = SD.totalBytes() - SD.usedBytes() ;
+  uint32_t MBFree = ( BytesFree / 1024 / 1024 ); 
+  if( MBFree > 5 ){   
+    Serial.print("SD Card start writing @");
+    Serial.println(TimeString);
+    Serial.print("Path:");
+    Serial.println(Path);
     if(true == SD.exists(Path) ){
       file = SD.open(Path, FILE_APPEND);
+      Serial.println("File exist, append data");
     } else {
-      file.print("Time ,");
       file = SD.open(Path, FILE_WRITE);
-      for(uint8_t i=0;i<64;i++){
-          file.print("Channel ");
-          file.print(i);
-          file.print(" Name");
-          file.print(",");
-          file.print("Value");
-          file.print(",");
+      if(file){
+        file.print("Time ,");
+        for(uint8_t i=0;i<64;i++){
+            file.print("Channel ");
+            file.print(i);
+            file.print(" Name");
+            file.print(",");
+            file.print("Value");
+            if(i<63){
+              file.print(",");
+            } else {
+              file.print("\r\n");
+    
+            }
+        }       
+      } else {
+        Serial.println("Can't open file for write");
+        xSemaphoreGive(SDCardAccessSem);
+        sdcard_umount();
+        return;    
       }
-      file.print("\n\r");
     }
 
     if(file){
-
+      //We need to output the current time if possible....
+      file.print(TimeString);
+      file.print(",");
       for(uint8_t i=0;i<64;i++){
         float value = NAN;
         if(false == DataMapping->ReadMappedValue(&value,i)){
-          Serial.printf("Channel %i not mapped\n\r",i);
           file.print("");
           file.print(",");
           file.print("");
-          file.print(",");
-        } else {
           
-          Serial.printf("Channel %i Value %f",i,value );
-          Serial.print(" @ ");
+        } else {
           String name = DataMapping->GetSensorNameByChannel(i);
-          Serial.println(name);
           file.print(name);
           file.print(",");
           file.print(value);
-          file.print(",");
-
         }
-        file.print("\n\r");
+        if(i<63){
+            file.print(",");
+        } else {
+           file.print("\n");
+        }
       } 
-      
       file.close();
     } else {
+      xSemaphoreGive(SDCardAccessSem);
+       Serial.println("SD Card file error");
       return; //File error 
     }
   } else {
     //Out of memory 
-  }
+    Serial.println("SD Card no space left on device");
+    Serial.print("MB Free:");
+    Serial.println(MBFree);
 
+  }
+  xSemaphoreGive(SDCardAccessSem);
 }

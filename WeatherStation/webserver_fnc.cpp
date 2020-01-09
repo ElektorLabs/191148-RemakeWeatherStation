@@ -1,4 +1,5 @@
 #include <ArduinoJson.h>
+#include <SPIFFS.h>
 #include "./src/ValueMapping/Valuemapping.h"
 #include "webserver_fnc.h"
 
@@ -130,8 +131,14 @@ int32_t iValueChannel=0;
 
 
 void response_mappingdata( void ){
-    String data="";
-    server->send(200, "text/plain", data);
+    if(SPIFFS.exists("/mapping.json")){
+      File file = SPIFFS.open("/mapping.json", "r");
+      server->streamFile(file, "text/plain");
+      file.close();
+    } else {
+      String data="{}";
+      server->send(200, "text/plain", data);
+    }
 }
 
 

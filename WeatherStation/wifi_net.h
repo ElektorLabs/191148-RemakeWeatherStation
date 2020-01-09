@@ -30,11 +30,13 @@ typedef struct {
   bool Connected;
   bool IsStation;
   bool IsAP;
+  bool WPS_Active;
   wifi_scan_result_t AP_Info;
   v4_ip_info_t IP_Info;
 } wifi_connection_info_t;
    
   void initWiFi( bool forceAP = false ,bool force_openap = false);
+  void WPS_Start( void );
   void WiFiClientEnable(bool Ena);
   void WiFiForceAP( bool Ena);
   void WiFiStop( void );

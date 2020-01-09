@@ -38,6 +38,11 @@ String getContentType(String filename) {
 }
 
 
+void sendError404( void ){
+   Serial.println("File doesn't exist (404)");
+   server->send(404, "text/plain", "The requested file doesn't exist");
+}
+
 /**************************************************************************************************
  *    Function      : sendFile
  *    Description   : Sends a requestedfile from SPIFFS
@@ -93,6 +98,10 @@ void SetupWebServer() {
   server->on("/getWiFiSettings", HTTP_GET, getWiFiSettings);
   server->on("/getSSIDList", HTTP_GET, getSSIDList);
   server->on("/restart", HTTP_GET, restart);
+
+  //access blacklist
+  server->on("/mapping.json", HTTP_GET, sendError404);
+
 
 
     

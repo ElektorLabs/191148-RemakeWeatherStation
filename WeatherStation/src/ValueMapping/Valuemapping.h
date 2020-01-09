@@ -49,7 +49,6 @@ class VALUEMAPPING{
         String GetSensorName( SensorElementEntry_t Element);
         String GetSensorNameByChannel(uint8_t Channel);
 
-
     private:
 
     SensorElementEntry_t MappingTable[64];

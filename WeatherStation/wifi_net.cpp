@@ -26,6 +26,8 @@ void (*scandone_cb[4]) (void)={NULL,};
 
 bool StarStopeMode = false;
 
+bool WPS_Running = false;
+
 /* Function prototypes */
 String wpspin2string(uint8_t a[]);
 void configureSoftAP( bool use_wifi_config );
@@ -81,7 +83,7 @@ void WiFiEvent(WiFiEvent_t event, system_event_info_t info)
     //Serial.printf("[WiFi-event] event: %d\n", event);
     switch (event) {
         case SYSTEM_EVENT_WIFI_READY: 
-            //Serial.println("WiFi interface ready");
+            Serial.println("WiFi interface ready");
             break;
         case SYSTEM_EVENT_SCAN_DONE:
             //Serial.println("Completed scan for access points");
@@ -95,17 +97,17 @@ void WiFiEvent(WiFiEvent_t event, system_event_info_t info)
             Serial.println("Station Mode Started");
             break;
         case SYSTEM_EVENT_STA_STOP:
-            //Serial.println("WiFi clients stopped");
+            Serial.println("WiFi clients stopped");
             break;
         case SYSTEM_EVENT_STA_CONNECTED:
-            //Serial.println("Connected to access point");
+            Serial.println("Connected to access point");
             AutoReconnect.detach();
             break;
         case SYSTEM_EVENT_STA_DISCONNECTED:
-            //Serial.println("Disconnected from WiFi access point");
+            Serial.println("Disconnected from WiFi access point");
             break;
         case SYSTEM_EVENT_STA_AUTHMODE_CHANGE:
-            //Serial.println("Authentication mode of access point has changed");
+            Serial.println("Authentication mode of access point has changed");
             break;
         case SYSTEM_EVENT_STA_GOT_IP:
               Serial.println("Connected to :" + String(WiFi.SSID()));
@@ -130,57 +132,64 @@ void WiFiEvent(WiFiEvent_t event, system_event_info_t info)
             WiFiClientEnable(true); //Force WiFi on 
             WiFiForceAP(false); //Diable Force AP
             _ReconnectWiFi(true);
+             WPS_Running=false;
             //We should be good to go now ....          
             break;
         case SYSTEM_EVENT_STA_WPS_ER_FAILED:
             Serial.println("WiFi Protected Setup (WPS): failed in enrollee mode");
             esp_wifi_wps_disable();
+             WPS_Running=false;
             break;
         case SYSTEM_EVENT_STA_WPS_ER_TIMEOUT:
             Serial.println("WPS Timedout, retrying");
             esp_wifi_wps_disable();
+            //Shutdown WiFi and Restart
+            WiFiForceAP(false); //Diable Force AP
+            _ReconnectWiFi(true);
+            WPS_Running=false;
             break;
         case SYSTEM_EVENT_STA_WPS_ER_PIN:
             Serial.println("WiFi Protected Setup (WPS): pin code in enrollee mode");
             Serial.println("WPS_PIN = " + wpspin2string(info.sta_er_pin.pin_code));
+            WPS_Running=false;
             break;
             break;
         case SYSTEM_EVENT_AP_START:
-            //Serial.println("WiFi access point started");
+            Serial.println("WiFi access point started");
             break;
         case SYSTEM_EVENT_AP_STOP:
-            //Serial.println("WiFi access point  stopped");
+            Serial.println("WiFi access point  stopped");
             break;
         case SYSTEM_EVENT_AP_STACONNECTED:
-            //Serial.println("Client connected");
+            Serial.println("Client connected");
             break;
         case SYSTEM_EVENT_AP_STADISCONNECTED:
             Serial.println("Disconnected from station, attempting reconnection");
             WiFi.reconnect();
             break;
         case SYSTEM_EVENT_AP_STAIPASSIGNED:
-            //Serial.println("Assigned IP address to client");
+            Serial.println("Assigned IP address to client");
             break;
         case SYSTEM_EVENT_AP_PROBEREQRECVED:
-            //Serial.println("Received probe request");
+            Serial.println("Received probe request");
             break;
         case SYSTEM_EVENT_GOT_IP6:
-            //Serial.println("IPv6 is preferred");
+            Serial.println("IPv6 is preferred");
             break;
         case SYSTEM_EVENT_ETH_START:
-            //Serial.println("Ethernet started");
+            Serial.println("Ethernet started");
             break;
         case SYSTEM_EVENT_ETH_STOP:
-            //Serial.println("Ethernet stopped");
+            Serial.println("Ethernet stopped");
             break;
         case SYSTEM_EVENT_ETH_CONNECTED:
-            //Serial.println("Ethernet connected");
+            Serial.println("Ethernet connected");
             break;
         case SYSTEM_EVENT_ETH_DISCONNECTED:
-            //Serial.println("Ethernet disconnected");
+            Serial.println("Ethernet disconnected");
             break;
         case SYSTEM_EVENT_ETH_GOT_IP:
-            //Serial.println("Obtained IP address");
+            Serial.println("Obtained IP address");
             break;
     }
 }
@@ -205,9 +214,8 @@ String wpspin2string(uint8_t a[]){
 
 void WPS_Start(){
   //This will only work is the statio is not connected to a wifi and also not configured to do so
-
-  //Disable wifi 
-  WiFi.mode(WIFI_OFF);
+  WPS_Running = true;
+  esp_wifi_disconnect();
   delay(10);
   WiFi.onEvent(WiFiEvent);
   WiFi.mode(WIFI_MODE_STA);
@@ -218,6 +226,7 @@ void WPS_Start(){
   esp_wifi_wps_enable(&wps_config);
   esp_wifi_wps_start(0);
   //Next is to wait what the driver will tell us....
+  Serial.println("WPS started");
 }
 
 
@@ -761,6 +770,12 @@ void GetWiFiConnectionInfo( wifi_connection_info_t* ConnectionInfo){
   esp_wifi_get_mode(&mode);
 
   bzero(ConnectionInfo, sizeof(ConnectionInfo));
+
+  if(true ==  WPS_Running ){
+    ConnectionInfo->WPS_Active = true;
+  } else  {
+    ConnectionInfo->WPS_Active = false;
+  }
 
   if(mode == WIFI_MODE_STA){
     ConnectionInfo->IsStation=true;

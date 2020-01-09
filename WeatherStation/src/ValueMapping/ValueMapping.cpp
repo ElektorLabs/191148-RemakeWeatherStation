@@ -266,7 +266,7 @@ void VALUEMAPPING::SetMappingForChannel( uint8_t MappedChannelIndex, SensorEleme
         memcpy((void*)(&MappingTable[MappedChannelIndex]), (void*)&Element, sizeof(Element));
         //Serial.printf("Mapped to channel %i", MappedChannelIndex);
         //PrintElementData(MappingTable[MappedChannelIndex]);
-
+        WriteConfig();
     } else {
         Serial.println("Mapping Channel out of Range");
     }
@@ -356,7 +356,7 @@ void VALUEMAPPING::ReadConfig( void ){
         deserializeJson(doc, file);
         JsonArray Mapping = doc["Mapping"];
         for(uint8_t i=0;i<64;i++){
-            JsonObject Entry = Mapping[0];
+            JsonObject Entry = Mapping[i];
             int Bus = Entry["Bus"]; // 0
             int Type = Entry["ValueType"]; // 0
             int Channel = Entry["Channel"]; // 0
@@ -375,11 +375,13 @@ void VALUEMAPPING::ReadConfig( void ){
             MappingTable[i].ValueType=(DATAUNITS::MessurmentValueType_t)(Type);
             MappingTable[i].ChannelIDX= (uint8_t)(Channel);
         }
+        file.close();
     } else {
         //We need to create a blank mapping scheme
          for(uint8_t i=0;i< ( sizeof(MappingTable) / sizeof( MappingTable[0] )  ) ; i++   ){
             MappingTable[i].Bus=NOTMAPPED;
          }
+         Serial.println("Write new Mapping");
          WriteConfig();
 
     }
@@ -401,6 +403,7 @@ void VALUEMAPPING::WriteConfig( void ){
             MappingObj["Channel"] = (uint8_t)(MappingTable[i].ChannelIDX);;
     }
     serializeJson(doc, file);
+    file.close();
 
 }
 

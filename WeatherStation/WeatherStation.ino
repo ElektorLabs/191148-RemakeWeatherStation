@@ -71,22 +71,29 @@
 
 #include "webserver_fnc.h"
 
+#include "./src/lcd_menu/lcd_menu.h"
+
 /* We define the pins used for the various components */
 
 #define INPUT_RAIN           ( 38 )
 #define INPUT_WINDSPEED      ( 34 )
 #define INPUT_WINDDIR        ( 37 )
 
-#define I2C0_SCL             ( 21 )
-#define I2C0_SDA             ( 33 )
+#define I2C0_SCL             ( 25 )
+#define I2C0_SDA             ( 26 )
 
 #define PARTICLESENSOR_RX    ( 10 )
 #define PARTICLESENSOR_TX    (  9 )
 
-#define SD_MISO              ( 12 )
+//#define SD_MISO              ( 12 )
+#define SD_MISO              ( 15 )
 #define SD_MOSI              ( 13 )
 #define SD_SCK               ( 14 )
-#define SD_CS0               ( 15 )
+//#define SD_CS0               ( 15 )
+#define SD_CS0               ( 12 )
+
+
+
 
 #define RFM95_MISO           ( 19 )
 #define RFM95_MOSI           ( 23 )
@@ -98,6 +105,7 @@
 #define RFM95_DIO2           ( 32 )
 
 #define USERBTN0             ( 0 )
+#define USERBTN1             ( 4 )
 
 
  lorawan LORAWAN;
@@ -113,7 +121,6 @@ Timecore TimeCore;
 SenseBoxUpload SenseBox;
 ThinkspeakUpload ThinkSpeak;
 
-
 void DataLoggingTask(void* param);
 bool ReadSensorData(float* data ,uint8_t ch);
 void SDCardDataLog( void );
@@ -122,14 +129,18 @@ void setup_iopins( void ){
   // Every pin that is just IO will be defined here 
   pinMode( USERBTN0, INPUT_PULLUP );
   //If this button is read as 0 this means it is pressed
+  if(USERBTN1 >= 0){
+    pinMode( USERBTN1, INPUT_PULLUP );
+  }
 
 }
 
 void setup() {
   Serial.begin(115200);
+  SPIFFS.begin(); /* This can be called multiple times, allready mounted it will just return */
   datastoresetup();
   setup_iopins();
-  setup_sdcard(SD_SCK ,SD_MISO, SD_MOSI, SD_CS0 );
+
   //We also need to mount the SPIFFS
   if(!SPIFFS.begin(true)){
       Serial.println("An Error has occurred while mounting SPIFFS");
@@ -138,8 +149,9 @@ void setup() {
   IntSensors.begin(INPUT_WINDDIR, INPUT_WINDSPEED, INPUT_RAIN );
   /* Next is to collect the I²C-Zoo of supported sensor */
   TwoWireSensors.begin();
-  
-  PMSensor.begin( Serial1 , UART_PM_Sensors::SerialSensorDriver_t::SENSOR_HPM115S0 );
+  LCDMenu( USERBTN0, USERBTN1 );
+  //This sould trigger autodetect
+  PMSensor.begin( Serial1 , UART_PM_Sensors::SerialSensorDriver_t::NONE );
   vTaskDelay(2000);
   if ( false == LORAWAN.begin( RFM95_NSS, 0xFF , 0xFF, RFM95_DIO0, RFM95_DIO1, RFM95_DIO2 ) ){
     //LoRa Module not found, we won't schedule any transmission
@@ -148,7 +160,6 @@ void setup() {
   }
   //Next step is to setup wifi and check if the configured AP is in range
   /* We check if the boot button is pressed ( IO00 ) */
-  delay(2000);
   WiFiClientEnable(true); //Force WiFi on 
   WiFiForceAP(false); //Diable Force AP
   if(0 != digitalRead(USERBTN0 )){
@@ -170,11 +181,15 @@ void setup() {
   ThinkSpeak.begin();
   ThinkSpeak.RegisterDataAccess( ReadSensorData );
   //Next is the SD-Card access, and this is a bit tricky
-  
+  SDCardRegisterMappingAccess(&SensorMapping);
+  SDCardRegisterTimecore(&TimeCore);
   //As also other parts use the card, if arround to log data
 
   //Last will be the MQTT Part for now
-
+  setup_sdcard(SD_SCK ,SD_MISO, SD_MOSI, SD_CS0 );
+  sdcard_mount();
+  
+  
     xTaskCreatePinnedToCore(
                     DataLoggingTask,   /* Function to implement the task */
                     "DataLogging",  /* Name of the task */
@@ -185,7 +200,11 @@ void setup() {
                     0);         /* Core where the task should run */
 
 
+ sdcard_log_int( 0 );
+ sdcard_log_enable( true );
 
+
+ 
 }
 
 
@@ -205,7 +224,8 @@ void loop() {
   //We can now take care for the important stuff
   if( (milli - last_ms) > 1000 ){
     last_ms = milli;
-    //Once a second to be called 
+    //Once a second to be called
+    
   }
   NetworkLoopTask();
 }
@@ -233,20 +253,42 @@ void DataLoggingTask(void* param){
   Element.ChannelIDX = 0;
   
   SensorMapping.SetMappingForChannel(2, Element);
+
+  Element.Bus = VALUEMAPPING::SensorBus_t::I2C;
+  Element.ValueType = DATAUNITS::TEMPERATURE;
+  Element.ChannelIDX = 0;
+  
+  SensorMapping.SetMappingForChannel(3, Element);
+  
+  Element.Bus = VALUEMAPPING::SensorBus_t::I2C;
+  Element.ValueType = DATAUNITS::HUMIDITY;
+  Element.ChannelIDX = 0;
+
+  SensorMapping.SetMappingForChannel(4, Element);
+  
+  Element.Bus = VALUEMAPPING::SensorBus_t::I2C;
+  Element.ValueType = DATAUNITS::PRESSURE;
+  Element.ChannelIDX = 0;
+  
+  SensorMapping.SetMappingForChannel(5, Element);
+  
+
+
   //This will grab every 10 seconds new values from the mapped sensors and display them as test
   while(1==1){
     for(uint8_t i=0;i<64;i++){
       float value = NAN;
       if(false == SensorMapping.ReadMappedValue(&value,i)){
-        Serial.printf("Channel %i not mapped\n\r",i);
+        //Serial.printf("Channel %i not mapped\n\r",i);
       } else {
         Serial.printf("Channel %i Value %f",i,value );
         Serial.print(" @ ");
         String name = SensorMapping.GetSensorNameByChannel(i);
-        Serial.println(name);
+        Serial.print(name);
       }
 
     }
+    Serial.println("");
   vTaskDelay(10000); //10s delay
   }
 }

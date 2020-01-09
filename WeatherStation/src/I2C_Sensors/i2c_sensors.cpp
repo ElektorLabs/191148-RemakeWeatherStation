@@ -29,10 +29,11 @@ I2C_Sensors::~I2C_Sensors( void ){
 
 void I2C_Sensors::begin( void ){
     uint8_t driver_idx=0;
-    //100kHz max for the wire, may reduced to 10kHz......
-    Wire.begin(SDA,SCL,100000);
+    //20kHz max for the wire, as this may gets a bit longer
+    Wire.begin(SDA,SCL,20000);
     //We fist look for the BME280 at address 0x77 / 0x76 
     i2c_lock_bus();
+   
     if( true == bme280.begin( BME280_ADDRESS ) ){
         Serial.println("BME found @ 0x77");
         DeviceOnBus[BME280]=true;
@@ -241,7 +242,7 @@ float value = NAN;
 
         case 0:{
             if(true==DeviceOnBus[BME280]){
-                bme280.readTemperature(); //°C as value 
+                value = bme280.readTemperature(); //°C as value 
             } else {
                 value = NAN;
             }
