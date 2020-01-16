@@ -50,9 +50,12 @@
 #include <Wire.h> 
 #include <LiquidCrystal_I2C.h>
 #include "SPIFFS.h"
+#include <Update.h>
 
 #include "./src/lora_wan/lorawan.h"
 #include "./src/lora_raw/loraraw.h"
+
+#include "./src/NTPClient/ntp_client.h"
 
 #include "./src/I2C_Sensors/i2c_sensors.h"
 #include "./src/uart_pm_sensors/uart_pm_sensors.h"
@@ -69,7 +72,9 @@
 
 #include "./datastore.h"
 
-#include "webserver_fnc.h"
+#include "webserver_map_fnc.h"
+#include "webserver_sensebox_fnc.h"
+#include "webserver_thinkspeak_fnc.h"
 
 #include "./src/lcd_menu/lcd_menu.h"
 
@@ -117,7 +122,10 @@
  InternalSensors IntSensors;
 
 LiquidCrystal_I2C lcd(0x27,20,4);  // set the LCD address to 0x27 for a 16 chars and 2 line display
+
 Timecore TimeCore;
+NTP_Client NTPC;
+
 SenseBoxUpload SenseBox;
 ThinkspeakUpload ThinkSpeak;
 
@@ -152,12 +160,6 @@ void setup() {
   LCDMenu( USERBTN0, USERBTN1 );
   //This sould trigger autodetect
   PMSensor.begin( Serial1 , UART_PM_Sensors::SerialSensorDriver_t::NONE );
-  vTaskDelay(2000);
-  if ( false == LORAWAN.begin( RFM95_NSS, 0xFF , 0xFF, RFM95_DIO0, RFM95_DIO1, RFM95_DIO2 ) ){
-    //LoRa Module not found, we won't schedule any transmission
-  } else {
-    //LoRa WAN Enabled
-  }
   //Next step is to setup wifi and check if the configured AP is in range
   /* We check if the boot button is pressed ( IO00 ) */
   WiFiClientEnable(true); //Force WiFi on 
@@ -168,6 +170,13 @@ void setup() {
     Serial.println("Force System to AP");
     initWiFi( false , true );   
   }
+  vTaskDelay(10000);
+  if ( false == LORAWAN.begin( RFM95_NSS, 0xFF , 0xFF, RFM95_DIO0, RFM95_DIO1, RFM95_DIO2 ) ){
+    //LoRa Module not found, we won't schedule any transmission
+  } else {
+    //LoRa WAN Enabled
+  }
+  
   TimeCore.begin(true);
   //We need to register the drivers
   SensorMapping.RegisterInternalSensors(&IntSensors);
@@ -178,8 +187,11 @@ void setup() {
   //We need to setup the Dataloggin parts now
   SenseBox.begin();
   SenseBox.RegisterDataAccess( ReadSensorData );
+  Webserver_SenseBox_RegisterSensebox(&SenseBox);
+
   ThinkSpeak.begin();
   ThinkSpeak.RegisterDataAccess( ReadSensorData );
+  Webserver_Thinkspeak_RegisterThinkspeak(&ThinkSpeak);
   //Next is the SD-Card access, and this is a bit tricky
   SDCardRegisterMappingAccess(&SensorMapping);
   SDCardRegisterTimecore(&TimeCore);
@@ -198,6 +210,15 @@ void setup() {
                     5,          /* Priority of the task */
                     NULL,  /* Task handle. */
                     0);         /* Core where the task should run */
+
+     xTaskCreatePinnedToCore(
+      NTP_Task,       /* Function to implement the task */
+      "NTP_Task",  /* Name of the task */
+      10000,          /* Stack size in words */
+      NULL,           /* Task input parameter */
+      1,              /* Priority of the task */
+      NULL,           /* Task handle. */
+      1); 
 
 
  sdcard_log_int( 0 );
@@ -294,3 +315,17 @@ void DataLoggingTask(void* param){
 }
 
 
+void NTP_Task( void * param){
+  Serial.println(F("Start NTP Task now"));
+  NTPC.ReadSettings();
+  NTPC.begin( &TimeCore );
+  NTPC.Sync();
+
+  /* As we are in a sperate thread we can run in an endless loop */
+  while( 1==1 ){
+    /* This will send the Task to sleep for one second */
+    vTaskDelay( 1000 / portTICK_PERIOD_MS );  
+    NTPC.Tick();
+    NTPC.Task();
+  }
+}

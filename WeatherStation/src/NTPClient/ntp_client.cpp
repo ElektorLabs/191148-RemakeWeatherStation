@@ -88,7 +88,7 @@ void NTP_Client::Sync(){
     Serial.println(F("Send NTP Request"));
     NTP.getTime();
   } else {
-    Serial.println(F("NTP not active"));  
+    //Serial.println(F("NTP not active"));  
   }
   
 }
@@ -112,6 +112,19 @@ void NTP_Client::Tick(){
   }
   
 }
+
+/**************************************************************************************************
+ *    Function      : ForeceSync
+ *    Class         : NTP_Client
+ *    Description   : This will force a sync
+ *    Input         : none
+ *    Output        : none
+ *    Remarks       : Can be called outside the ntp task
+ **************************************************************************************************/
+void NTP_Client::ForceSync( void ){
+    _sync=true;
+}
+
 
 /**************************************************************************************************
  *    Function      : GetServerName

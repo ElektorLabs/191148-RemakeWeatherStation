@@ -39,19 +39,20 @@
             void SetSensBoxID( String ID );
             void SetSensBoxEnable( bool Enable );
             void SetSensBoxUploadInterval( uint16_t Interval ); //65535 minutes Max ( 45 days )
-            void SetMapping(uint8_t Channel, SensBoxMapping_t Mapping);
+            void SetMapping(uint8_t Channel, SensBoxMapping_t Map);
 
             String GetSensBoxID( void );
             bool GetSensBoxEnable( void );
-            uint16_t SetSensBoxUploadInterval( void );
+            uint16_t GetSensBoxUploadInterval( void );
             SensBoxMapping_t GetMapping(uint8_t Channel );
+
+            uint8_t GetMaxMappingChannels( void );
 
             
         private:
         bool usesecure=true;
         WiFiClient* client;
         WiFiClientSecure* clientS;
-
         SensBoxMapping_t Mapping[16];
         SenseBoxSettings_t Settings;
         DataAccesFnc DaFnc=nullptr;

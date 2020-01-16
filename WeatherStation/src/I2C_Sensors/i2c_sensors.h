@@ -105,8 +105,9 @@ class I2C_Sensors{
             {.Sensor=WSEN_PADS,.Type=DATAUNITS::TEMPERATURE,.ChannelID=1}
         };
 
-        const SensorUnitInfo_t PRESSURESENSORS[1]={
-            {.Sensor=BME280,.Type=DATAUNITS::PRESSURE,.ChannelID=0}    
+        const SensorUnitInfo_t PRESSURESENSORS[2]={
+            {.Sensor=BME280,.Type=DATAUNITS::PRESSURE,.ChannelID=0},
+            {.Sensor=WSEN_PADS,.Type=DATAUNITS::PRESSURE,.ChannelID=1}    
         };
 
         const SensorUnitInfo_t HUMIDITYSENSORS[1]={

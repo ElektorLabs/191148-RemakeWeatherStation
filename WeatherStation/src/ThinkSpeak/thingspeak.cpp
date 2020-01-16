@@ -225,9 +225,9 @@ bool ThinkspeakUpload::PostData(  ThinkspeakUpload* obj ) {
 
     String resp ="";
     if(true==obj->usesecure){
-      resp = performRequest(false, thingspeakHost, thingspeakUrl,443);
+      resp = performRequest(clientptr, thingspeakHost, thingspeakUrl,443);
     } else {
-      resp = performRequest(false, thingspeakHost, thingspeakUrl);
+      resp = performRequest(clientptr, thingspeakHost, thingspeakUrl);
     }
     ReleaseWiFiConnection();
     return (resp != "" && !resp.startsWith("0"));
@@ -305,8 +305,57 @@ void ThinkspeakUpload::UploadTaskFnc(void* params){
 
 }
 
+uint8_t ThinkspeakUpload::GetMaxMappingChannels( void ){
+  return ( sizeof(Mapping) / sizeof( Mapping[0] )  );
+}
+
+void ThinkspeakUpload::SetThinkspeakAPIKey( String ID ) {
+  
+  strncpy(Settings.ThingspealAPIKey, ID.c_str(), sizeof(Settings.ThingspealAPIKey));
+
+}
+
+void ThinkspeakUpload::SetThinkspeakEnable( bool Enable ) {
+
+  Settings.Enabled=Enable;
+
+}
+
+void ThinkspeakUpload::SetThinkspeakUploadInterval( uint16_t Interval ) {
+
+  Settings.UploadInterval=Interval;
+
+}
+
+void ThinkspeakUpload::SetMapping(uint8_t Channel, ThinkspeakMapping_t Map){
+  if( Channel >= ( sizeof(Mapping) / sizeof( Mapping[0] )  )  ){
+    Channel=0;
+  }
+
+  Mapping[Channel] = Map;
 
 
+}
+
+String ThinkspeakUpload::GetThinkspeakAPIKey( void ) {
+  return String(Settings.ThingspealAPIKey);
+}
+bool ThinkspeakUpload::GetThinkspeakEnable( void ) {
+  return  Settings.Enabled;
+
+}
+uint16_t ThinkspeakUpload::GetThinkspeakUploadInterval( void ) {
+  return  Settings.UploadInterval;
+
+}
+ThinkspeakUpload::ThinkspeakMapping_t ThinkspeakUpload::GetMapping(uint8_t Channel ){
+   if( Channel >= ( sizeof(Mapping) / sizeof( Mapping[0] )  )  ){
+    Channel= ( sizeof(Mapping) / sizeof( Mapping[0] )  ) - 1;
+  }
+
+  return Mapping[Channel];
+
+}
 
 
 

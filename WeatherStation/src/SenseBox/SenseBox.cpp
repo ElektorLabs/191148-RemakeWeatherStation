@@ -329,3 +329,55 @@ void SenseBoxUpload::UploadTaskFnc(void* params){
 
 }
 
+
+void SenseBoxUpload::SetSensBoxID( String ID ){
+  strncpy(Settings.SenseBoxID,ID.c_str(),sizeof(Settings.SenseBoxID) );
+  WriteSettings();
+}
+
+void SenseBoxUpload::SetSensBoxEnable( bool Enable ){
+   Settings.Enabled = Enable;
+   WriteSettings();
+}
+
+void SenseBoxUpload::SetSensBoxUploadInterval( uint16_t Interval ){
+   Settings.UploadInterval = Interval;
+   WriteSettings();
+}
+
+void SenseBoxUpload::SetMapping(uint8_t Channel, SensBoxMapping_t Map){
+   if(  ( sizeof(Mapping) / sizeof( Mapping[0] )) <= Channel ){
+     return;
+   }
+  
+   Mapping[Channel] = Map ;
+   WriteMapping();
+}
+
+String SenseBoxUpload::GetSensBoxID( void ){
+
+  return String(Settings.SenseBoxID);
+   
+}
+
+bool SenseBoxUpload::GetSensBoxEnable( void ){
+  return Settings.Enabled;
+   
+}
+
+uint16_t SenseBoxUpload::GetSensBoxUploadInterval( void ){
+  return Settings.UploadInterval;
+   
+}
+
+SenseBoxUpload::SensBoxMapping_t SenseBoxUpload::GetMapping(uint8_t Channel ){
+   if(  ( sizeof(Mapping) / sizeof( Mapping[0] )) <= Channel ){
+     Channel = 0;
+   }
+   return Mapping[Channel];
+}
+
+    
+uint8_t SenseBoxUpload::GetMaxMappingChannels( void ){
+  return ( sizeof(Mapping) / sizeof( Mapping[0] ));
+}

@@ -1,30 +1,167 @@
 <!DOCTYPE html>
+
 <html>
 	<head>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" charset="UTF-8">
 		<title>Weatherstation MkII</title>
         <link rel="stylesheet" href="css/basic.css"/>
- 
+        <script src="js/basics.js"></script>
+        <script src="js/wififnc.js"></script> 
+        <script src="js/mapping.js"></script> 
+        <script src="js/sensebox.js"></script>
+        <script src="js/thinkspeak.js"></script> 
+        <script src="../gauge.min.js"></script>
+        
 	</head>
-	<body onload="pageLoad()">
+    <body onload="pageLoad()">
+
+
+
 		<a href="javascript:openMenu()" class="menuOpenBtn">&#9776;</a>
 		<div id="menu" class="menu">
 			<a href="javascript:closeMenu()" class="menuCloseBtn">x</a>
 			<h1 class="menuLbl">Menu</h1>
             <a class="menuBtn" id="MainPageBtn" href="javascript:showMainPage()">Main page</a>
-			<a class="menuBtn" id="WiFiSettingsBtn" href="javascript:showWiFiSettings()">WiFi settings</a>
-			<a class="menuBtn" id="restartBtn" href="javascript:restart()">Restart</a>
-		</div>
+            <a class="menuBtn" id="WiFiSettingsBtn" href="javascript:showWiFiSettings()">WiFi settings</a>
+            <a class="menuBtn" id="SensorMappingBtn" href="javascript:showSensorMapping()">Sensormapping</a>
+            <a class="menuBtn" id="SenseBoxBtn" href="javascript:showSenseBox()">SenseBox</a>
+            <a class="menuBtn" id="ThinkspeakBtn" href="javascript:showThinkspeak()">Thinkspeak</a>
+            <a class="menuBtn" id="MQTT" href="javascript:showMQTT()">MQTT</a>
+            <a class="menuBtn" id="SDCARD" href="javascript:showSDCARD()">SD-Card</a>
+            <h1 class="menuLbl">ESP32</h1>
+            <a class="menuBtn" id="restartBtn" href="javascript:restart()">Update Firmware</a>
+            <a class="menuBtn" id="restartBtn" href="javascript:restart()">Update Webpages</a>
+            <a class="menuBtn" id="restartBtn" href="javascript:restart()">Restart</a>
+       </div>
 		
-		<div class="content">
+		<div id="PageFrame" class="content">
             <div id="MainPage" class="views grid">
         
                 <H1><label style="/*! margin-left:50%; */display: block;text-align: center;">Weatherstation MkII</label></H1><br>
-                 <canvas id="remotescreen" width="480" height="320"></canvas>
-                       
+
+<canvas data-type="radial-gauge"
+        data-width="200"
+        data-height="200"
+        data-units="Km/h"
+        data-min-value="0"
+        data-max-value="120"
+        data-value="0"
+        data-title="Windspeed"
+        data-animate-on-init="false"
+        data-major-ticks="10,20,30,40,50,60,70,80,90,100,100,120"
+        data-minor-ticks="2"
+        data-stroke-ticks="true"
+        data-highlights='[{"from": 50, "to": 90, "color": "rgba(255, 102, 0, 0.90)"},{"from": 90, "to": 120, "color": "rgba(200, 50, 50, 0.90)"}]'
+
+        data-color-needle-start="rgba(240, 128, 128, 1)"
+        data-color-needle-end="rgba(255, 160, 122, .9)"
+        data-value-box="true"
+        data-font-value="Repetition"
+        data-font-numbers="Repetition"
+        data-animated-value="true"
+        data-needle-type="arrow"
+        data-needle-width="2"
+        data-needle-circle-size="7"
+        data-needle-circle-outer="true"
+        data-needle-circle-inner="false"
+        data-animation-duration="1500"
+        data-animation-rule="linear"
+        data-ticks-angle="250"
+        data-start-angle="55"
+        data-color-needle-shadow-down="#333"
+        data-value-box-width="45"
+></canvas>
+
+<canvas data-type="radial-gauge"
+        data-width="200"
+        data-height="200"
+        data-min-value="0"
+        data-max-value="360"
+        data-major-ticks="N,NE,E,SE,S,SW,W,NW,N"
+        data-minor-ticks="22"
+        data-ticks-angle="360"
+        data-start-angle="180"
+        data-stroke-ticks="false"
+        data-highlights="false"
+        data-color-plate="#222"
+        data-color-major-ticks="#f5f5f5"
+        data-color-minor-ticks="#ddd"
+        data-color-numbers="#ccc"
+        data-color-needle="rgba(240, 128, 128, 1)"
+        data-color-needle-end="rgba(255, 160, 122, .9)"
+        data-value-box="false"
+        data-value-text-shadow="false"
+        data-color-circle-inner="#fff"
+        data-color-needle-circle-outer="#ccc"
+        data-needle-circle-size="15"
+        data-needle-circle-outer="false"
+        data-animation-rule="linear"
+        data-needle-type="line"
+        data-needle-start="75"
+        data-needle-end="99"
+        data-needle-width="3"
+        data-borders="true"
+        data-border-inner-width="0"
+        data-border-middle-width="0"
+        data-border-outer-width="10"
+        data-color-border-outer="#ccc"
+        data-color-border-outer-end="#ccc"
+        data-color-needle-shadow-down="#222"
+        data-border-shadow-width="0"
+        data-font-value="Led"
+></canvas>
+
+<canvas data-type="radial-gauge"
+        data-major-ticks="0,10,20,30,40,50,60,70,80,90,100"
+        data-type="radial-gauge"
+        data-title="Humidity"
+        data-units="%rH"
+        data-width="200"
+        data-height="200"
+        data-value-int="0"
+        data-value-dec="0"
+        data-width="200"
+        data-height="200"
+        data-min-value="0"
+        data-max-value="100"
+        data-highlights="false"
+></canvas>
+
+<canvas data-type="radial-gauge"
+        data-major-ticks="-30,-25,-20,-10,0,10,20,30,50"
+        data-type="radial-gauge"
+        data-title="Temperature"
+        data-units="°C"
+        data-width="200"
+        data-height="200"
+        data-value-int="0"
+        data-value-dec="0"
+        data-width="200"
+        data-height="200"
+        data-min-value="-30"
+        data-max-value="40"
+        data-highlights="false"
+></canvas>
+
+
+<canvas data-type="radial-gauge"
+        data-major-ticks="950, 960, 970, 980, 990, 1000, 1010, 1020, 1030, 1040, 1050"
+        data-type="radial-gauge"
+        data-title="Barometer"
+        data-units="mBar"
+        data-width="200"
+        data-height="200"
+        data-value-int="0"
+        data-value-dec="0"
+        data-width="200"
+        data-height="200"
+        data-min-value="950"
+        data-max-value="1050"
+        data-highlights="false"
+></canvas>
                 
-            </div>
-                        
+</div>
+            <!--  WIFI Section     -->
 			<div id="WiFiSettings" class="views grid">
 				<div>
 					<table>
@@ -63,393 +200,234 @@
 			</div>
 			<div id="notification" class="notification">
 			</div>
-		</div>
-        
-	</body>
+        </div>
+        <!--  Mapping Section     -->
+        <div id="SensorMapping" class="views grid">
+            <div>
+                    <table>
+                            <thead>
+                                <tr>
+                                    <th colspan="2">Sensor Mapping</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ChannelMappingTableBtn">
+                                <tr>
+                                    <td>Channel 0</td>
+                                    <td id="CH1_TD">
+                                        <select id="Mapping_CH0">
+                                                <option value="none">none</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Channel 1</td>
+                                    <td>
+                                            <select id="Mapping_CH0">
+                                                    <option value="none">none</option>
+                                            </select>
+                                    </td>
+                                </tr>
+                               
+                            </tbody>
+                             <!-- 
+                            <tfoot>
+                                <tr>
+                                    <td colspan="1"><button onclick="setWiFiSettings(); return false;">Discard</button></td><td><button onclick="clearWiFiSettings(); return false;">Apply</button></td>
+                                </tr>
+                            <tfoot>
+                                  -->
 
+                        </table>
+               
+            </div>
+        </div>
 
+        <div id="SenseBox" class="views grid">
+                <div>
+                        <table>
+                                <thead>
+                                    <tr>
+                                        <th colspan="3">Sensebox Settings</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody id="SenseboxMappingTableStg">
+                                        <tr>
+                                            <td colspan="1">Upload Enabled</td>
+                                            <td colspan="2" id="CH1_TD">
+                                                <select id="Mapping_CH0">
+                                                        <option value="true">True</option>
+                                                        <option value="false">False</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td  colspan="1">Upload interval</td>
+                                            <td colspan="2">
+                                                    <input type="number" id="tentacles" name="tentacles" min="1" max="2500"> Minutes
+                                            </td>
+                                        </tr>
+                                       
+                                    </tbody>
+
+                                    <thead>
+                                            <tr>
+                                                <th colspan="3">Sensebox Mapping</th>
+                                            </tr>
+                                        </thead>
+                               
+                                    <tbody id="SenseboxMappingTableBtn">
+                                            <tr>
+                                                <td>ID Key X<input type="text" id="thingspeakApi"> </td>
+                                                <td id="CH1_TD">
+                                                  Channel <select id="Mapping_CH0">
+                                                            <option value="none">none</option>
+                                                    </select>
+                                                </td>
+                                                <td id="CH1_TD">
+                                                        Enabled <select id="Mapping_CH0">
+                                                                  <option value="ChEnaTrue">True</option>
+                                                                  <option value="ChEnaTrue">False</option>
+                                                          </select>
+                                                      </td>
+                                            </tr>
+                                            <tr>
+                                                    <td>ID Key X<input type="text" id="thingspeakApi"> </td>
+                                                    <td id="CH1_TD">
+                                                      Channel <select id="Mapping_CH0">
+                                                                <option value="none">none</option>
+                                                        </select>
+                                                    </td>
+                                                    <td id="CH1_TD">
+                                                            Enabled <select id="Mapping_CH0">
+                                                                      <option value="ChEnaTrue">True</option>
+                                                                      <option value="ChEnaTrue">False</option>
+                                                              </select>
+                                                          </td>
+                                                </tr>
+                                            
+                                           
+                                        </tbody>
+                                 <!-- 
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="1"><button onclick="setWiFiSettings(); return false;">Discard</button></td><td><button onclick="clearWiFiSettings(); return false;">Apply</button></td>
+                                    </tr>
+                                <tfoot>
+                                      -->
     
-	<script>
-        
-        var wifi_scan_results = null;
-        var wifi_clean_ssid_list = null;
-        
-        var RemoteScreenSocket = null;
-		function pageLoad() {
-        showMainPage(); 
-        var host = window.location.hostname;
-        var port = 81;
-        RemoteScreenSocket = new WebSocket("ws://"+host+":"+port);
-        RemoteScreenSocket.binaryType = 'arraybuffer';
-        RemoteScreenSocket.onmessage = TileDecoder;
-        document.getElementById('remotescreen').onmousemove =  canvas_mouseover ;
-        document.getElementById('remotescreen').onmousedown= canvas_mousedown;
-        document.getElementById('remotescreen').onmouseup=canvas_mouseup;
-                    
-		}
-        
-       function onlyUnique(value, index, self) { 
-            return self.indexOf(value) === index;
-       }
+                            </table>
+                   
+                </div>
+            </div>
 
-		//get a list of available SSIDs
-		function getSSIDList() {
-			openNotification("Getting network names...", 0);
-			sendRequest("getSSIDList", getSSIDListHandler);
-		}
-		function getSSIDListHandler(data) {
-			openNotification("Done");
-			setTimeout(closeNotification, 1000);
-			if (data == null)
-				return;
-			wifi_scan_results = JSON.parse(data);
-            
-            /* We cleanup the list and remove double entrys here */
-            wifi_clean_ssid_list=[];
-            for(var x=0;x<wifi_scan_results.Networks.length;x++){
-             wifi_clean_ssid_list.push( wifi_scan_results.Networks[x].SSID );  
-            }
-            wifi_clean_ssid_list = wifi_clean_ssid_list.filter(onlyUnique);
-            
-            
-            var list = document.getElementById("ssid");
-			list.innerHTML = "";
-			if (wifi_scan_results.ScanCount == 0) {
-				list.innerHTML = "<option value='0'>-</option>";
-				return;
-			}
-			for (var i = 0; i < wifi_clean_ssid_list.length; i++) {
-				list.innerHTML += "<option value='" + wifi_clean_ssid_list[i] + "'>" + wifi_clean_ssid_list[i] + "</option>";
-			}
-            
-            
-		}
+            <div id="Thinkspeak" class="views grid">
+                <div>
+                        <table>
+                                <thead>
+                                    <tr>
+                                        <th colspan="3">Thinkspeak Settings</th>
+                                    </tr>
+                                </thead>
 
-		//get and set wifi settings
-		function setWiFiSettings() {
-			var ssid = document.getElementById("ssid").value;
-			var pass = document.getElementById("pass").value;
-			console.log("ssid: " + ssid + ", pass: " + pass);
-			var request = "setWiFiSettings?ssid=" + ssid + "&pass=" + pass;
-			sendRequest(request, openNotification);
-		}
-		function getWiFiSettings() {
-			openNotification("Getting data...", 0);
-			sendRequest("getWiFiSettings", getWiFiSettingsHandler);
-		}
-		function getWiFiSettingsHandler(data) {
-			obj = JSON.parse(data);
-            if(obj.SSID != ""){
-             document.getElementById("currentSSID").innerHTML = "SSID: " + obj.SSID +"<br> Channel: "+obj.CHANNEL+"<br>RSSI: "+obj.RSSI+"dBm";
-            }else{
-                document.getElementById("currentSSID").innerHTML = "No network configured";
-            }
-			
-		}
-		
-		
-	
-  
-        
-		
-        function showMainPage(){
-        
-            showView("MainPage");
-          
-            
-        
-        }
-        
-        function testAlarm() {
-			sendRequest("testAlarm", openNotification);
-		}
-		
-		function sendRequest(addr, func = null) {
-			console.log("requesting: " + addr);
-			requestPending = true;
-			var xhr = new XMLHttpRequest();
-			//xhr.timeout = 5000; //ms
-			xhr.open("GET", addr, true);
-			xhr.onload = function() {
-				console.log("Request finished");
-				requestPending = false;
-				if (func != null)
-					func(this.responseText);
-			}
-			xhr.onerror = function() {
-				console.log("Request finished");
-				requestPending = false;
-				console.log("error");
-			}
-			xhr.ontimeout = function() {
-				console.log("Request finished");
-				requestPending = false;
-				console.log("timeout");
-			}
-			xhr.send();
-		}
+                                <tbody id="ThinkspeakMappingTableStg">
+                                        <tr>
+                                            <td colspan="1">Upload Enabled</td>
+                                            <td colspan="2" id="CH1_TD">
+                                                <select id="Mapping_CH0">
+                                                        <option value="true">True</option>
+                                                        <option value="false">False</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td  colspan="1">Upload interval</td>
+                                            <td colspan="2">
+                                                    <input type="number" id="tentacles" name="tentacles" min="1" max="2500"> Minutes
+                                            </td>
+                                        </tr>
+                                       
+                                    </tbody>
 
-		//open and close the main menu
-		function openMenu() {
-			document.getElementById("menu").classList.add("open");
-		}
-		function closeMenu() {
-			document.getElementById("menu").classList.remove("open");
-		}
+                                    <thead>
+                                            <tr>
+                                                <th colspan="3">Thinkspeak Mapping</th>
+                                            </tr>
+                                        </thead>
+                               
+                                    <tbody id="ThinkspeakMappingTableBtn">
+                                            <tr>
+                                                <td>Field 0</td>
+                                                <td id="CH1_TD">
+                                                  Channel <select id="Mapping_CH0">
+                                                            <option value="none">none</option>
+                                                    </select>
+                                                </td>
+                                                <td id="CH1_TD">
+                                                        Enabled <select id="Mapping_CH0">
+                                                                  <option value="ChEnaTrue">True</option>
+                                                                  <option value="ChEnaTrue">False</option>
+                                                          </select>
+                                                      </td>
+                                            </tr>
+                                            <tr>
+                                                    <td>Field 1</td>
+                                                    <td id="CH1_TD">
+                                                      Channel <select id="Mapping_CH0">
+                                                                <option value="none">none</option>
+                                                        </select>
+                                                    </td>
+                                                    <td id="CH1_TD">
+                                                            Enabled <select id="Mapping_CH0">
+                                                                      <option value="ChEnaTrue">True</option>
+                                                                      <option value="ChEnaTrue">False</option>
+                                                              </select>
+                                                          </td>
+                                                </tr>
+                                            
+                                           
+                                        </tbody>
+                          
+    
+                            </table>
+                   
+                </div>
+            </div>
 
-		//show and hide the notification bar
-		function openNotification(msg, timeout=2500) {
-			document.getElementById("notification").innerHTML = msg;
-			document.getElementById("notification").classList.add("open");
-			if (timeout != 0)
-				setTimeout(closeNotification, timeout);
-		}
-		function closeNotification() {
-			document.getElementById("notification").classList.remove("open");
-		}
+                
+</div>
 
 
-		//enable alarm cb
-		function enableAlarm() {
-			var cb = document.getElementById("alarmEnabled").checked;
-			document.getElementById("alarmLevelRow").style.display = (cb ? "" : "none");
-		}
-
-		//show the wifi settings data
-		
-		function showWiFiSettings() {
-			showView("WiFiSettings");
-			getWiFiSettings();
-            getSSIDList();
-		}
-		
-        function restart() {
-			sendRequest("restart", openNotification);
-		}
-		
-		
-		function showView(view) {
-            Array.from(document.getElementsByClassName("views")).forEach(function(v) {v.style.display = "none";});
-			document.getElementById(view).style.display = "";
-			Array.from(document.getElementsByClassName("menuBtn")).forEach(function(b) {b.classList.remove("active")});
-			document.getElementById(view + "Btn").classList.add("active");
-
-		}
-		
-		
-        
-       
-       
-        
-        
-        
-        
-     
-          
-        function clearWiFiSettings(){
-            var ssid ="";
-			var pass = "";
-			console.log("Clear WiFi Settings");
-			var request = "setWiFiSettings?ssid=" + ssid + "&pass=" + pass;
-			sendRequest(request, openNotification);
-        }
-        
-
-        
-  
-        
-
-        
-
-        
-     
-        
-
-        
-        
-       
-        
-        function httpGetAsync(theUrl, callback)
-        {
-            var xmlHttp = new XMLHttpRequest();
-            xmlHttp.onreadystatechange = function() { 
-                if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
-                if(callback != null){
-                    callback(xmlHttp.responseText);
+<script>
+        if (!Array.prototype.forEach) {
+            Array.prototype.forEach = function(cb) {
+                var i = 0, s = this.length;
+                for (; i < s; i++) {
+                    cb && cb(this[i], i, this);
                 }
             }
-            xmlHttp.open("GET", theUrl, true); // true for asynchronous 
-            xmlHttp.send(null);
         }
-        
-        function sendData(url,data) {       
-          var XHR = new XMLHttpRequest();
-          var urlEncodedData = "";
-          var urlEncodedDataPairs = [];
-          var name;
-
-          for(name in data) {
-            urlEncodedDataPairs.push(encodeURIComponent(data[name].key) + '=' + encodeURIComponent(data[name].value));
-          }
-
-          urlEncodedData = urlEncodedDataPairs.join('&').replace(/%20/g, '+');
-
-          XHR.addEventListener('load', function(event) {
-            /*   */
-          });
-
-          XHR.addEventListener('error', function(event) {
-            alert('Oops! Something goes wrong.');
-          });
-
-          XHR.open('POST', url);
-          XHR.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-          XHR.send(urlEncodedData);
-          
-        }
-                
-        function leftPad(num, size) {
-            var s = num+"";
-            while (s.length < size) s = "0" + s;
-            return s;
-        }
-
-		
-
-function TileDecoder( event) {
-  var canvas = document.getElementById('remotescreen');
-  var ctx = canvas.getContext('2d');
-
-  var littleEndian = true;
-  var data = event.data;
-  var dv = new DataView(data);
-  var colorformat = dv.getUint16(0,littleEndian);
-  var x1 =  dv.getInt16(2,littleEndian);
-  var y1 =  dv.getInt16(4, littleEndian);
-  var x2 =  dv.getInt16(6, littleEndian);
-  var y2 =  dv.getInt16(8, littleEndian);
-  
-  var lines = ( y2 -y1 +1 );
-  var pixel_per_line = ( x2 - x1 +1 );
-  
-  var colorpixel =  lines * pixel_per_line ;
-  var imagedata = ctx.createImageData(pixel_per_line,lines);
-  var blue = 0;
-  var green = 0;
-  var red = 0;
-  var offset = 0;
-  var pixelindex =0;
-  for( var y = 0 ; y < (y2 - y1 +1) ;y++){
-  
-      for(var x = 0 ; x < ( x2 - x1 +1) ; x++ ) {
     
-        offset = ( ( ( pixel_per_line * y * 1 ) + x *1  ) +10 );
-        color = dv.getUint8( offset ,littleEndian); 
-        
-       if( colorformat == 1 ){
-        
-        blue = ( color & (0xC0) ) >>> 6; //5
-        green = ( color & (0x38) ) >>> 3; //6
-        red =  ( color & (0x07) ) >>> 0; //5
-        
-        
-        pixelindex = ( (y) * pixel_per_line + ( x) ) * 4;
-        
-        
-        imagedata.data[pixelindex]   = blue<<6;
-        imagedata.data[pixelindex+1]   = green<<5;
-        imagedata.data[pixelindex+2]   = red<<5;
-        imagedata.data[pixelindex+3]   = 255;       
-       }
-       
-       if( colorformat == 0){
-         for(var x = 0 ; x < ( x2 - x1 +1) ; x++ ) {
+        document.fonts && document.fonts.forEach(function(font) {
+            font.loaded.then(function() {
+                if (font.family.match(/Led/)) {
+                    document.gauges.forEach(function(gauge) {
+                        gauge.update();
+                    });
+                }
+            });
+        });
     
-        offset = ( ( ( pixel_per_line * y * 2 ) + x *2  ) +10 );
-        color = dv.getUint16( offset ,littleEndian); 
-        blue = ( color & (0xF800) ) >>> 11; //5
-        green = ( color & (0x07E0) ) >>> 5; //6
-        red =  ( color & (0x001F) ) >>> 0; //5
-      
-        pixelindex = ( (y) * pixel_per_line + ( x) ) * 4;
-        imagedata.data[pixelindex]   = ( blue * 527 + 23 ) >> 6;
-        imagedata.data[pixelindex+1]   = ( green * 259 + 33 ) >> 6;
-        imagedata.data[pixelindex+2]   = ( red * 527 + 23 ) >> 6;
-        imagedata.data[pixelindex+3]   = 255;       
+        function animateGauges() {
+            document.gauges.forEach(function(gauge) {
+                gauge.value = parseFloat(
+                    document.getElementById('gauge-value').value) || 0;
+                setTimeout(function() {
+                    console.log('new gauge value:' + gauge.value);
+                }, 1510);
+            });
+        }
+    </script>
         
-      }
-       
-       }
-        
-        
-      }
-  }
-      
-  ctx.putImageData(imagedata , x1 , y1 );
-  
-  
-}
-
-
-var mousedown = false;
-
-function canvas_mouseover( e ){
-
- if( mousedown == true ) {
-  var pos = getMousePos( document.getElementById('myCanvas') , e);
-  
-  // 2 byte x, 2 byte y , 1 byte pressed
-  var buffer = new ArrayBuffer(5);
-  var dv = new DataView(buffer);
-  dv.setUint16(0, pos.x,true );
-  dv.setUint16(2, pos.y,true );
-  dv.setUint8(4, mousedown,true );
-  
-  
-  
-  /* we send new data to the server */
-  RemoteScreenSocket.send( buffer ); 
-
- }
-}
-
-function canvas_mousedown( e ){
- mousedown = true;
- 
- var pos = getMousePos( document.getElementById('myCanvas') , e);
-  
-  // 2 byte x, 2 byte y , 1 byte pressed
-  var buffer = new ArrayBuffer(5);
-  var dv = new DataView(buffer);
-  dv.setUint16(0, pos.x,true );
-  dv.setUint16(2, pos.y,true );
-  dv.setUint8(4, mousedown,true );
-   RemoteScreenSocket.send( buffer ); 
-}
-
-function canvas_mouseup( e ){
- mousedown = false;
- 
- var pos = getMousePos( document.getElementById('myCanvas') , e);
-  
-  // 2 byte x, 2 byte y , 1 byte pressed
-  var buffer = new ArrayBuffer(5);
-  var dv = new DataView(buffer);
-  dv.setUint16(0, pos.x,true );
-  dv.setUint16(2, pos.y,true );
-  dv.setUint8(4, mousedown,true );
-   RemoteScreenSocket.send( buffer ); 
-}
-
-function getMousePos(canvas, evt) {
-    var canvas = document.getElementById('remotescreen');
-    var rect = canvas.getBoundingClientRect();
-    return {
-      x: evt.clientX - rect.left,
-      y: evt.clientY - rect.top
-    };
-}  
-		
-	</script>
-     
+	</body>     
 </html>

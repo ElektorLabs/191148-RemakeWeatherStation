@@ -74,7 +74,7 @@ void sdcard_mount(){
       return;
     } 
     SD.end();
-    if(false == SD.begin(CS_Pin, SDSPI) ){
+  if(false == SD.begin(CS_Pin, SDSPI) ){
     Serial.println("SD-Card mount failed");
      card_eject = true;
   } else {
@@ -161,7 +161,35 @@ void SDCardLog_ReadConfig( void ){
 
 }
 
+//Capacity in MB
+uint32_t sdcard_GetCapacity( void ){
+  uint32_t size_mb=0;
+  if (false == xSemaphoreTake(SDCardAccessSem, 5)){
+    Serial.println("SD Card Semaphore locked");
+    return 0;
+  } 
+  if(true == sdcard_getmounted()){
+      uint64_t bytesfree = SD.totalBytes();
+      size_mb = bytesfree / 1024 / 1024 ;
+  }
+ 
 
+
+  xSemaphoreGive(SDCardAccessSem);
+  return size_mb;
+} 
+
+//FreeSpace in MB
+uint32_t sdcard_GetFreeSpace( void  ){
+  if (false == xSemaphoreTake(SDCardAccessSem, 5)){
+    Serial.println("SD Card Semaphore locked");
+    return 0;
+  } 
+  uint64_t BytesFree = SD.totalBytes() - SD.usedBytes() ;
+  uint32_t MBFree = ( BytesFree / 1024 / 1024 ); 
+  xSemaphoreGive(SDCardAccessSem);
+  return MBFree;
+}
 
 
 void SDCardLoging( void* param){
@@ -193,7 +221,6 @@ void SDCardLoging( void* param){
     }
     if( false == xSemaphoreTake( SDCfgSem, Interval ) ){
       //No Configchange at all we can simpy upload the data 
-      Serial.println("SD Card: Prepare save ( enter code here )");
       SDCardDataLog();
     } else {
       //We have a configchange 
@@ -275,10 +302,10 @@ void SDCardDataLog( void ){
     Serial.print("SD Card start writing @");
     Serial.println(TimeString);
     Serial.print("Path:");
-    Serial.println(Path);
+    Serial.print(Path);
     if(true == SD.exists(Path) ){
       file = SD.open(Path, FILE_APPEND);
-      Serial.println("File exist, append data");
+      Serial.println(" - File exist, append data");
     } else {
       file = SD.open(Path, FILE_WRITE);
       if(file){

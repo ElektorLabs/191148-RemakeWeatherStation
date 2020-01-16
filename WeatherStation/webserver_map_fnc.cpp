@@ -1,12 +1,7 @@
 #include <ArduinoJson.h>
 #include <SPIFFS.h>
 #include "./src/ValueMapping/Valuemapping.h"
-
-//requiered for timekeeping, old but working 
-#include "./src/TimeCore/timecore.h"
-#include "datastore.h"
-//
-#include "webserver_fnc.h"
+#include "webserver_map_fnc.h"
 
 
 extern VALUEMAPPING SensorMapping;
@@ -18,21 +13,8 @@ void response_supportedsensors( void );
 void response_connectedsensors( void );
 void process_setmapping( void );
 
-void timesettings_send( void );
-void settime_update(void );
-void ntp_settings_update( void );
-void timezone_update( void );
-void timezone_overrides_update( void );
-
-void WebserverFunctionsRegister( WebServer* serverptr){
+void Webserver_Map_FunctionsRegister( WebServer* serverptr){
 server=serverptr;
-
-// server->on("/notes.dat",HTTP_GET,read_notes);
-// server->on("/notes.dat",HTTP_POST,update_notes);
-
-// server->on("/mqtt/settings",HTTP_POST,mqttsettings_update);
-// server->on("/mqtt/settings",HTTP_GET,read_mqttsetting);
-
 server->on("/mapping/mappingdata.json", HTTP_GET, response_mappingdata);
 server->on("/devices/supportedsensors.json",HTTP_GET,response_supportedsensors);
 server->on("/devices/connectedsensors.json",HTTP_GET,response_connectedsensors);
@@ -366,7 +348,6 @@ void response_connectedsensors( void ){
             MappingObj["Bus"] = (uint8_t)(SensorList[i].Bus);
             MappingObj["ValueType"] = (uint8_t)(SensorList[i].ValueType);
             MappingObj["Channel"] = (uint8_t)(SensorList[i].ChannelIDX);
-            MappingObj["Connected"] = 
             MappingObj["Name"]= SensorMapping.GetSensorName( SensorList[i]);
     }
     serializeJson(doc, data);
@@ -393,8 +374,7 @@ void response_supportedsensors( void ){
             JsonObject MappingObj = Mapping.createNestedObject();
             MappingObj["Bus"] = (uint8_t)(SensorList[i].Bus);
             MappingObj["ValueType"] = (uint8_t)(SensorList[i].ValueType);
-            MappingObj["Channel"] = (uint8_t)(SensorList[i].ChannelIDX);
-            MappingObj["Connected"] = 
+            MappingObj["Channel"] = (uint8_t)(SensorList[i].ChannelIDX); 
             MappingObj["Name"]= SensorMapping.GetSensorName( SensorList[i]);
     }
     serializeJson(doc, data);

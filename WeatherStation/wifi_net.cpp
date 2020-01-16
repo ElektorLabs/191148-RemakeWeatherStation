@@ -5,7 +5,10 @@
 
 #include "datastore.h"
 #include "webserver_base.h"
-#include "webserver_fnc.h"
+#include "webserver_map_fnc.h"
+#include "webserver_sensebox_fnc.h"
+#include "webserver_sdcard_fnc.h"
+#include "webserver_thinkspeak_fnc.h"
 #include "wifi_net.h"
 
 #define ESP_WPS_MODE      WPS_TYPE_PBC
@@ -704,7 +707,10 @@ String WiFiGetStatus() {
 void configureServer( void ){
   SetupWebServer();
   //We also need to register the custom function extensions
-  WebserverFunctionsRegister(WebserverGetHandle());
+  Webserver_Map_FunctionsRegister(WebserverGetHandle());
+  Webserver_SenseBox_FunctionsRegister(WebserverGetHandle());
+  Webserver_SDCard_FunctionsRegister(WebserverGetHandle());
+  Webserver_Thinkspeak_FunctionsRegister(WebserverGetHandle());
 
 }
 

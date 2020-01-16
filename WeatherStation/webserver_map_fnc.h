@@ -3,6 +3,6 @@
 
 
 
-void WebserverFunctionsRegister(WebServer* server);
+void Webserver_Map_FunctionsRegister(WebServer* server);
 //This will register all specific functions
  
