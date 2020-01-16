@@ -1,7 +1,7 @@
 #include <ArduinoJson.h>
 #include <SPIFFS.h>
 #include "./src/ValueMapping/Valuemapping.h"
-#include "webserver_fnc.h"
+#include "webserver_map_fnc.h"
 
 
 extern VALUEMAPPING SensorMapping;
@@ -13,22 +13,8 @@ void response_supportedsensors( void );
 void response_connectedsensors( void );
 void process_setmapping( void );
 
-void WebserverFunctionsRegister( WebServer* serverptr){
+void Webserver_Map_FunctionsRegister( WebServer* serverptr){
 server=serverptr;
-// server->on("/timesettings", HTTP_GET, response_settings);
-// server->on("/settime.dat", HTTP_POST, settime_update); /* needs to process date and time */
-// server->on("/ntp.dat",HTTP_POST,ntp_settings_update); /* needs to process NTP_ON, NTPServerName and NTP_UPDTAE_SPAN */
-// server->on("/timezone.dat",timezone_update); /*needs to handel timezoneid */
-// server->on("/overrides.dat",timezone_overrides_update); /* needs to handle DLSOverrid,  ManualDLS, dls_offset, ZONE_OVERRRIDE and GMT_OFFSET */
-// server->on("/led/activespan.dat",HTTP_POST, update_ledactivespan);
-// server->on("/led/activespan.dat",HTTP_GET, ledactivespan_send); 
-// server->on("/notes.dat",HTTP_GET,read_notes);
-// server->on("/notes.dat",HTTP_POST,update_notes);
-// server->on("/led/settings",HTTP_POST,led_update);
-// server->on("/led/settings",HTTP_GET, led_status);
-// server->on("/mqtt/settings",HTTP_POST,mqttsettings_update);
-// server->on("/mqtt/settings",HTTP_GET,read_mqttsetting);
-
 server->on("/mapping/mappingdata.json", HTTP_GET, response_mappingdata);
 server->on("/devices/supportedsensors.json",HTTP_GET,response_supportedsensors);
 server->on("/devices/connectedsensors.json",HTTP_GET,response_connectedsensors);
@@ -163,7 +149,6 @@ void response_connectedsensors( void ){
             MappingObj["Bus"] = (uint8_t)(SensorList[i].Bus);
             MappingObj["ValueType"] = (uint8_t)(SensorList[i].ValueType);
             MappingObj["Channel"] = (uint8_t)(SensorList[i].ChannelIDX);
-            MappingObj["Connected"] = 
             MappingObj["Name"]= SensorMapping.GetSensorName( SensorList[i]);
     }
     serializeJson(doc, data);
@@ -190,8 +175,7 @@ void response_supportedsensors( void ){
             JsonObject MappingObj = Mapping.createNestedObject();
             MappingObj["Bus"] = (uint8_t)(SensorList[i].Bus);
             MappingObj["ValueType"] = (uint8_t)(SensorList[i].ValueType);
-            MappingObj["Channel"] = (uint8_t)(SensorList[i].ChannelIDX);
-            MappingObj["Connected"] = 
+            MappingObj["Channel"] = (uint8_t)(SensorList[i].ChannelIDX); 
             MappingObj["Name"]= SensorMapping.GetSensorName( SensorList[i]);
     }
     serializeJson(doc, data);

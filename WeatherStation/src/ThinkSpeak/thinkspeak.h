@@ -40,15 +40,16 @@
             void RegisterDataAccess(DataAccesFnc Fnc);
 
             //We ned some functions to get and set settings
-            void SetThinkseakAPIKey( String ID ); //WriteKey here expected
-            void SetThinkseakEnable( bool Enable );
-            void SetThinkseakUploadInterval( uint16_t Interval ); //65535 minutes Max ( 45 days )
+            void SetThinkspeakAPIKey( String ID ); //WriteKey here expected
+            void SetThinkspeakEnable( bool Enable );
+            void SetThinkspeakUploadInterval( uint16_t Interval ); //65535 minutes Max ( 45 days )
             void SetMapping(uint8_t Channel, ThinkspeakMapping_t Mapping);
 
-            String GetThinkseakAPIKey( void );
-            bool GetThinkseakEnable( void );
-            uint16_t GetThinkseakUploadInterval( void );
+            String GetThinkspeakAPIKey( void );
+            bool GetThinkspeakEnable( void );
+            uint16_t GetThinkspeakUploadInterval( void );
             ThinkspeakMapping_t GetMapping(uint8_t Channel );
+            uint8_t GetMaxMappingChannels( void );
 
             
         private:

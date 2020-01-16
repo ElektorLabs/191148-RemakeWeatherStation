@@ -318,7 +318,8 @@ String VALUEMAPPING::GetSensorName( VALUEMAPPING::SensorElementEntry_t Element){
         } break;
     }
     
-    Sensorname = BusName+"."+ValueTyeName+"."+ChannelID+"."+ValueName;
+    //Sensorname = BusName+"."+ValueTyeName+"."+ChannelID+"."+ValueName;
+    Sensorname = ValueName + "." +ChannelID + "." + ValueTyeName+ "." + BusName;
     return Sensorname;
 
 

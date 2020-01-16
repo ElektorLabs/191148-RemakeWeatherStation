@@ -10,5 +10,8 @@ void sdcard_log_int( uint16_t interval);
 bool sdcard_log_getenable( void );
 uint16_t sdcard_log_getinterval( void );
 
+uint32_t sdcard_GetCapacity( void ); //Capacity in MB
+uint32_t sdcard_GetFreeSpace( void  ); //FreeSpace in MB
+
 void SDCardRegisterTimecore( Timecore* TC);
 void SDCardRegisterMappingAccess(VALUEMAPPING* Mapping);
