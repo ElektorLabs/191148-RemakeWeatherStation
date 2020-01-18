@@ -1,13 +1,22 @@
 var wifi_scan_results = null;
 var wifi_clean_ssid_list = null;
 
-function pageLoad() {
-showMainPage(); 
-}
+function respondToVisibility (element, callback) {
+    var options = {
+      root: document.documentElement
+    }
+  
+    var observer = new IntersectionObserver((entries, observer) => {
+      entries.forEach(entry => {
+        callback(entry.intersectionRatio > 0);
+      });
+    }, options);
+  
+    observer.observe(element);
+  }
+  
+ 
 
-function showMainPage(){
-    showView("MainPage");
-}
 
 function showView(view) {
     Array.from(document.getElementsByClassName("views")).forEach(function(v) {v.style.display = "none";});
@@ -82,11 +91,36 @@ function httpGetAsync(theUrl, callback, param, workspace)
 {
     var xmlHttp = new XMLHttpRequest();
     xmlHttp.onreadystatechange = function() { 
-        if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+        if (xmlHttp.readyState == 4 && xmlHttp.status == 200){
+            if(callback != null){
+                callback(xmlHttp.responseText, param, workspace);
+            }
+        }
+        if (xmlHttp.readyState == 4 && xmlHttp.status == 404){
+            if(callback != null){
+                callback("", param, workspace);
+            }
+        }
+        if (xmlHttp.readyState == 4 && xmlHttp.status == 500){
+            if(callback != null){
+                callback("", param, workspace);
+            }
+        }
+
+    }
+
+    xmlHttp.onerror = function() {
         if(callback != null){
-            callback(xmlHttp.responseText, param, workspace);
+            callback("", param, workspace);
         }
     }
+
+    xmlHttp.ontimeout = function() {
+        if(callback != null){
+            callback("", param, workspace);
+        }
+    }
+
     xmlHttp.open("GET", theUrl, true); // true for asynchronous 
     xmlHttp.send(null);
 }
@@ -136,6 +170,16 @@ function loadMultipleData( URL_To_Load , CallBackOnDone){
 function StartRequest( workspace ){
     var done = true;
     for( var x=0;x<workspace.URL_To_Load.length;x++){
+        if(workspace.URL_To_Load[x][0]==""){ //No URL inside....
+            workspace.DoneArray[x] = true;
+            workspace.URL_To_Load[x][1]="";
+        }
+
+        if(workspace.URL_To_Load[x][0]==null){ //No URL inside....
+            workspace.DoneArray[x] = true;
+            workspace.URL_To_Load[x][1]="";
+        }
+        
         if(workspace.DoneArray[x] == false){
             httpGetAsync(workspace.URL_To_Load[x][0],ProcessResponse,x, workspace);
             workspace.DoneArray[x] = true;

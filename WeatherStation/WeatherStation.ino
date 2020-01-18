@@ -75,6 +75,7 @@
 #include "webserver_map_fnc.h"
 #include "webserver_sensebox_fnc.h"
 #include "webserver_thinkspeak_fnc.h"
+#include "webserver_time_fnc.h"
 
 #include "./src/lcd_menu/lcd_menu.h"
 
@@ -178,6 +179,10 @@ void setup() {
   }
   
   TimeCore.begin(true);
+  Webserver_Time_FunctionRegisterTimecore(&TimeCore);
+  Webserver_Time_FunctionRegisterNTPClient(&NTPC);
+
+
   //We need to register the drivers
   SensorMapping.RegisterInternalSensors(&IntSensors);
   SensorMapping.RegisterI2CBus(&TwoWireSensors);

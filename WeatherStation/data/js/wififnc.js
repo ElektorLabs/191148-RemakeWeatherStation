@@ -29,11 +29,16 @@ function getWiFiSettings() {
     sendRequest("getWiFiSettings", getWiFiSettingsHandler);
 }
 function getWiFiSettingsHandler(data) {
-    obj = JSON.parse(data);
-    if(obj.SSID != ""){
-     document.getElementById("currentSSID").innerHTML = "SSID: " + obj.SSID +"<br> Channel: "+obj.CHANNEL+"<br>RSSI: "+obj.RSSI+"dBm";
-    }else{
-        document.getElementById("currentSSID").innerHTML = "No network configured";
+    try{
+        obj = JSON.parse(data);
+        if(obj.SSID != ""){
+        document.getElementById("currentSSID").innerHTML = "SSID: " + obj.SSID +"<br> Channel: "+obj.CHANNEL+"<br>RSSI: "+obj.RSSI+"dBm";
+        }else{
+            document.getElementById("currentSSID").innerHTML = "No network configured";
+        }
+    } catch {
+        //No valid JSON received!
+        document.getElementById("currentSSID").innerHTML = "SSID: Unknown<br> Channel: Unknown <br>RSSI: Unknown";
     }
     
 }
@@ -52,8 +57,8 @@ function getSSIDListHandler(data) {
     setTimeout(closeNotification, 1000);
     if (data == null)
         return;
+    try{
     wifi_scan_results = JSON.parse(data);
-    
     /* We cleanup the list and remove double entrys here */
     wifi_clean_ssid_list=[];
     for(var x=0;x<wifi_scan_results.Networks.length;x++){
@@ -71,6 +76,12 @@ function getSSIDListHandler(data) {
     for (var i = 0; i < wifi_clean_ssid_list.length; i++) {
         list.innerHTML += "<option value='" + wifi_clean_ssid_list[i] + "'>" + wifi_clean_ssid_list[i] + "</option>";
     }
+    } catch {
+         
+        var list = document.getElementById("ssid");
+        list.innerHTML = "";
+    }
+    
     
     
 }

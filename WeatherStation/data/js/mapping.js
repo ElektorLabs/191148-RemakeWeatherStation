@@ -3,8 +3,8 @@ var connectedsensors=null;
 var supportedsensors=null;
 var mapping=null;
 
-var connectedsensors_json = ["testdata/supportedsensors.json", null];
-var supportedsensors_json = ["testdata/connectedsensors.json",null];
+var connectedsensors_json = ["testdata/connectedsensors.json", null];
+var supportedsensors_json = ["testdata/supportedsensors.json",null];
 var mapping_json = [ "testdata/mappingdata.json", null];
 var MappingDataToLoad = [connectedsensors_json, supportedsensors_json, mapping_json ];
 
@@ -18,9 +18,87 @@ function load_mapping_data( callback_on_done){
 
 function mapping_parse_loaded_data_to_json(){
     connectedsensors=JSON.parse( connectedsensors_json[1] );
-    supportedsensors=JSON.parse( supportedsensors[1] );
+    supportedsensors=JSON.parse( supportedsensors_json[1] );
     mapping =JSON.parse( mapping_json[1] );
 }
+
+//This will search for the first mapped sensor that will fit
+function SearchForFirstSensor( ValueType ){
+
+    var mBus = 0
+    var mChannel = 0
+    var mValueType = 0;
+    var found = false;
+
+    var mMappedChannel = 0;
+
+    for (var i = 0; i <  mapping.Mapping.length ; i++) {
+        if( mapping.Mapping[i].ValueType===ValueType ){
+                //We have a connected sensor all good......
+                mBus = mapping.Mapping[i].Bus;
+                mChannel = mapping.Mapping[i].Channel;
+                mValueType = mapping.Mapping[i].ValueType;
+                mMappedChannel = i;
+                found = true;
+                break;
+
+            }
+    }
+
+    return { found, mMappedChannel ,mBus, mChannel, mValueType };
+}
+
+function channel_valid_mapped( ch_idx ){
+    var name = "unmapped";
+    var valid = false;
+    if(ch_idx>=mapping.Mapping.lenght){
+        return {valid, name};
+    }
+   
+    var location ;
+     //We now get the mapped channel and select the propper entry 
+     var mBus = mapping.Mapping[ch_idx].Bus;
+     var mChannel = mapping.Mapping[ch_idx].Channel;
+     var mValueType = mapping.Mapping[ch_idx].ValueType;
+     var foundconnected = false
+     //Lets try to find an entry in the connected sensors
+     for (var i = 0; i < connectedsensors.SensorList.length ; i++) {
+         if( (  connectedsensors.SensorList[i].Bus === mBus )        && 
+             (connectedsensors.SensorList[i].Channel === mChannel )  &&
+             (connectedsensors.SensorList[i].ValueType === mValueType ) ){
+                 //We have a connected sensor all good......
+                 name  = connectedsensors.SensorList[i].Name;
+                 foundconnected = true;
+                 break;
+ 
+             }
+     }
+     
+     if(foundconnected === false){
+         //Lookup in the supported ones.....
+         for (var i = 0; i < supportedsensors.SensorList.length ; i++) {
+             if( (  supportedsensors.SensorList[i].Bus === mBus )        && 
+                 (supportedsensors.SensorList[i].Channel === mChannel )  &&
+                 (supportedsensors.SensorList[i].ValueType === mValueType ) ){
+                     //We need to add a new entry to the list....
+                     name = "(unconnected) "+supportedsensors.SensorList[i].Name;
+                     foundconnected = true;
+                     break;
+     
+                 }
+         }
+ 
+     }
+     
+     if(foundconnected===false){
+        name = ("unmapped");
+     }
+     valid = foundconnected;
+     return { valid , name};
+
+
+}
+
 
 function showSensorMapping() {
     showView("SensorMapping");

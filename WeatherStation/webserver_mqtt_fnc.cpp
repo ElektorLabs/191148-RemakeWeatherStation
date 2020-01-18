@@ -3,7 +3,7 @@
 #include "webserver_mqtt_fnc.h"
 
 
-extern TaskHandle_t MQTTTaskHandle;
+extern TaskHandle_t MQTTTaskHandle; //Still not good to have that here .....
 static WebServer * MQTTWebserver=nullptr;
 
 static void request_mqttsetting( void );

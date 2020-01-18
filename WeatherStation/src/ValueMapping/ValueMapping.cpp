@@ -206,7 +206,7 @@ uint8_t VALUEMAPPING::GetSensors( SensorElementEntry_t* List, uint8_t capacity){
 
 bool VALUEMAPPING::ReadMappedValue( float* Value, uint8_t Channel ){
     float value = NAN;
-    if(Channel>=64){
+    if(Channel>= ( ( sizeof(MappingTable) / sizeof( MappingTable[0] )  ) )){
         return false;
     } 
     //If we are here the channel is mapped and we need to fetch data
@@ -261,7 +261,7 @@ void VALUEMAPPING::PrintElementData( SensorElementEntry_t Element ){
 
 void VALUEMAPPING::SetMappingForChannel( uint8_t MappedChannelIndex, SensorElementEntry_t Element ){
 
-    if(MappedChannelIndex<64){
+     if(MappedChannelIndex<( ( sizeof(MappingTable) / sizeof( MappingTable[0] )  ) )){
         //PrintElementData(Element);
         memcpy((void*)(&MappingTable[MappedChannelIndex]), (void*)&Element, sizeof(Element));
         //Serial.printf("Mapped to channel %i", MappedChannelIndex);
@@ -275,7 +275,7 @@ void VALUEMAPPING::SetMappingForChannel( uint8_t MappedChannelIndex, SensorEleme
 VALUEMAPPING::SensorElementEntry_t VALUEMAPPING::GetMappingForChannel( uint8_t MappedChannelIndex){
     VALUEMAPPING::SensorElementEntry_t Element;
     Element.Bus=NOTMAPPED;
-    if(MappedChannelIndex<64){
+    if(MappedChannelIndex<( ( sizeof(MappingTable) / sizeof( MappingTable[0] )  ) )){
               memcpy((void*)&Element,(void*)(&MappingTable[MappedChannelIndex]),  sizeof(Element));
     }
     return Element;
@@ -328,7 +328,8 @@ String VALUEMAPPING::GetSensorName( VALUEMAPPING::SensorElementEntry_t Element){
 String VALUEMAPPING::GetSensorNameByChannel(uint8_t Channel){
      String Name;
      VALUEMAPPING::SensorElementEntry_t Element;
-     if(Channel<64){
+    
+     if(Channel<( ( sizeof(MappingTable) / sizeof( MappingTable[0] )  ) )){
               memcpy((void*)&Element,(void*)(&MappingTable[Channel]),  sizeof(Element));
               Name = GetSensorName( Element );
      
@@ -338,6 +339,54 @@ String VALUEMAPPING::GetSensorNameByChannel(uint8_t Channel){
      }
 
    return Name;
+}
+
+ bool VALUEMAPPING::GetSensorValue( float* Value, VALUEMAPPING::SensorElementEntry_t Element ){
+    float value = NAN;
+    switch(Element.Bus){
+        case NOTMAPPED:{
+            return false;
+        } break;
+
+        case INTERNAL:{
+            if(nullptr!=IntSensors){
+                value = IntSensors->GetValue(Element.ValueType, Element.ChannelIDX);
+            } else {
+                //This is an error !
+                Serial.printf("Internal Sensor, no driver registred\n\r");
+                return false;
+            }
+        } break;
+
+        case I2C:{
+            if(nullptr!=I2CSensorBus){
+                value = I2CSensorBus->GetValue(Element.ValueType, Element.ChannelIDX);
+            } else {
+                //This is an error !
+                Serial.printf("I2C Sensor, no driver registred\n\r");
+                return false;
+            }
+        } break;
+
+        case UART_SERIAL:{
+            if(nullptr!=PMSensors){
+                value = PMSensors->GetValue(Element.ValueType, Element.ChannelIDX);
+            } else {
+                //This is an error !
+                Serial.printf("UART Sensor, no driver registred\n\r");
+                return false;
+            }
+        } break;
+
+        default:{
+            return false;
+        } break;
+    }
+
+    *Value = value;
+    return true;
+
+
 }
 
 void VALUEMAPPING::ReadConfig( void ){
@@ -351,12 +400,13 @@ void VALUEMAPPING::ReadConfig( void ){
         ReadBufferingStream bufferingStream(file, 64);
         deserialzeJson(doc, bufferingStream);
         */
-        
-        const size_t capacity = JSON_ARRAY_SIZE(64) + JSON_OBJECT_SIZE(1) + 64*JSON_OBJECT_SIZE(3) + 1580;
+        //Arraysize
+        uint32_t elementcount = ( ( sizeof(MappingTable) / sizeof( MappingTable[0] )  ) );
+        const size_t capacity = elementcount*JSON_ARRAY_SIZE(1) + JSON_OBJECT_SIZE(1) + elementcount*JSON_OBJECT_SIZE(3) + 1580;
         DynamicJsonDocument doc(capacity);
         deserializeJson(doc, file);
         JsonArray Mapping = doc["Mapping"];
-        for(uint8_t i=0;i<64;i++){
+        for(uint8_t i=0;i<( ( sizeof(MappingTable) / sizeof( MappingTable[0] )  ) );i++){
             JsonObject Entry = Mapping[i];
             int Bus = Entry["Bus"]; // 0
             int Type = Entry["ValueType"]; // 0
@@ -393,7 +443,8 @@ void VALUEMAPPING::ReadConfig( void ){
 void VALUEMAPPING::WriteConfig( void ){
 
     File file = SPIFFS.open("/mapping.json", FILE_WRITE);
-    const size_t capacity = JSON_ARRAY_SIZE(64) + JSON_OBJECT_SIZE(1) + 64*JSON_OBJECT_SIZE(3);
+     uint32_t elementcount = ( ( sizeof(MappingTable) / sizeof( MappingTable[0] )  ) );
+    const size_t capacity = elementcount*JSON_ARRAY_SIZE(1) + JSON_OBJECT_SIZE(1) + elementcount*JSON_OBJECT_SIZE(3);
     DynamicJsonDocument doc(capacity);
 
     JsonArray Mapping = doc.createNestedArray("Mapping");
@@ -408,3 +459,6 @@ void VALUEMAPPING::WriteConfig( void ){
 
 }
 
+uint8_t VALUEMAPPING::GetMaxMappedChannels( void ){
+    return ( sizeof(MappingTable) / sizeof( MappingTable[0] )  );
+}

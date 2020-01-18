@@ -6,7 +6,7 @@
 #include "sdcard_if.h"
 
 SPIClass SDSPI(HSPI);
-Timecore* TimeCorePtr=nullptr;
+Timecore* SDTimeCorePtr=nullptr;
 int16_t CS_Pin = -1;
 bool card_eject = false;
 VALUEMAPPING* DataMapping = nullptr;
@@ -29,7 +29,7 @@ void SDCardRegisterMappingAccess(VALUEMAPPING* Mapping){
 }
 
 void SDCardRegisterTimecore( Timecore* TC){
-  TimeCorePtr=TC;
+  SDTimeCorePtr=TC;
 }
 
 void setup_sdcard( int8_t sd_sck_pin , int8_t sd_miso_pin, int8_t sd_mosi_pin, int8_t sd_cs_pin ){
@@ -265,9 +265,9 @@ void SDCardDataLog( void ){
   datum_t Date;
   bzero((void*)(&Date),sizeof(datum_t));
 
-  if(TimeCorePtr != nullptr){
-    timestamp = TimeCorePtr->GetUTC( );
-    Date = TimeCorePtr->ConvertToDatum( timestamp );
+  if(SDTimeCorePtr != nullptr){
+    timestamp = SDTimeCorePtr->GetUTC( );
+    Date = SDTimeCorePtr->ConvertToDatum( timestamp );
   
   }
 

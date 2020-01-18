@@ -1,10 +1,6 @@
 
 #include <ArduinoJson.h>
-#include <WebServer.h>
 
-
-#include "./src/TimeCore/timecore.h"
-#include "./src/NTPClient/ntp_client.h"
 
 #include "datastore.h"
 
@@ -12,12 +8,39 @@
 #include "webserver_time_fnc.h"
 
 
-extern NTP_Client NTPC;
-extern Timecore TimeCore;
+NTP_Client * NTPCPtr=nullptr;
+Timecore* TimeCorePtr=nullptr;
 
-extern void sendData(String data);
-extern WebServer * server;
-extern TaskHandle_t MQTTTaskHandle;
+WebServer* WebTimeSvr=nullptr;
+
+void timesettings_send(void);
+void settime_update(void);
+void ntp_settings_update(void);
+void timezone_update(void);
+void timezone_overrides_update(void);
+
+//As we have a kind of time service with NTP arround we also need to reimplement the functions to hanlde it
+void Webserver_Time_FunctionsRegister(WebServer* server){
+  WebTimeSvr=server;
+  if(WebTimeSvr==nullptr){
+    abort();
+  }
+  WebTimeSvr->on("/timesettings", HTTP_GET, timesettings_send);
+  WebTimeSvr->on("/settime.dat", HTTP_POST, settime_update); /* needs to process date and time */
+  WebTimeSvr->on("/ntp.dat",HTTP_POST,ntp_settings_update); /* needs to process NTP_ON, NTPServerName and NTP_UPDTAE_SPAN */
+  WebTimeSvr->on("/timezone.dat",timezone_update); /*needs to handel timezoneid */
+  WebTimeSvr->on("/overrides.dat",timezone_overrides_update); /* needs to handle DLSOverrid,  ManualDLS, dls_offset, ZONE_OVERRRIDE and GMT_OFFSET */
+
+}
+
+void Webserver_Time_FunctionRegisterTimecore(Timecore* TcPtr){
+  TimeCorePtr=TcPtr;
+}
+void Webserver_Time_FunctionRegisterNTPClient(NTP_Client* NtpCPtr){
+  NTPCPtr=NtpCPtr;
+}
+
+
 
 /**************************************************************************************************
 *    Function      : response_settings
@@ -26,14 +49,19 @@ extern TaskHandle_t MQTTTaskHandle;
 *    Output        : none
 *    Remarks       : none
 **************************************************************************************************/ 
-void response_settings(){
+void timesettings_send(){
 
 char strbuffer[129];
 String response="";  
 
+if( (TimeCorePtr==nullptr) || (NTPCPtr==nullptr) ){
+  WebTimeSvr->send(500);
+  return;
+}
+
   DynamicJsonDocument root(350);
   memset(strbuffer,0,129);
-  datum_t d = TimeCore.GetLocalTimeDate();
+  datum_t d = TimeCorePtr->GetLocalTimeDate();
   snprintf(strbuffer,64,"%02d:%02d:%02d",d.hour,d.minute,d.second);
   
   root["time"] = strbuffer;
@@ -43,19 +71,19 @@ String response="";
   root["date"] = strbuffer;
 
   memset(strbuffer,0,129);
-  snprintf(strbuffer,129,"%s",NTPC.GetServerName());
+  snprintf(strbuffer,129,"%s",NTPCPtr->GetServerName());
   root["ntpname"] = strbuffer;
-  root["tzidx"] = (int32_t)TimeCore.GetTimeZone();
-  root["ntpena"] = NTPC.GetNTPSyncEna();
-  root["ntp_update_span"]=NTPC.GetSyncInterval();
-  root["zoneoverride"]=TimeCore.GetTimeZoneManual();;
-  root["gmtoffset"]=TimeCore.GetGMT_Offset();;
-  root["dlsdis"]=!TimeCore.GetAutomacitDLS();
-  root["dlsmanena"]=TimeCore.GetManualDLSEna();
-  uint32_t idx = TimeCore.GetDLS_Offset();
+  root["tzidx"] = (int32_t)TimeCorePtr->GetTimeZone();
+  root["ntpena"] = NTPCPtr->GetNTPSyncEna();
+  root["ntp_update_span"]=NTPCPtr->GetSyncInterval();
+  root["zoneoverride"]=TimeCorePtr->GetTimeZoneManual();;
+  root["gmtoffset"]=TimeCorePtr->GetGMT_Offset();;
+  root["dlsdis"]=!TimeCorePtr->GetAutomacitDLS();
+  root["dlsmanena"]=TimeCorePtr->GetManualDLSEna();
+  uint32_t idx = TimeCorePtr->GetDLS_Offset();
   root["dlsmanidx"]=idx;
   serializeJson(root,response);
-  server->send(200, "text/plain", response);
+  WebTimeSvr->send(200, "text/plain", response);
 }
 
 
@@ -78,19 +106,24 @@ void settime_update( ){ /* needs to process date and time */
   bool time_found=false;
   bool date_found=false;
   
-  if( ! server->hasArg("date") || server->arg("date") == NULL ) { // If the POST request doesn't have username and password data
+  if( (TimeCorePtr==nullptr) || (NTPCPtr==nullptr) ){
+    WebTimeSvr->send(500);
+    return;
+  }
+
+  if( ! WebTimeSvr->hasArg("date") || WebTimeSvr->arg("date") == NULL ) { // If the POST request doesn't have username and password data
     /* we are missong something here */
   } else {
    
-    Serial.printf("found date: %s\n\r",server->arg("date").c_str());
-    uint8_t d_len = server->arg("date").length();
+    Serial.printf("found date: %s\n\r",WebTimeSvr->arg("date").c_str());
+    uint8_t d_len = WebTimeSvr->arg("date").length();
     Serial.printf("datelen: %i\n\r",d_len);
-    if(server->arg("date").length()!=10){
+    if(WebTimeSvr->arg("date").length()!=10){
       Serial.println("date len failed");
     } else {   
-      String year=server->arg("date").substring(0,4);
-      String month=server->arg("date").substring(5,7);
-      String day=server->arg("date").substring(8,10);
+      String year=WebTimeSvr->arg("date").substring(0,4);
+      String month=WebTimeSvr->arg("date").substring(5,7);
+      String day=WebTimeSvr->arg("date").substring(8,10);
       d.year = year.toInt();
       d.month = month.toInt();
       d.day = day.toInt();
@@ -98,16 +131,16 @@ void settime_update( ){ /* needs to process date and time */
     }   
   }
 
-  if( ! server->hasArg("time") || server->arg("time") == NULL ) { // If the POST request doesn't have username and password data
+  if( ! WebTimeSvr->hasArg("time") || WebTimeSvr->arg("time") == NULL ) { // If the POST request doesn't have username and password data
     
   } else {
-    if(server->arg("time").length()!=8){
+    if(WebTimeSvr->arg("time").length()!=8){
       Serial.println("time len failed");
     } else {
     
-      String hour=server->arg("time").substring(0,2);
-      String minute=server->arg("time").substring(3,5);
-      String second=server->arg("time").substring(6,8);
+      String hour=WebTimeSvr->arg("time").substring(0,2);
+      String minute=WebTimeSvr->arg("time").substring(3,5);
+      String second=WebTimeSvr->arg("time").substring(6,8);
       d.hour = hour.toInt();
       d.minute = minute.toInt();
       d.second = second.toInt();     
@@ -118,10 +151,10 @@ void settime_update( ){ /* needs to process date and time */
   if( (time_found==true) && ( date_found==true) ){
     Serial.printf("Date: %i, %i, %i ", d.year , d.month, d.day );
     Serial.printf("Time: %i, %i, %i ", d.hour , d.minute, d.second );
-    TimeCore.SetLocalTime(d);
+    TimeCorePtr->SetLocalTime(d);
   }
   
-  server->send(200);   
+  WebTimeSvr->send(200);   
  
  }
 
@@ -133,27 +166,32 @@ void settime_update( ){ /* needs to process date and time */
 *    Output        : none
 *    Remarks       : none
 **************************************************************************************************/ 
-void ntp_settings_update( ){ /* needs to process NTP_ON, NTPServerName and NTP_UPDTAE_SPAN */
+void ntp_settings_update( ){ /* needs to process NTP_ON, NTPWebTimeSvrName and NTP_UPDTAE_SPAN */
 
-  if( ! server->hasArg("NTP_ON") || server->arg("NTP_ON") == NULL ) { // If the POST request doesn't have username and password data
-    NTPC.SetNTPSyncEna(false);  
+    if( (TimeCorePtr==nullptr) || (NTPCPtr==nullptr) ){
+      WebTimeSvr->send(500);
+      return;
+    }
+
+  if( ! WebTimeSvr->hasArg("NTP_ON") || WebTimeSvr->arg("NTP_ON") == NULL ) { // If the POST request doesn't have username and password data
+    NTPCPtr->SetNTPSyncEna(false);  
   } else {
-    NTPC.SetNTPSyncEna(true);  
+    NTPCPtr->SetNTPSyncEna(true);  
   }
 
-  if( ! server->hasArg("NTPServerName") || server->arg("NTPServerName") == NULL ) { // If the POST request doesn't have username and password data
+  if( ! WebTimeSvr->hasArg("NTPWebTimeSvrName") || WebTimeSvr->arg("NTPWebTimeSvrName") == NULL ) { // If the POST request doesn't have username and password data
       
   } else {
-     NTPC.SetServerName( server->arg("NTPServerName") );
+     NTPCPtr->SetServerName( WebTimeSvr->arg("NTPWebTimeSvrName") );
   }
 
-  if( ! server->hasArg("ntp_update_delta") || server->arg("ntp_update_delta") == NULL ) { // If the POST request doesn't have username and password data
+  if( ! WebTimeSvr->hasArg("ntp_update_delta") || WebTimeSvr->arg("ntp_update_delta") == NULL ) { // If the POST request doesn't have username and password data
      
   } else {
-    NTPC.SetSyncInterval( server->arg("ntp_update_delta").toInt() );
+    NTPCPtr->SetSyncInterval( WebTimeSvr->arg("ntp_update_delta").toInt() );
   }
-  NTPC.SaveSettings();
-  server->send(200);   
+  NTPCPtr->SaveSettings();
+  WebTimeSvr->send(200);   
   
  }
 
@@ -165,16 +203,21 @@ void ntp_settings_update( ){ /* needs to process NTP_ON, NTPServerName and NTP_U
 *    Remarks       : none
 **************************************************************************************************/  
 void timezone_update( ){ /*needs to handel timezoneid */
-  if( ! server->hasArg("timezoneid") || server->arg("timezoneid") == NULL ) { // If the POST request doesn't have username and password data
+  if( (TimeCorePtr==nullptr) || (NTPCPtr==nullptr) ){
+    WebTimeSvr->send(500);
+    return;
+  }
+
+  if( ! WebTimeSvr->hasArg("timezoneid") || WebTimeSvr->arg("timezoneid") == NULL ) { // If the POST request doesn't have username and password data
     /* we are missong something here */
   } else {
    
-    Serial.printf("New TimeZoneID: %s\n\r",server->arg("timezoneid").c_str());
-    uint32_t timezoneid = server->arg("timezoneid").toInt();
-    TimeCore.SetTimeZone( (TIMEZONES_NAMES_t)timezoneid );   
+    Serial.printf("New TimeZoneID: %s\n\r",WebTimeSvr->arg("timezoneid").c_str());
+    uint32_t timezoneid = WebTimeSvr->arg("timezoneid").toInt();
+    TimeCorePtr->SetTimeZone( (TIMEZONES_NAMES_t)timezoneid );   
   }
-  TimeCore.SaveConfig();
-  server->send(200);    
+  TimeCorePtr->SaveConfig();
+  WebTimeSvr->send(200);    
 
  }
 
@@ -188,49 +231,55 @@ void timezone_update( ){ /*needs to handel timezoneid */
 **************************************************************************************************/  
  void timezone_overrides_update( ){ /* needs to handle DLSOverrid,  ManualDLS, dls_offset, ZONE_OVERRRIDE and GMT_OFFSET */
 
+  if( (TimeCorePtr==nullptr) || (NTPCPtr==nullptr) ){
+    WebTimeSvr->send(500);
+    return;
+  }
+
+
   bool DLSOverrid=false;
   bool ManualDLS = false;
   bool ZONE_OVERRRIDE = false;
   int32_t gmt_offset = 0;
   DLTS_OFFSET_t dls_offsetidx = DLST_OFFSET_0;
-  if( ! server->hasArg("dlsdis") || server->arg("dlsdis") == NULL ) { // If the POST request doesn't have username and password data
+  if( ! WebTimeSvr->hasArg("dlsdis") || WebTimeSvr->arg("dlsdis") == NULL ) { // If the POST request doesn't have username and password data
       /* we are missing something here */
   } else {
     DLSOverrid=true;  
   }
 
-  if( ! server->hasArg("dlsmanena") || server->arg("dlsmanena") == NULL ) { // If the POST request doesn't have username and password data
+  if( ! WebTimeSvr->hasArg("dlsmanena") || WebTimeSvr->arg("dlsmanena") == NULL ) { // If the POST request doesn't have username and password data
       /* we are missing something here */
   } else {
     ManualDLS=true;  
   }
 
-  if( ! server->hasArg("ZONE_OVERRRIDE") || server->arg("ZONE_OVERRRIDE") == NULL ) { // If the POST request doesn't have username and password data
+  if( ! WebTimeSvr->hasArg("ZONE_OVERRRIDE") || WebTimeSvr->arg("ZONE_OVERRRIDE") == NULL ) { // If the POST request doesn't have username and password data
       /* we are missing something here */
   } else {
     ZONE_OVERRRIDE=true;  
   }
 
-  if( ! server->hasArg("gmtoffset") || server->arg("gmtoffset") == NULL ) { // If the POST request doesn't have username and password data
+  if( ! WebTimeSvr->hasArg("gmtoffset") || WebTimeSvr->arg("gmtoffset") == NULL ) { // If the POST request doesn't have username and password data
       /* we are missing something here */
   } else {
-    gmt_offset = server->arg("gmtoffset").toInt();
+    gmt_offset = WebTimeSvr->arg("gmtoffset").toInt();
   }
 
-  if( ! server->hasArg("dlsmanidx") || server->arg("dlsmanidx") == NULL ) { // If the POST request doesn't have username and password data
+  if( ! WebTimeSvr->hasArg("dlsmanidx") || WebTimeSvr->arg("dlsmanidx") == NULL ) { // If the POST request doesn't have username and password data
       /* we are missing something here */
   } else {
-    dls_offsetidx = (DLTS_OFFSET_t) server->arg("dlsmanidx").toInt();
+    dls_offsetidx = (DLTS_OFFSET_t) WebTimeSvr->arg("dlsmanidx").toInt();
   }
-  TimeCore.SetGMT_Offset(gmt_offset);
-  TimeCore.SetDLS_Offset( (DLTS_OFFSET_t)(dls_offsetidx) );
-  TimeCore.SetAutomaticDLS(!DLSOverrid);
-  TimeCore.SetManualDLSEna(ManualDLS);
-  TimeCore.SetTimeZoneManual(ZONE_OVERRRIDE);
+  TimeCorePtr->SetGMT_Offset(gmt_offset);
+  TimeCorePtr->SetDLS_Offset( (DLTS_OFFSET_t)(dls_offsetidx) );
+  TimeCorePtr->SetAutomaticDLS(!DLSOverrid);
+  TimeCorePtr->SetManualDLSEna(ManualDLS);
+  TimeCorePtr->SetTimeZoneManual(ZONE_OVERRRIDE);
 
  
-  TimeCore.SaveConfig();
-  server->send(200);    
+  TimeCorePtr->SaveConfig();
+  WebTimeSvr->send(200);    
 
   
  }

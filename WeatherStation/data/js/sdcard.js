@@ -1,0 +1,3 @@
+function showSDCARD(){
+    showView("SDCARDView");
+}
