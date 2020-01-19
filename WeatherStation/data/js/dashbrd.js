@@ -1,31 +1,9 @@
 var AutoUpdate = null;
-function myTimer() {
-  var d = new Date();
-  var t = d.toLocaleTimeString();
-  document.getElementById("demo").innerHTML = t;
-} 
-function pageLoad() {
-    showDashboard(); 
-}
-
 
 function showDashboard(){
     showView("MainPage");
     Dashbaord_update_values();
     AutoUpdate = setInterval(AutomaticUpdate, 30000); //every 30 seconds
-    
-    /*
-    respondToVisibility(document.getElementById("MainPage"), visible => {
-        
-      if(visible) {
-        //Enable 1 minute update 
-       }
-       else {
-        //Disable 1 minute update 
-       }
-    });
-    */
-
 }
 
 function AutomaticUpdate(){

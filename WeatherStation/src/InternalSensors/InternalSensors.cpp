@@ -127,7 +127,12 @@ bool InternalSensors::GetSensorList( SensorUnitInfo_t* List, uint8_t capacity, u
             if(channel>2){
                  return "N/A";
              } else {
-                 return SensorNames[0+channel];
+                 if(2+channel>=10){
+                     return "N/A";
+                 } else {
+                    return SensorNames[0+channel];
+                 }
+                 
              }
          } break;
 
@@ -136,7 +141,11 @@ bool InternalSensors::GetSensorList( SensorUnitInfo_t* List, uint8_t capacity, u
              if(channel>2){
                  return "N/A";
              } else {
-                 return SensorNames[3+channel];
+                 if(2+channel>=10){
+                     return "N/A";
+                 } else {
+                    return SensorNames[3+channel];
+                 }
              }
          } break;
 
@@ -144,7 +153,13 @@ bool InternalSensors::GetSensorList( SensorUnitInfo_t* List, uint8_t capacity, u
              if(channel>3){
                  return "N/A";
              } else {
-                 return SensorNames[6+channel];
+                 //Boundary check
+                 if(6+channel>=10){
+                     return "N/A";
+                 } else {
+                     return SensorNames[6+channel];
+                 }
+                 
              }
          }break;
 

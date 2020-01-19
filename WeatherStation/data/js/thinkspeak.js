@@ -8,6 +8,9 @@ var thinkspeak_mapping_json = ["testdata/thinkspeak/mapping.json",null];
 var station_mappin_json = [ "testdata/mappingdata.json", null];
 var TSDataToLoad = [thinkspeak_settings_json, thinkspeak_mapping_json, station_mappin_json ];
 
+function thinkspeak_js_loaded(){
+    return true;
+}
 
 function showThinkspeak(){
     showView("Thinkspeak");

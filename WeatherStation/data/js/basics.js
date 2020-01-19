@@ -1,6 +1,10 @@
 var wifi_scan_results = null;
 var wifi_clean_ssid_list = null;
 
+function basic_js_loaded(){
+    return true;
+}
+
 function respondToVisibility (element, callback) {
     var options = {
       root: document.documentElement
@@ -125,7 +129,7 @@ function httpGetAsync(theUrl, callback, param, workspace)
     xmlHttp.send(null);
 }
 
-function sendData(url,data) {       
+function sendData(url,data,callbackDone=null,callBackError=null) {       
   var XHR = new XMLHttpRequest();
   var urlEncodedData = "";
   var urlEncodedDataPairs = [];
@@ -138,11 +142,17 @@ function sendData(url,data) {
   urlEncodedData = urlEncodedDataPairs.join('&').replace(/%20/g, '+');
 
   XHR.addEventListener('load', function(event) {
-    /*   */
+    if(callbackDone!=null){
+        callbackDone;
+    }
+
   });
 
   XHR.addEventListener('error', function(event) {
     alert('Oops! Something goes wrong.');
+    if(callBackError!=null){
+        callBackError();
+    }
   });
 
   XHR.open('POST', url);
@@ -202,3 +212,11 @@ function ProcessResponse( data, param ,workspace){
     StartRequest(workspace);
 }
 
+
+function GenerateHostUrl( part ){
+    var protocol = location.protocol;
+    var slashes = protocol.concat("//");
+    var host = slashes.concat(window.location.hostname);
+    var url = host +  part;
+    return url;
+}

@@ -8,6 +8,9 @@ var sensebox_mapping_json = ["testdata/sensebox/mapping.json",null];
 var sensebox_station_mapping_json = [ "testdata/mappingdata.json", null];
 var DataToLoad = [sensebox_settings_json, sensebox_mapping_json, sensebox_station_mapping_json ];
 
+function sensebox_js_loaded(){
+    return true;
+}
 
 function showSenseBox(){
     showView("SenseBox");
