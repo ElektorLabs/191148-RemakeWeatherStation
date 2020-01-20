@@ -8,11 +8,17 @@ var thinkspeak_mapping_json = ["testdata/thinkspeak/mapping.json",null];
 var station_mappin_json = [ "testdata/mappingdata.json", null];
 var TSDataToLoad = [thinkspeak_settings_json, thinkspeak_mapping_json, station_mappin_json ];
 
+function thinkspeak_js_loaded(){
+    return true;
+}
 
 function showThinkspeak(){
     showView("Thinkspeak");
     ClearMappingTB();
-    loadMultipleData(TSDataToLoad,ThinkspeakDisplaySettings);
+    load_mapping_data(function(){
+        loadMultipleData(TSDataToLoad,ThinkspeakDisplaySettings);
+    });
+    
 }
 
 function ClearMappingTB(){
@@ -32,6 +38,15 @@ thinkspeak_settings = JSON.parse(thinkspeak_settings_json[1]);
 thinkspeak_mapping = JSON.parse(thinkspeak_mapping_json[1]);
 station_mapping = JSON.parse(station_mappin_json[1]);
 
+
+document.getElementById("ThinkspeakUploadInterval").onchange = null;
+document.getElementById("ThinkspeakUploadInterval").value = thinkspeak_settings.THINKSPEAK_TXINTERVALL;
+document.getElementById("ThinkspeakUploadInterval").onchange = ThinkspeakUploadIntervalChanged;
+
+document.getElementById("ThinkspeakUploadEnable").onchange = null;
+document.getElementById("ThinkspeakUploadEnable").value = thinkspeak_settings.THINKSPEAK_ENA;
+document.getElementById("ThinkspeakUploadEnable").onchange = ThinkspeakUploadEnableChanged;
+
 for(var x =0; x< 8;x++){
     var row = myNode.insertRow(-1);
     var cell1 = row.insertCell(0);
@@ -49,31 +64,40 @@ for(var x =0; x< 8;x++){
     //And the selected one if not mapped
     //Create and append select list
     var selectList = document.createElement("select");
-    selectList.setAttribute("id", "SenseboxChSelect"+x);
-    selectList.setAttribute('onchange','MappingChannelChanged('+x+');');
+    selectList.setAttribute("id", "ThinkspeakChSelect"+x);
+    selectList.setAttribute('onchange','ThinkspeakMappingChannelChanged('+x+');');
     var thinkspeak_mapped_ch  = thinkspeak_mapping.Mapping[x].STA_Channel;
     var option = document.createElement("option");
-
     var mapping_exists= false;
-    for(var t=0;t<station_mapping.Mapping.length;t++){
 
+    for(var t=0;t<station_mapping.Mapping.length;t++){
+        var vmpg = channel_valid_mapped( t );
+        mapping_exists=false;
         if(station_mapping.Mapping[t].Bus!=0){
-            if(thinkspeak_mapped_ch === t ){
-                mapping_exists = true;
-            }
+            if(thinkspeak_mapped_ch === t ){  
+                if( vmpg.valid === true ){
+                    mapping_exists = true;
+                } else {
+                    mapping_exists = false;
+                }
+                option = document.createElement("option");
+                option.setAttribute("value",t);
+                option.text = t +" ("+   vmpg.name +" )";
+                selectList.appendChild(option);
+            }       
+        }
+
+        if(mapping_exists === false){
+            if( vmpg.valid === true ){
             option = document.createElement("option");
             option.setAttribute("value",t);
-            option.text = t;
+            option.text = t +" ( "+   vmpg.name +" )";
             selectList.appendChild(option);
+            }
         }
        
     }
-    if(mapping_exists === false){
-        option = document.createElement("option");
-        option.setAttribute("value",thinkspeak);
-        option.text = thinkspeak_mapped_ch + "(unmapped)";
-        selectList.appendChild(option);
-    }
+
     cell2.appendChild(selectList);
     //select the value we need....
     selectList.value = thinkspeak_mapped_ch;
@@ -96,8 +120,8 @@ for(var x =0; x< 8;x++){
 
 
     //Create and append select list
-    EnaListHtml.setAttribute("id", "EnaList"+x);
-    EnaListHtml.setAttribute('onchange','MappingSelectionChanged('+x+');');
+    EnaListHtml.setAttribute("id", "TsEnaList"+x);
+    EnaListHtml.setAttribute('onchange','ThinkspeakEnableChannelChanged('+x+');');
     cell3.appendChild(EnaListHtml);
     if(true === thinkspeak_mapping.Mapping[x].Enabled){
         EnaListHtml.value = "true";
@@ -108,31 +132,23 @@ for(var x =0; x< 8;x++){
 
 }
 
-function KeyID_MayChanged( Channel ){
-    //Key has may changed as we use to onbluc function.....
-    myNode = document.getElementById("SenseBoxID_"+Channel);
-    var id = myNode.value;
-    var org_id = sensebox_mapping.Mapping[Channel].SensorID;
-    if(id !=org_id ){
-       //We need to write the new value back 
-    }
-    myNode.style.color="black";
-
-
-
-}
-
-function KeyID_Changed( Channel ){
-    //We change the color to red.....
-    myNode = document.getElementById("SenseBoxID_"+Channel);
-    myNode.style.color="red";
-}
-
-function MappingChannelChanged( Channel ){
+function ThinkspeakMappingChannelChanged( Channel ){
 //Mapping channel has been changed 
-
+var el = document.getElementById("ThinkspeakChSelect"+Channel);
 }
 
-function EnableChannelChanged( Channel ){
+function ThinkspeakEnableChannelChanged( Channel ){
 //Enabled has been changed 
+var el = document.getElementById("TsEnaList"+Channel);
+}
+
+function ThinkspeakUploadEnableChanged( ){
+    var el = document.getElementById("ThinkspeakUploadEnable");
+}
+
+function ThinkspeakUploadIntervalChanged(){
+    var el = document.getElementById("ThinkspeakUploadInterval");
+    if(true == el.validity.valid ){
+        //We can process the input....
+    }
 }

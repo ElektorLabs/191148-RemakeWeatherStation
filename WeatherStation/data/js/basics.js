@@ -1,13 +1,26 @@
 var wifi_scan_results = null;
 var wifi_clean_ssid_list = null;
 
-function pageLoad() {
-showMainPage(); 
+function basic_js_loaded(){
+    return true;
 }
 
-function showMainPage(){
-    showView("MainPage");
-}
+function respondToVisibility (element, callback) {
+    var options = {
+      root: document.documentElement
+    }
+  
+    var observer = new IntersectionObserver((entries, observer) => {
+      entries.forEach(entry => {
+        callback(entry.intersectionRatio > 0);
+      });
+    }, options);
+  
+    observer.observe(element);
+  }
+  
+ 
+
 
 function showView(view) {
     Array.from(document.getElementsByClassName("views")).forEach(function(v) {v.style.display = "none";});
@@ -82,16 +95,41 @@ function httpGetAsync(theUrl, callback, param, workspace)
 {
     var xmlHttp = new XMLHttpRequest();
     xmlHttp.onreadystatechange = function() { 
-        if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+        if (xmlHttp.readyState == 4 && xmlHttp.status == 200){
+            if(callback != null){
+                callback(xmlHttp.responseText, param, workspace);
+            }
+        }
+        if (xmlHttp.readyState == 4 && xmlHttp.status == 404){
+            if(callback != null){
+                callback("", param, workspace);
+            }
+        }
+        if (xmlHttp.readyState == 4 && xmlHttp.status == 500){
+            if(callback != null){
+                callback("", param, workspace);
+            }
+        }
+
+    }
+
+    xmlHttp.onerror = function() {
         if(callback != null){
-            callback(xmlHttp.responseText, param, workspace);
+            callback("", param, workspace);
         }
     }
+
+    xmlHttp.ontimeout = function() {
+        if(callback != null){
+            callback("", param, workspace);
+        }
+    }
+
     xmlHttp.open("GET", theUrl, true); // true for asynchronous 
     xmlHttp.send(null);
 }
 
-function sendData(url,data) {       
+function sendData(url,data,callbackDone=null,callBackError=null) {       
   var XHR = new XMLHttpRequest();
   var urlEncodedData = "";
   var urlEncodedDataPairs = [];
@@ -104,11 +142,17 @@ function sendData(url,data) {
   urlEncodedData = urlEncodedDataPairs.join('&').replace(/%20/g, '+');
 
   XHR.addEventListener('load', function(event) {
-    /*   */
+    if(callbackDone!=null){
+        callbackDone;
+    }
+
   });
 
   XHR.addEventListener('error', function(event) {
     alert('Oops! Something goes wrong.');
+    if(callBackError!=null){
+        callBackError();
+    }
   });
 
   XHR.open('POST', url);
@@ -136,6 +180,16 @@ function loadMultipleData( URL_To_Load , CallBackOnDone){
 function StartRequest( workspace ){
     var done = true;
     for( var x=0;x<workspace.URL_To_Load.length;x++){
+        if(workspace.URL_To_Load[x][0]==""){ //No URL inside....
+            workspace.DoneArray[x] = true;
+            workspace.URL_To_Load[x][1]="";
+        }
+
+        if(workspace.URL_To_Load[x][0]==null){ //No URL inside....
+            workspace.DoneArray[x] = true;
+            workspace.URL_To_Load[x][1]="";
+        }
+        
         if(workspace.DoneArray[x] == false){
             httpGetAsync(workspace.URL_To_Load[x][0],ProcessResponse,x, workspace);
             workspace.DoneArray[x] = true;
@@ -158,3 +212,11 @@ function ProcessResponse( data, param ,workspace){
     StartRequest(workspace);
 }
 
+
+function GenerateHostUrl( part ){
+    var protocol = location.protocol;
+    var slashes = protocol.concat("//");
+    var host = slashes.concat(window.location.hostname);
+    var url = host +  part;
+    return url;
+}

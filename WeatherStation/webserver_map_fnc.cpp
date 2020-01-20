@@ -6,21 +6,26 @@
 
 extern VALUEMAPPING SensorMapping;
 
-static  WebServer* server = nullptr;
+static  WebServer* MappingServer = nullptr;
 
 void response_mappingdata( void );
 void response_supportedsensors( void );
 void response_connectedsensors( void );
 void process_setmapping( void );
+void response_channelvalue( void );
 
 void Webserver_Map_FunctionsRegister( WebServer* serverptr){
-server=serverptr;
-server->on("/mapping/mappingdata.json", HTTP_GET, response_mappingdata);
-server->on("/devices/supportedsensors.json",HTTP_GET,response_supportedsensors);
-server->on("/devices/connectedsensors.json",HTTP_GET,response_connectedsensors);
-server->on("/mapping/set",HTTP_POST,process_setmapping );
+MappingServer=serverptr;
+MappingServer->on("/mapping/mappingdata.json", HTTP_GET, response_mappingdata);
+MappingServer->on("/devices/supportedsensors.json",HTTP_GET,response_supportedsensors);
+MappingServer->on("/devices/connectedsensors.json",HTTP_GET,response_connectedsensors);
+MappingServer->on("/mapping/set",HTTP_POST,process_setmapping ); //Sets a single mapping for one channel
+MappingServer->on("/mapping/{}/value",HTTP_GET, response_channelvalue);
+
 
 }
+
+/* ------------------------------------------- */
 
 void process_setmapping( void ){
 //We need here the element eqivalent for the mapping
@@ -33,33 +38,33 @@ int32_t iValueType=0;
 int32_t iValueChannel=0;
 
 
-  if( ! server->hasArg("MAPPEDCHANNEL") || server->arg("MAPPEDCHANNEL") == NULL ) { // If the POST request doesn't have username and password data
+  if( ! MappingServer->hasArg("MAPPEDCHANNEL") || MappingServer->arg("MAPPEDCHANNEL") == NULL ) { // If the POST request doesn't have username and password data
     /* we are missong something here */
     completedata = completedata & false;
   } else {
-     iMappedChannel = server->arg("MAPPEDCHANNEL").toInt();
+     iMappedChannel = MappingServer->arg("MAPPEDCHANNEL").toInt();
   }
 
-  if( ! server->hasArg("BUS") || server->arg("BUS") == NULL ) { // If the POST request doesn't have username and password data
+  if( ! MappingServer->hasArg("BUS") || MappingServer->arg("BUS") == NULL ) { // If the POST request doesn't have username and password data
     /* we are missong something here */
     completedata = completedata & false;
   } else {
-     iBus= server->arg("BUS").toInt();
+     iBus= MappingServer->arg("BUS").toInt();
     
   }
 
-  if( ! server->hasArg("MESSURMENTVALTYPE") || server->arg("MESSURMENTVALTYPE") == NULL ) { // If the POST request doesn't have username and password data
+  if( ! MappingServer->hasArg("MESSURMENTVALTYPE") || MappingServer->arg("MESSURMENTVALTYPE") == NULL ) { // If the POST request doesn't have username and password data
     /* we are missong something here */
     completedata = completedata & false;
   } else {
-     iValueType = server->arg("MESSURMENTVALTYPE").toInt();
+     iValueType = MappingServer->arg("MESSURMENTVALTYPE").toInt();
   }
 
-  if( ! server->hasArg("VALCHANNEL") || server->arg("VALCHANNEL") == NULL ) { // If the POST request doesn't have username and password data
+  if( ! MappingServer->hasArg("VALCHANNEL") || MappingServer->arg("VALCHANNEL") == NULL ) { // If the POST request doesn't have username and password data
     /* we are missong something here */
     completedata = completedata & false;
   } else {
-    iValueChannel = server->arg("VALCHANNEL").toInt();
+    iValueChannel = MappingServer->arg("VALCHANNEL").toInt();
   }
 
   if(true == completedata){
@@ -111,7 +116,7 @@ int32_t iValueChannel=0;
 
   }
 
-  server->send(200); 
+  MappingServer->send(200); 
 
 }
 
@@ -119,11 +124,11 @@ int32_t iValueChannel=0;
 void response_mappingdata( void ){
     if(SPIFFS.exists("/mapping.json")){
       File file = SPIFFS.open("/mapping.json", "r");
-      server->streamFile(file, "text/plain");
+      MappingServer->streamFile(file, "text/plain");
       file.close();
     } else {
       String data="{}";
-      server->send(200, "text/plain", data);
+      MappingServer->send(200, "text/plain", data);
     }
 }
 
@@ -152,7 +157,7 @@ void response_connectedsensors( void ){
             MappingObj["Name"]= SensorMapping.GetSensorName( SensorList[i]);
     }
     serializeJson(doc, data);
-    server->send(200, "text/plain", data);
+    MappingServer->send(200, "text/plain", data);
 }
 
 void response_supportedsensors( void ){
@@ -179,5 +184,37 @@ void response_supportedsensors( void ){
             MappingObj["Name"]= SensorMapping.GetSensorName( SensorList[i]);
     }
     serializeJson(doc, data);
-    server->send(200, "text/plain", data);
+    MappingServer->send(200, "text/plain", data);
 }
+
+void response_channelvalue( void ){
+    float value = 0;
+    WebServer * server = MappingServer;
+    if(server == nullptr){
+        return;
+    }
+   
+    uint8_t max_channel = SensorMapping.GetMaxMappedChannels();
+    String IDs = server->pathArg(0);//This will be the channel we like to set
+    int32_t Ch = IDs.toInt();
+    if( (Ch<0) ){
+        Ch=0;
+    }
+
+    if(Ch>=max_channel){
+        Ch=max_channel-1; 
+    }
+    
+    bool mapped = SensorMapping.ReadMappedValue( &value, Ch );
+
+    //We build a qick JSON 
+    String response ="";
+    DynamicJsonDocument root(2048);
+    root["channel"]= Ch;
+    root["mapped"]= (bool)mapped;
+    root["value"] = value ;
+    serializeJson(root, response);
+    server->send(200, "text/plain", response);
+  
+}
+

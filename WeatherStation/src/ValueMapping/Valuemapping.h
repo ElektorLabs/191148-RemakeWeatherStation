@@ -38,6 +38,7 @@ class VALUEMAPPING{
         
         //This will grab one mapped value, returns false if not mapped
         bool ReadMappedValue( float* Value, uint8_t MappedChannelIndex );
+       
         
 
         uint8_t GetSensors( SensorElementEntry_t* List, uint8_t capacity);
@@ -46,12 +47,14 @@ class VALUEMAPPING{
         SensorElementEntry_t GetMappingForChannel( uint8_t MappedChannelIndex);
         
         //This will fetch the corresponding Sensorname for better human identificaion
+        bool GetSensorValue( float* Value, VALUEMAPPING::SensorElementEntry_t Element );
         String GetSensorName( SensorElementEntry_t Element);
         String GetSensorNameByChannel(uint8_t Channel);
+        uint8_t GetMaxMappedChannels( void );
 
     private:
 
-    SensorElementEntry_t MappingTable[64];
+    SensorElementEntry_t MappingTable[64]; //If we can reduce the amount of channels here 
     I2C_Sensors* I2CSensorBus=nullptr;
     InternalSensors* IntSensors=nullptr;
     UART_PM_Sensors* PMSensors=nullptr;

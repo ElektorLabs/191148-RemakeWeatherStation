@@ -8,10 +8,10 @@ void UmountCard( void );
 void MountCard(void);
 void GetMountStatus( void );
 void GetSettings( void );
-void UpdateSettungs( void );
+void UpdateSettings( void );
 void Webserver_SDCard_FunctionsRegister(WebServer* server){
     SDCardWebServer = server;
-    server->on("/sdlog/settings.dat", HTTP_GET, UpdateSettungs );
+    server->on("/sdlog/settings.dat", HTTP_GET, UpdateSettings );
     server->on("/sdlog/settings.json", HTTP_POST, GetSettings );
     server->on("/sdlog/sd/mount", MountCard);
     server->on("/sdlog/sd/umount", UmountCard);
@@ -62,7 +62,7 @@ void GetMountStatus( void ){
 
 }
 
-void UpdateSettungs( void ){
+void UpdateSettings( void ){
     WebServer * server = SDCardWebServer;
     if(server == nullptr){
         return;
@@ -81,22 +81,17 @@ void UpdateSettungs( void ){
        
     }
 
-    if( ! server->hasArg("SENSEBOX_TXINTERVALL") || server->arg("SENSEBOX_TXINTERVALL") == NULL ) { 
+    if( ! server->hasArg("SDLOG_INT") || server->arg("SDLOG_INT") == NULL ) { 
             /* we are missong something here */
     } else { 
-        uint32_t value = server->arg("SENSEBOX_TXINTERVALL").toInt();
+        uint32_t value = server->arg("SDLOG_INT").toInt();
         if( (value >=0 ) && ( value < UINT16_MAX )){
                sdcard_log_int( value );
             Serial.print("New SDCard Log  interval:");
             Serial.println(value);
         }
     }
-     server->send(200); 
-
-
-
-  
-
+    server->send(200); 
 }
 
 void GetSettings( void ){

@@ -8,11 +8,17 @@ var sensebox_mapping_json = ["testdata/sensebox/mapping.json",null];
 var sensebox_station_mapping_json = [ "testdata/mappingdata.json", null];
 var DataToLoad = [sensebox_settings_json, sensebox_mapping_json, sensebox_station_mapping_json ];
 
+function sensebox_js_loaded(){
+    return true;
+}
 
 function showSenseBox(){
     showView("SenseBox");
     ClearMappingSB();
-    loadMultipleData(DataToLoad,SenseBoxDisplaySettings);
+    load_mapping_data(function(){
+        loadMultipleData(DataToLoad,SenseBoxDisplaySettings);
+    });
+    
 }
 
 function ClearMappingSB(){
@@ -32,7 +38,16 @@ sensebox_settings = JSON.parse(sensebox_settings_json[1]);
 sensebox_mapping = JSON.parse(sensebox_mapping_json[1]);
 station_mapping = JSON.parse(sensebox_station_mapping_json[1]);
 
-for(var x =0; x< sensebox_mapping_json[1].length;x++){
+document.getElementById("SenseboxUploadInterval").onchange = null;
+document.getElementById("SenseboxUploadInterval").value = sensebox_settings.SENSEBOX_TXINTERVALL;
+document.getElementById("SenseboxUploadInterval").onchange = SenseBoxUploadIntervalChanged;
+
+document.getElementById("SenseboxUploadEnable").onchange = null;
+document.getElementById("SenseboxUploadEnable").value = sensebox_settings.SENSEBOX_ENA;
+document.getElementById("SenseboxUploadEnable").onchange = SenseboxUploadEnableChanged;
+
+
+for(var x =0; x< sensebox_mapping.Mapping.length;x++){
     var row = myNode.insertRow(-1);
     var cell1 = row.insertCell(0);
     var cell2 = row.insertCell(1);
@@ -50,26 +65,28 @@ for(var x =0; x< sensebox_mapping_json[1].length;x++){
     //Create and append select list
     var selectList = document.createElement("select");
     selectList.setAttribute("id", "SenseboxChSelect"+x);
-    selectList.setAttribute('onchange','MappingChannelChanged('+x+');');
+    selectList.setAttribute('onchange','SenseboxChSelectChanged('+x+');');
     var sensbox_mapped_ch  = sensebox_mapping.Mapping[x].STA_Channel;
     var option = document.createElement("option");
-
     var mapping_exists= false;
     for(var t=0;t<station_mapping.Mapping.length;t++){
-
+        var vmpg = channel_valid_mapped( t );
         if(station_mapping.Mapping[t].Bus!=0){
             if(sensbox_mapped_ch === t ){
                 mapping_exists = true;
             }
-            option = document.createElement("option");
-            option.setAttribute("value",t);
-            option.text = t;
-            selectList.appendChild(option);
+            if(vmpg.valid === true ){
+                option = document.createElement("option");
+                option.setAttribute("value",t);
+                option.text = t+" ( " +vmpg.name+" )";
+                selectList.appendChild(option);
+            }
         }
        
 
     }
     if(mapping_exists === false){
+
         option = document.createElement("option");
         option.setAttribute("value",sensbox_mapped_ch);
         option.text = sensbox_mapped_ch + "(unmapped)";
@@ -98,10 +115,9 @@ for(var x =0; x< sensebox_mapping_json[1].length;x++){
     EnaListHtml.appendChild(option);
     
 
-
     //Create and append select list
-    EnaListHtml.setAttribute("id", "EnaList"+x);
-    EnaListHtml.setAttribute('onchange','MappingSelectionChanged('+x+');');
+    EnaListHtml.setAttribute("id", "SenseboxEnaList"+x);
+    EnaListHtml.setAttribute('onchange','SenseboxEnaListSelectionChanged('+x+');');
     cell3.appendChild(EnaListHtml);
     if(true === sensebox_mapping.Mapping[x].Enabled){
         EnaListHtml.value = "true";
@@ -132,11 +148,26 @@ function KeyID_Changed( Channel ){
     myNode.style.color="red";
 }
 
-function MappingChannelChanged( Channel ){
-//Mapping channel has been changed 
+function SenseboxChSelectChanged( Channel ){
+    //Mapping channel has been changed 
+    var el = document.getElementById("SenseboxChSelect"+Channel);
 
 }
 
-function EnableChannelChanged( Channel ){
-//Enabled has been changed 
+function SenseboxEnaListSelectionChanged( Channel ){
+    //Enabled has been changed 
+    var el = document.getElementById("SenseboxEnaList"+Channel);
+}
+
+function SenseboxUploadEnableChanged( ){
+    var el = document.getElementById("SenseboxUploadEnable");
+
+}
+
+function SenseBoxUploadIntervalChanged( ){
+    var el = document.getElementById("SenseboxUploadInterval");
+    if(true == el.validity.valid ){
+        //We can process the input....
+    }
+
 }

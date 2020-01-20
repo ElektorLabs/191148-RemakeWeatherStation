@@ -3,6 +3,7 @@
 #include "datastore.h"
 #include <ArduinoJson.h>
 #include <SPIFFS.h>
+#include <Update.h>
 
 WebServer* server = NULL;
 
@@ -12,6 +13,11 @@ void getWiFiSettings( void );
 void setWiFiSettings( void );
 void restart( void );
 void getSSIDList( void );
+
+//This will even work if the spiffs is not mounatable or empty
+const char* serverFirmwareIndex = "<form method='POST' action='/update/fimrware' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form>";
+const char* serverSPIFFSIndex = "<form method='POST' action='/update/spiffs' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form>";
+
 
 /**************************************************************************************************
  *    Function      : getContentType
@@ -63,8 +69,14 @@ void sendFile() {
     file.close();
   }
   else {
-    Serial.println("File '" + path + "' doesn't exist");
-    server->send(404, "text/plain", "The requested file doesn't exist");
+    if(path=="/index.html"){
+      //If we are here the index html is missing so no webconten at all
+      server->sendHeader("Connection", "close");
+      server->send(200, "text/html", serverSPIFFSIndex);
+    } else {
+      Serial.println("File '" + path + "' doesn't exist");
+      server->send(404, "text/plain", "The requested file doesn't exist");
+    }
   }
   
 
@@ -79,6 +91,55 @@ void sendFile() {
  **************************************************************************************************/
 void sendData(String data) {
   server->send(200, "text/plain", data);
+}
+
+
+void UpdateUploadDone( void ){
+  server->sendHeader("Connection", "close");
+  server->send(200, "text/plain", (Update.hasError()) ? "FAIL" : "OK");
+  ESP.restart();
+}
+
+void UpdateFirmwareProcess( void ){
+  HTTPUpload& upload = server->upload();
+    if (upload.status == UPLOAD_FILE_START) {
+      Serial.printf("Update: %s\n", upload.filename.c_str());
+      if (!Update.begin(UPDATE_SIZE_UNKNOWN,U_FLASH,-1,LOW )) { //start with max available size
+        Update.printError(Serial);
+      }
+    } else if (upload.status == UPLOAD_FILE_WRITE) {
+      /* flashing firmware to ESP*/
+      if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) {
+        Update.printError(Serial);
+      }
+    } else if (upload.status == UPLOAD_FILE_END) {
+      if (Update.end(true)) { //true to set the size to the current progress
+        Serial.printf("Update Success: %u\nRebooting...\n", upload.totalSize);
+      } else {
+        Update.printError(Serial);
+      }
+    }
+}
+
+void UpdateSPIFFSProcess( void ){
+  HTTPUpload& upload = server->upload();
+    if (upload.status == UPLOAD_FILE_START) {
+      Serial.printf("Update: %s\n", upload.filename.c_str());
+      if (!Update.begin(UPDATE_SIZE_UNKNOWN,U_SPIFFS  ,-1,LOW )) { //start with max available size
+        Update.printError(Serial);
+      }
+    } else if (upload.status == UPLOAD_FILE_WRITE) {
+      /* flashing firmware to ESP*/
+      if (Update.write(upload.buf, upload.currentSize) != upload.currentSize) {
+        Update.printError(Serial);
+      }
+    } else if (upload.status == UPLOAD_FILE_END) {
+      if (Update.end(true)) { //true to set the size to the current progress
+        Serial.printf("Update Success: %u\nRebooting...\n", upload.totalSize);
+      } else {
+        Update.printError(Serial);
+      }
+    }
 }
 
 
@@ -99,10 +160,23 @@ void SetupWebServer() {
   server->on("/getSSIDList", HTTP_GET, getSSIDList);
   server->on("/restart", HTTP_GET, restart);
 
+
+  //This is for the Webupdate for the firmware
+   server->on("/update/fimrware.html", HTTP_GET, []() {
+      server->sendHeader("Connection", "close");
+      server->send(200, "text/html", serverFirmwareIndex);
+   });
+   server->on("/update/fimrware", HTTP_POST, UpdateUploadDone, UpdateFirmwareProcess);
+     server->on("/update/spiffs.html", HTTP_GET, []() {
+      server->sendHeader("Connection", "close");
+      server->send(200, "text/html", serverSPIFFSIndex);
+   });
+   server->on("/update/spiffs", HTTP_POST, UpdateUploadDone, UpdateSPIFFSProcess);
+
   //access blacklist
   server->on("/mapping.json", HTTP_GET, sendError404);
 
-
+  //Webupdate functions
 
     
     server->onNotFound(sendFile); //handle everything except the above things

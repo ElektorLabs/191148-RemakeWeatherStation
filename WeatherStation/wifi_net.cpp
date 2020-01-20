@@ -9,6 +9,8 @@
 #include "webserver_sensebox_fnc.h"
 #include "webserver_sdcard_fnc.h"
 #include "webserver_thinkspeak_fnc.h"
+#include "webserver_time_fnc.h"
+#include "webserver_mqtt_fnc.h"
 #include "wifi_net.h"
 
 #define ESP_WPS_MODE      WPS_TYPE_PBC
@@ -708,9 +710,11 @@ void configureServer( void ){
   SetupWebServer();
   //We also need to register the custom function extensions
   Webserver_Map_FunctionsRegister(WebserverGetHandle());
+  Webserver_Time_FunctionsRegister(WebserverGetHandle());
   Webserver_SenseBox_FunctionsRegister(WebserverGetHandle());
   Webserver_SDCard_FunctionsRegister(WebserverGetHandle());
   Webserver_Thinkspeak_FunctionsRegister(WebserverGetHandle());
+  Webserver_MQTT_FunctionsRegister(WebserverGetHandle());
 
 }
 
