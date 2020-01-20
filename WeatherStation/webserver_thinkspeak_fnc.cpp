@@ -23,11 +23,11 @@ void Webserver_Thinkspeak_FunctionsRegister(WebServer* server){
     ThinkspeakWebserver = server;
 
     //Register the requiered function calls
-    server->on("/thinkspeak/settings.dat", HTTP_POST, SetThinkspeakServerSettings);
-    server->on("/thinkspeak/settings.json", HTTP_GET, GetThinkspeakSeverSettings);
-    server->on("/thinkspeak/mapping/{}", HTTP_GET, GetThinkspeakChMapping );
-    server->on("/thinkspeak/mapping/{}", HTTP_POST, SetThinkspeakChMapping );
-    server->on("/thinkspeak/mapping.json", HTTP_GET, GetThinkspeakMapping);
+    server->on("/thingspeak/settings.dat", HTTP_POST, SetThinkspeakServerSettings);
+    server->on("/thingspeak/settings.json", HTTP_GET, GetThinkspeakSeverSettings);
+    server->on("/thingspeak/mapping/{}", HTTP_GET, GetThinkspeakChMapping );
+    server->on("/thingspeak/mapping/{}", HTTP_POST, SetThinkspeakChMapping );
+    server->on("/thingspeak/mapping.json", HTTP_GET, GetThinkspeakMapping);
     
 }
 
@@ -157,13 +157,13 @@ void SetThinkspeakChMapping( void ){
         return;
     }
    
-     ThinkspeakUpload::ThinkspeakMapping_t Mapping;
+    ThinkspeakUpload::ThinkspeakMapping_t Mapping;
     String IDs = server->pathArg(0);//This will be the channel we like to set
     int32_t Ch = IDs.toInt();
     if( (Ch<0) ){
         Ch=0;
     }
-     Mapping.enable = false;
+    Mapping =  Thsp->GetMapping(Ch );
     if( ! server->hasArg("THINKSPEAK_CH_ENA") || server->arg("THINKSPEAK_CH_ENA") == NULL ) { 
     /* we are missing something here */
     } else { 
@@ -174,7 +174,6 @@ void SetThinkspeakChMapping( void ){
         Mapping.enable = value;
     }
 
-    Mapping.StationChannelIdx=0;
     if( ! server->hasArg("THINKSPEAK_STA_CH") || server->arg("THINKSPEAK_STA_CH") == NULL ) { 
         /* we are missong something here */
     } else { 

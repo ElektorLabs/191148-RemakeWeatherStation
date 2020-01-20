@@ -136,6 +136,9 @@ void SenseBoxUpload::WriteSettings(){
     doc["Enabled"] = Settings.Enabled; //If the uplaod is enabled or not 
     serializeJson(doc, file);
     file.close();
+    if(TaskData.CfgSem!=nullptr){
+      xSemaphoreGive(TaskData.CfgSem);
+    }
 
 
 }
@@ -278,6 +281,7 @@ String SenseBoxUpload::performRequest(WiFiClient* c , String host, String url, i
       c->stop();
       return "";
     }
+    delay(1);
   }
   //read client reply
   String response;
@@ -311,6 +315,9 @@ void SenseBoxUpload::UploadTaskFnc(void* params){
     } else {
       WaitTime = portMAX_DELAY;
     }
+    Serial.print("Sensebox will upload in ");
+    Serial.print(WaitTime);
+    Serial.println(" Ticks( ms )");
     if( false == xSemaphoreTake( TaskData->CfgSem, WaitTime ) ){
       //No Configchange at all we can simpy upload the data 
       //If WiFi is in Start-Stop-mode activate it now.......

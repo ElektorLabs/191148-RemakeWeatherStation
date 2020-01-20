@@ -3,9 +3,9 @@ var connectedsensors=null;
 var supportedsensors=null;
 var mapping=null;
 
-var connectedsensors_json = ["testdata/connectedsensors.json", null];
-var supportedsensors_json = ["testdata/supportedsensors.json",null];
-var mapping_json = [ "testdata/mappingdata.json", null];
+var connectedsensors_json = ["/devices/connectedsensors.json", null];
+var supportedsensors_json = ["/devices/supportedsensors.json",null];
+var mapping_json = [ "/mapping/mappingdata.json", null];
 var MappingDataToLoad = [connectedsensors_json, supportedsensors_json, mapping_json ];
 
 function load_mapping_data( callback_on_done){

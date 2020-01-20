@@ -3,9 +3,9 @@ var thinkspeak_mapping ;
 
 
 
-var thinkspeak_settings_json = ["testdata/thinkspeak/settings.json", null];
-var thinkspeak_mapping_json = ["testdata/thinkspeak/mapping.json",null];
-var station_mappin_json = [ "testdata/mappingdata.json", null];
+var thinkspeak_settings_json = ["thingspeak/settings.json", null];
+var thinkspeak_mapping_json = ["thingspeak/mapping.json",null];
+var station_mappin_json = [ "mapping/mappingdata.json", null];
 var TSDataToLoad = [thinkspeak_settings_json, thinkspeak_mapping_json, station_mappin_json ];
 
 function thinkspeak_js_loaded(){
@@ -37,6 +37,8 @@ const myNode = document.getElementById("ThinkspeakMappingTableBtn");
 thinkspeak_settings = JSON.parse(thinkspeak_settings_json[1]);
 thinkspeak_mapping = JSON.parse(thinkspeak_mapping_json[1]);
 station_mapping = JSON.parse(station_mappin_json[1]);
+
+document.getElementById("ThingspeakAPIWriteKey").value = thinkspeak_settings.APIKEY;
 
 
 document.getElementById("ThinkspeakUploadInterval").onchange = null;
@@ -144,11 +146,45 @@ var el = document.getElementById("TsEnaList"+Channel);
 
 function ThinkspeakUploadEnableChanged( ){
     var el = document.getElementById("ThinkspeakUploadEnable");
+    var url = GenerateHostUrl("/thingspeak/settings.dat");
+    var data = [];
+    var val = el.value;
+    data.push({key:"THINKSPEAK_ENA",
+                value: val});
+    sendData(url,data); 
 }
 
 function ThinkspeakUploadIntervalChanged(){
     var el = document.getElementById("ThinkspeakUploadInterval");
     if(true == el.validity.valid ){
         //We can process the input....
+        var url = GenerateHostUrl("/thingspeak/settings.dat");
+        var data = [];
+        var val = el.value;
+        data.push({key:"THINKSPEAK_TXINTERVALL",
+                    value: val});
+        sendData(url,data);
     }
+}
+
+function ThingSpeakAPIKeyChanged(){
+    var myNode = document.getElementById("ThingspeakAPIWriteKey");
+    myNode.style.color="red";
+} 
+function ThingSpeakAPIKeyMayChanged(){
+       //Key has may changed as we use to onbluc function.....
+       var myNode = document.getElementById("ThingspeakAPIWriteKey");
+       var id = myNode.value;
+       var org_id = thinkspeak_settings.APIKEY;
+       if(id !=org_id ){
+          //We need to write the new value back           
+            var url = GenerateHostUrl("/thingspeak/settings.dat");
+            var data = [];
+            data.push({key:"APIKEY",
+                        value: id});
+            sendData(url,data); 
+
+
+       }
+       myNode.style.color="black";
 }

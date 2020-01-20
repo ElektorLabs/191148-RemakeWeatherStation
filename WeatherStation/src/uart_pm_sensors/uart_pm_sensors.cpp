@@ -252,7 +252,7 @@ bool UART_PM_Sensors::GetSensorList( SensorUnitInfo_t* List, uint8_t capacity, u
 bool UART_PM_Sensors::GetConnectedSensorList( SensorUnitInfo_t* List, uint8_t capacity, uint8_t* used_elements, bool mustbedetected){
        
         if( (true == mustbedetected ) && (false == SensorDetected) ){
-            Serial.println("No Serial Sensors detected");
+            //Serial.println("No Serial Sensors detected");
             return true;
         }
         switch( SelectedDriver ){

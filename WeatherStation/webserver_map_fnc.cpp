@@ -137,7 +137,7 @@ void response_connectedsensors( void ){
     //We need to collect a whole buch of data for this one......
     VALUEMAPPING::SensorElementEntry_t SensorList[64];
     uint8_t SensorCount = SensorMapping.GetConnectedSensors(SensorList,64);
-    Serial.printf("Sensors supported: %i \n\r", SensorCount);
+    //Serial.printf("Sensors supported: %i \n\r", SensorCount);
     String data="";
     /*
           SensorBus_t Bus;
@@ -164,7 +164,7 @@ void response_supportedsensors( void ){
     //We need to collect a whole buch of data for this one......
     VALUEMAPPING::SensorElementEntry_t SensorList[64];
     uint8_t SensorCount = SensorMapping.GetSensors(SensorList,64);
-    Serial.printf("Sensors supported: %i \n\r", SensorCount);
+    //Serial.printf("Sensors supported: %i \n\r", SensorCount);
     String data="";
     /*
           SensorBus_t Bus;

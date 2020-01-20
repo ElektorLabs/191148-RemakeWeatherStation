@@ -171,7 +171,12 @@ void setup() {
     Serial.println("Force System to AP");
     initWiFi( false , true );   
   }
-  vTaskDelay(10000);
+  Serial.println("Reduce powerusage for WiFi(10s)");
+  for(uint32_t i=0;i<10000;i++){
+    vTaskDelay(1);
+    NetworkLoopTask();
+  } 
+  Serial.println("Continue boot");
   if ( false == LORAWAN.begin( RFM95_NSS, 0xFF , 0xFF, RFM95_DIO0, RFM95_DIO1, RFM95_DIO2 ) ){
     //LoRa Module not found, we won't schedule any transmission
   } else {

@@ -162,7 +162,7 @@ void SetSenseboxChMapping( void ){
     if( (Ch<0) ){
         Ch=0;
     }
-     Mapping.enable = false;
+    Mapping = Sbxptr->GetMapping( Ch ); //Load current Data and modify it....
     if( ! server->hasArg("SENSEBOX_CH_ENA") || server->arg("SENSEBOX_CH_ENA") == NULL ) { 
     /* we are missing something here */
     } else { 
@@ -173,7 +173,7 @@ void SetSenseboxChMapping( void ){
         Mapping.enable = value;
     }
 
-    Mapping.StationChannelIdx=0;
+  
     if( ! server->hasArg("SENSEBOX_STA_CH") || server->arg("SENSEBOX_STA_CH") == NULL ) { 
         /* we are missong something here */
     } else { 

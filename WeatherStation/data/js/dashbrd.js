@@ -3,7 +3,10 @@ var AutoUpdate = null;
 function showDashboard(){
     showView("MainPage");
     Dashbaord_update_values();
-    AutoUpdate = setInterval(AutomaticUpdate, 30000); //every 30 seconds
+    if(AutoUpdate != null){
+        clearInterval(AutoUpdate);
+    }
+    AutoUpdate = setInterval(AutomaticUpdate, 10000); //every 30 seconds
 }
 
 function AutomaticUpdate(){
@@ -38,25 +41,35 @@ function collect_sensors_to_read(callback_on_done){
         //We now have json objects if all went well
         //if data is null there was an error inside the JSON
         //The internal ones we try to keep displayed
-        UpdateGauge("cvs_windspeed",25);
-        UpdateGauge("cvs_winddirection",125);
-
-        if(parsed_data[2][1]==null){
-            UpdateGauge("cvs_humidity",-1);
+    
+        if(parsed_data[0][1]==null){
+            UpdateGaug("cvs_windspeed",-1);
         } else {
-            UpdateGauge("cvs_humidity",55);
+            UpdateGauge("cvs_windspeed",parsed_data[0][1].value);
         }
 
-        if(parsed_data[3][1]==null){
+        if(parsed_data[1][1]==null){
+            UpdateGaug("cvs_winddirection",-1);
+        } else {
+            UpdateGauge("cvs_winddirection",parsed_data[1][1].value);
+        }
+
+        if(parsed_data[4][1]==null){
+            UpdateGaug("cvs_humidity",-1);
+        } else {
+            UpdateGauge("cvs_humidity",parsed_data[4][1].value);
+        }
+
+        if(parsed_data[2][1]==null){
             UpdateGauge("cvs_temperature",-273);
         } else {
-            UpdateGauge("cvs_temperature",-12);
+            UpdateGauge("cvs_temperature",parsed_data[2][1].value);
         }
 
         if(parsed_data[3][1]==null){
             UpdateGauge("cvs_pressure",0);
         } else {
-            UpdateGauge("cvs_pressure",1000);
+            UpdateGauge("cvs_pressure",parsed_data[3][1].value);
         }
 
         

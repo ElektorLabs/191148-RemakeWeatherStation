@@ -57,10 +57,10 @@ uint8_t VALUEMAPPING::GetConnectedSensors( SensorElementEntry_t* List, uint8_t c
     if(IntSensors != nullptr ){
         
         if(true == IntSensors->GetConnectedSensorList(IntSensorList, ( sizeof( IntSensorList ) / sizeof( IntSensorList[0] ) )  ,&IntSensorListElementCnt, true)){
-            Serial.printf("Collected %i INTERNAL Sensors\n\r",IntSensorListElementCnt);
+            //Serial.printf("Collected %i INTERNAL Sensors\n\r",IntSensorListElementCnt);
         } else {
             //OutOfMemory
-            Serial.println("INTERNAL SENSORLIST OUT OF MEMORY");
+            //Serial.println("INTERNAL SENSORLIST OUT OF MEMORY");
         }
     }
     
@@ -68,21 +68,21 @@ uint8_t VALUEMAPPING::GetConnectedSensors( SensorElementEntry_t* List, uint8_t c
         //Collect all I2C Sensors
         if(true == I2CSensorBus->GetConnectedSensorList(I2CSensorList, ( sizeof( I2CSensorList ) / sizeof( I2CSensorList[0] ) ), &I2CSensorListElementCnt, true ) ){
             //Calculate the remaining capacity
-           Serial.printf("Collected %i I2C Sensors\n\r",I2CSensorListElementCnt);
+           //Serial.printf("Collected %i I2C Sensors\n\r",I2CSensorListElementCnt);
         } else {
            //OutOfMemory
-           Serial.println("I2C SENSORLIST OUT OF MEMORY");
+           //Serial.println("I2C SENSORLIST OUT OF MEMORY");
         }
     }
 
     if(PMSensors != nullptr){
         if(true == PMSensors->GetConnectedSensorList(PMSensorList, ( sizeof( PMSensorList ) / sizeof( PMSensorList[0] ) ), &PMSensorListElementCnt ,true) ){
             //Calculate the remaining capacity
-            Serial.printf("Collected %i UART Sensors\n\r",PMSensorListElementCnt);
+            //Serial.printf("Collected %i UART Sensors\n\r",PMSensorListElementCnt);
            
         } else {
            //OutOfMemory
-           Serial.println("UART SENSORLIST OUT OF MEMORY");
+           //Serial.println("UART SENSORLIST OUT OF MEMORY");
         }
     }
 
@@ -139,10 +139,10 @@ uint8_t VALUEMAPPING::GetSensors( SensorElementEntry_t* List, uint8_t capacity){
     if(IntSensors != nullptr ){
         
         if(true == IntSensors->GetSensorList(IntSensorList, ( sizeof( IntSensorList ) / sizeof( IntSensorList[0] ) )  ,&IntSensorListElementCnt)){
-            Serial.printf("Collected %i INTERNAL Sensors\n\r",IntSensorListElementCnt);
+            //Serial.printf("Collected %i INTERNAL Sensors\n\r",IntSensorListElementCnt);
         } else {
             //OutOfMemory
-            Serial.println("INTERNAL SENSORLIST OUT OF MEMORY");
+            //Serial.println("INTERNAL SENSORLIST OUT OF MEMORY");
         }
     }
     
@@ -150,21 +150,21 @@ uint8_t VALUEMAPPING::GetSensors( SensorElementEntry_t* List, uint8_t capacity){
         //Collect all I2C Sensors
         if(true == I2CSensorBus->GetSensorList(I2CSensorList, ( sizeof( I2CSensorList ) / sizeof( I2CSensorList[0] ) ), &I2CSensorListElementCnt ) ){
             //Calculate the remaining capacity
-           Serial.printf("Collected %i I2C Sensors\n\r",I2CSensorListElementCnt);
+           //Serial.printf("Collected %i I2C Sensors\n\r",I2CSensorListElementCnt);
         } else {
            //OutOfMemory
-           Serial.println("I2C SENSORLIST OUT OF MEMORY");
+           //Serial.println("I2C SENSORLIST OUT OF MEMORY");
         }
     }
 
     if(PMSensors != nullptr){
         if(true == PMSensors->GetSensorList(PMSensorList, ( sizeof( PMSensorList ) / sizeof( PMSensorList[0] ) ), &PMSensorListElementCnt ) ){
             //Calculate the remaining capacity
-            Serial.printf("Collected %i UART Sensors\n\r",PMSensorListElementCnt);
+            //Serial.printf("Collected %i UART Sensors\n\r",PMSensorListElementCnt);
            
         } else {
            //OutOfMemory
-           Serial.println("UART SENSORLIST OUT OF MEMORY");
+           //Serial.println("UART SENSORLIST OUT OF MEMORY");
         }
     }
 

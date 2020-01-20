@@ -3,9 +3,9 @@ var sensebox_mapping ;
 var station_mapping ;
 
 
-var sensebox_settings_json = ["testdata/sensebox/settings.json", null];
-var sensebox_mapping_json = ["testdata/sensebox/mapping.json",null];
-var sensebox_station_mapping_json = [ "testdata/mappingdata.json", null];
+var sensebox_settings_json = ["sensebox/settings.json", null];
+var sensebox_mapping_json = ["sensebox/mapping.json",null];
+var sensebox_station_mapping_json = [ "mapping/mappingdata.json", null];
 var DataToLoad = [sensebox_settings_json, sensebox_mapping_json, sensebox_station_mapping_json ];
 
 function sensebox_js_loaded(){
@@ -34,10 +34,21 @@ function SenseBoxDisplaySettings(URL_to_Load){
     //We remove parts from the tabel an generate new ones
 const myNode = document.getElementById("SenseboxMappingTableBtn");
 //Next is to rebuild the table....
-sensebox_settings = JSON.parse(sensebox_settings_json[1]);
-sensebox_mapping = JSON.parse(sensebox_mapping_json[1]);
-station_mapping = JSON.parse(sensebox_station_mapping_json[1]);
+try{
+    sensebox_settings = JSON.parse(sensebox_settings_json[1]);
+} catch {
+    
+}
+try{
+    sensebox_mapping = JSON.parse(sensebox_mapping_json[1]);
+} catch{
 
+}
+try{
+    station_mapping = JSON.parse(sensebox_station_mapping_json[1]);
+} catch {
+
+}
 document.getElementById("SenseboxUploadInterval").onchange = null;
 document.getElementById("SenseboxUploadInterval").value = sensebox_settings.SENSEBOX_TXINTERVALL;
 document.getElementById("SenseboxUploadInterval").onchange = SenseBoxUploadIntervalChanged;
@@ -45,6 +56,10 @@ document.getElementById("SenseboxUploadInterval").onchange = SenseBoxUploadInter
 document.getElementById("SenseboxUploadEnable").onchange = null;
 document.getElementById("SenseboxUploadEnable").value = sensebox_settings.SENSEBOX_ENA;
 document.getElementById("SenseboxUploadEnable").onchange = SenseboxUploadEnableChanged;
+
+var elid = document.getElementById("SenseboxID");
+elid.style.color="black";
+elid.value = sensebox_settings.SENSEBOX_ID;
 
 
 for(var x =0; x< sensebox_mapping.Mapping.length;x++){
@@ -128,13 +143,25 @@ for(var x =0; x< sensebox_mapping.Mapping.length;x++){
 
 }
 
+//SENSEBOX_CH_ENA
+//SENSEBOX_STA_CH
+//SENSEBOX_CH_ID
+
 function KeyID_MayChanged( Channel ){
     //Key has may changed as we use to onbluc function.....
-    myNode = document.getElementById("SenseBoxID_"+Channel);
+    var myNode = document.getElementById("SenseBoxID_"+Channel);
     var id = myNode.value;
     var org_id = sensebox_mapping.Mapping[Channel].SensorID;
     if(id !=org_id ){
        //We need to write the new value back 
+       //The URL is a bit special here..../sensebox/mapping/[ChNo]
+       var url = GenerateHostUrl("/sensebox/mapping/"+Channel);
+       var data = [];
+       data.push({key:"SENSEBOX_CH_ID",
+                   value: id});
+       sendData(url,data); 
+
+
     }
     myNode.style.color="black";
 
@@ -144,30 +171,80 @@ function KeyID_MayChanged( Channel ){
 
 function KeyID_Changed( Channel ){
     //We change the color to red.....
-    myNode = document.getElementById("SenseBoxID_"+Channel);
+    var myNode = document.getElementById("SenseBoxID_"+Channel);
     myNode.style.color="red";
 }
 
 function SenseboxChSelectChanged( Channel ){
     //Mapping channel has been changed 
     var el = document.getElementById("SenseboxChSelect"+Channel);
+    var val = el.value;
+    //The URL is a bit special here..../sensebox/mapping/[ChNo]
+    var url = GenerateHostUrl("/sensebox/mapping/"+Channel);
+    var data = [];
+    data.push({key:"SENSEBOX_STA_CH",
+                value: val});
+    sendData(url,data); 
 
 }
 
 function SenseboxEnaListSelectionChanged( Channel ){
     //Enabled has been changed 
     var el = document.getElementById("SenseboxEnaList"+Channel);
+    var val = el.value;
+    //The URL is a bit special here..../sensebox/mapping/[ChNo]
+    var url = GenerateHostUrl("/sensebox/mapping/"+Channel);
+    var data = [];
+    data.push({key:"SENSEBOX_CH_ENA",
+                value: val});
+    sendData(url,data); 
+
 }
 
 function SenseboxUploadEnableChanged( ){
     var el = document.getElementById("SenseboxUploadEnable");
+    var val = el.value;
+    //We can process the input....
+    var url = GenerateHostUrl("/sensebox/settings.dat");
+    var data = [];
+    data.push({key:"SENSEBOX_ENA",
+                value: val});
+    sendData(url,data); 
 
 }
 
 function SenseBoxUploadIntervalChanged( ){
     var el = document.getElementById("SenseboxUploadInterval");
     if(true == el.validity.valid ){
+        var val = el.value;
         //We can process the input....
+        var url = GenerateHostUrl("/sensebox/settings.dat");
+        var data = [];
+        data.push({key:"SENSEBOX_TXINTERVALL",
+                    value: val});
+        sendData(url,data); 
     }
 
+}
+
+function SensboxIDChanged(){
+    var myNode = document.getElementById("SenseboxID");
+    myNode.style.color="red";
+} 
+function SensboxIDMayChanged(){
+       //Key has may changed as we use to onbluc function.....
+       var myNode = document.getElementById("SenseboxID");
+       var id = myNode.value;
+       var org_id = sensebox_settings.SENSEBOX_ID;
+       if(id !=org_id ){
+          //We need to write the new value back           
+            var url = GenerateHostUrl("/sensebox/settings.dat");
+            var data = [];
+            data.push({key:"SENSEBOX_ID",
+                        value: id});
+            sendData(url,data); 
+
+
+       }
+       myNode.style.color="black";
 }
