@@ -87,7 +87,15 @@ void SenseBoxUpload::ReadMapping( void ){
         const size_t capacity = JSON_ARRAY_SIZE(64) + JSON_OBJECT_SIZE(1) + 64*JSON_OBJECT_SIZE(3) + 1580;
         DynamicJsonDocument doc(capacity);
         deserializeJson(doc, file);
+        DeserializationError err =  deserializeJson(doc, file);
+        if(err) {
+          Serial.print(F("deserializeJson() failed with code "));
+          Serial.println(err.c_str());
+        }
         JsonArray SenseboxMapping = doc["Mapping"];
+        if(SenseboxMapping.isNull()==true){
+          Serial.println("Dezerialize Sensebox failed");
+        }
         for(uint8_t i=0;i<( sizeof(Mapping) / sizeof( Mapping[0] ));i++){
             JsonObject MappingObj = SenseboxMapping[i];
            

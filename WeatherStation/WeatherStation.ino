@@ -66,7 +66,7 @@
 #include "./wifi_net.h"
 
 #include "./src/SenseBox/SenseBox.h"
-#include "./src/ThinkSpeak/thinkspeak.h"
+#include "./src/ThingSpeak/thingspeak.h"
 
 #include "./src/sdcard/sdcard_if.h"
 
@@ -199,7 +199,7 @@ void setup() {
   SenseBox.RegisterDataAccess( ReadSensorData );
   Webserver_SenseBox_RegisterSensebox(&SenseBox);
 
-  ThinkSpeak.begin();
+  ThinkSpeak.begin(false); //We need to stick to HTTP
   ThinkSpeak.RegisterDataAccess( ReadSensorData );
   Webserver_Thinkspeak_RegisterThinkspeak(&ThinkSpeak);
   //Next is the SD-Card access, and this is a bit tricky
@@ -266,42 +266,7 @@ void loop() {
 /* This is a generic test function */
 void DataLoggingTask(void* param){
   //We will force a mapping for the internal sensors here , just for testing
-  VALUEMAPPING::SensorElementEntry_t Element;
-  Element.Bus = VALUEMAPPING::SensorBus_t::INTERNAL;
-  Element.ValueType = DATAUNITS::SPEED;
-  Element.ChannelIDX = 0;
-  SensorMapping.SetMappingForChannel(0, Element);
 
-
-  Element.Bus = VALUEMAPPING::SensorBus_t::INTERNAL;
-  Element.ValueType = DATAUNITS::DIRECTION;
-  Element.ChannelIDX = 0;
-  
-  SensorMapping.SetMappingForChannel(1, Element);
-  
-  Element.Bus = VALUEMAPPING::SensorBus_t::INTERNAL;
-  Element.ValueType = DATAUNITS::RAINAMOUNT;
-  Element.ChannelIDX = 0;
-  
-  SensorMapping.SetMappingForChannel(2, Element);
-
-  Element.Bus = VALUEMAPPING::SensorBus_t::I2C;
-  Element.ValueType = DATAUNITS::TEMPERATURE;
-  Element.ChannelIDX = 0;
-  
-  SensorMapping.SetMappingForChannel(3, Element);
-  
-  Element.Bus = VALUEMAPPING::SensorBus_t::I2C;
-  Element.ValueType = DATAUNITS::HUMIDITY;
-  Element.ChannelIDX = 0;
-
-  SensorMapping.SetMappingForChannel(4, Element);
-  
-  Element.Bus = VALUEMAPPING::SensorBus_t::I2C;
-  Element.ValueType = DATAUNITS::PRESSURE;
-  Element.ChannelIDX = 0;
-  
-  SensorMapping.SetMappingForChannel(5, Element);
   
 
 
@@ -320,7 +285,7 @@ void DataLoggingTask(void* param){
 
     }
     Serial.println("");
-  vTaskDelay(10000); //10s delay
+  vTaskDelay(60000); //60s delay
   }
 }
 

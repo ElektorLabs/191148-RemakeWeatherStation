@@ -137,11 +137,27 @@ for(var x =0; x< 8;x++){
 function ThinkspeakMappingChannelChanged( Channel ){
 //Mapping channel has been changed 
 var el = document.getElementById("ThinkspeakChSelect"+Channel);
+var val = el.value;
+//The URL is a bit special here..../sensebox/mapping/[ChNo]
+var url = GenerateHostUrl("/thingspeak/mapping/"+Channel);
+var data = [];
+data.push({key:"THINKSPEAK_STA_CH",
+            value: val});
+sendData(url,data); 
+
 }
 
 function ThinkspeakEnableChannelChanged( Channel ){
 //Enabled has been changed 
 var el = document.getElementById("TsEnaList"+Channel);
+var val = el.value;
+//The URL is a bit special here..../sensebox/mapping/[ChNo]
+var url = GenerateHostUrl("/thingspeak/mapping/"+Channel);
+var data = [];
+data.push({key:"THINKSPEAK_CH_ENA",
+            value: val});
+sendData(url,data); 
+
 }
 
 function ThinkspeakUploadEnableChanged( ){

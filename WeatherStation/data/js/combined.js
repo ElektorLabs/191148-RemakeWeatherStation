@@ -1285,8 +1285,8 @@ var thinkspeak_mapping ;
 
 
 
-var thinkspeak_settings_json = ["thinkspeak/settings.json", null];
-var thinkspeak_mapping_json = ["thinkspeak/mapping.json",null];
+var thinkspeak_settings_json = ["thingspeak/settings.json", null];
+var thinkspeak_mapping_json = ["thingspeak/mapping.json",null];
 var station_mappin_json = [ "mapping/mappingdata.json", null];
 var TSDataToLoad = [thinkspeak_settings_json, thinkspeak_mapping_json, station_mappin_json ];
 
@@ -1319,6 +1319,8 @@ const myNode = document.getElementById("ThinkspeakMappingTableBtn");
 thinkspeak_settings = JSON.parse(thinkspeak_settings_json[1]);
 thinkspeak_mapping = JSON.parse(thinkspeak_mapping_json[1]);
 station_mapping = JSON.parse(station_mappin_json[1]);
+
+document.getElementById("ThingspeakAPIWriteKey").value = thinkspeak_settings.APIKEY;
 
 
 document.getElementById("ThinkspeakUploadInterval").onchange = null;
@@ -1417,22 +1419,72 @@ for(var x =0; x< 8;x++){
 function ThinkspeakMappingChannelChanged( Channel ){
 //Mapping channel has been changed 
 var el = document.getElementById("ThinkspeakChSelect"+Channel);
+var val = el.value;
+//The URL is a bit special here..../sensebox/mapping/[ChNo]
+var url = GenerateHostUrl("/thingspeak/mapping/"+Channel);
+var data = [];
+data.push({key:"THINKSPEAK_STA_CH",
+            value: val});
+sendData(url,data); 
+
 }
 
 function ThinkspeakEnableChannelChanged( Channel ){
 //Enabled has been changed 
 var el = document.getElementById("TsEnaList"+Channel);
+var val = el.value;
+//The URL is a bit special here..../sensebox/mapping/[ChNo]
+var url = GenerateHostUrl("/thingspeak/mapping/"+Channel);
+var data = [];
+data.push({key:"THINKSPEAK_CH_ENA",
+            value: val});
+sendData(url,data); 
+
 }
 
 function ThinkspeakUploadEnableChanged( ){
     var el = document.getElementById("ThinkspeakUploadEnable");
+    var url = GenerateHostUrl("/thingspeak/settings.dat");
+    var data = [];
+    var val = el.value;
+    data.push({key:"THINKSPEAK_ENA",
+                value: val});
+    sendData(url,data); 
 }
 
 function ThinkspeakUploadIntervalChanged(){
     var el = document.getElementById("ThinkspeakUploadInterval");
     if(true == el.validity.valid ){
         //We can process the input....
+        var url = GenerateHostUrl("/thingspeak/settings.dat");
+        var data = [];
+        var val = el.value;
+        data.push({key:"THINKSPEAK_TXINTERVALL",
+                    value: val});
+        sendData(url,data);
     }
+}
+
+function ThingSpeakAPIKeyChanged(){
+    var myNode = document.getElementById("ThingspeakAPIWriteKey");
+    myNode.style.color="red";
+} 
+function ThingSpeakAPIKeyMayChanged(){
+       //Key has may changed as we use to onbluc function.....
+       var myNode = document.getElementById("ThingspeakAPIWriteKey");
+       var id = myNode.value;
+       var org_id = thinkspeak_settings.APIKEY;
+       if(id !=org_id ){
+          //We need to write the new value back           
+            var url = GenerateHostUrl("/thingspeak/settings.dat");
+            var data = [];
+            data.push({key:"APIKEY",
+                        value: id});
+            sendData(url,data); 
+
+
+       }
+       myNode.style.color="black";
 }function timesettings_js_loaded(){
     return true;
 }

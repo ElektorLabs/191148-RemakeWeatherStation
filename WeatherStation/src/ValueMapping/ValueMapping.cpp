@@ -432,8 +432,37 @@ void VALUEMAPPING::ReadConfig( void ){
          for(uint8_t i=0;i< ( sizeof(MappingTable) / sizeof( MappingTable[0] )  ) ; i++   ){
             MappingTable[i].Bus=NOTMAPPED;
          }
-         Serial.println("Write new Mapping");
-         WriteConfig();
+         //Next is to apply a default scheme.....
+       
+        MappingTable[0].Bus = VALUEMAPPING::SensorBus_t::INTERNAL;
+        MappingTable[0].ValueType = DATAUNITS::SPEED;
+        MappingTable[0].ChannelIDX = 0;
+       
+        MappingTable[1].Bus = VALUEMAPPING::SensorBus_t::INTERNAL;
+        MappingTable[1].ValueType = DATAUNITS::DIRECTION;
+        MappingTable[1].ChannelIDX = 0;
+        
+        
+        MappingTable[2].Bus = VALUEMAPPING::SensorBus_t::INTERNAL;
+        MappingTable[2].ValueType = DATAUNITS::RAINAMOUNT;
+        MappingTable[2].ChannelIDX = 0;
+        
+      
+        MappingTable[3].Bus = VALUEMAPPING::SensorBus_t::I2C;
+        MappingTable[3].ValueType = DATAUNITS::TEMPERATURE;
+        MappingTable[3].ChannelIDX = 0;
+        
+        
+        MappingTable[4].Bus = VALUEMAPPING::SensorBus_t::I2C;
+        MappingTable[4].ValueType = DATAUNITS::HUMIDITY;
+        MappingTable[4].ChannelIDX = 0;
+
+        MappingTable[5].Bus = VALUEMAPPING::SensorBus_t::I2C;
+        MappingTable[5].ValueType = DATAUNITS::PRESSURE;
+        MappingTable[5].ChannelIDX = 0;
+         
+        Serial.println("Write new Mapping");
+        WriteConfig();
 
     }
 

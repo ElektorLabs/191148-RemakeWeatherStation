@@ -3,7 +3,7 @@
 #include "SPIFFS.h"
 #include "sslCertificate.h"
 #include "../../wifi_net.h"
-#include "thinkspeak.h"
+#include "thingspeak.h"
 
 
 
@@ -48,7 +48,7 @@ void ThinkspeakUpload::RegisterDataAccess(ThinkspeakUpload::DataAccesFnc Fnc){
 
 void ThinkspeakUpload::WriteMapping( void ){
   //This will just convert the Mapping to JSON and write it to the local filesystem
-   File file = SPIFFS.open("/ThinkspeakMapping.json", FILE_WRITE);
+   File file = SPIFFS.open("/ThingSpeakMapping.json", FILE_WRITE);
     const size_t capacity = JSON_ARRAY_SIZE(64) + JSON_OBJECT_SIZE(1) + 64*JSON_OBJECT_SIZE(3)+(64*16);
     DynamicJsonDocument doc(capacity);
 
@@ -59,37 +59,56 @@ void ThinkspeakUpload::WriteMapping( void ){
             MappingObj["Channel"] = Mapping[i].StationChannelIdx;            
     }
     serializeJson(doc, file);
+    xSemaphoreGive(TaskData.CfgSem);
+
 }
 
 void ThinkspeakUpload::ReadMapping( void ){
 
 //Config will be stored as JSON String on SPIFFS
     //This makes mapping more complicated but will easen web access
-    if(SPIFFS.exists("/ThinkspeakMapping.json")){
+    if(SPIFFS.exists("/ThingSpeakMapping.json")){
         File file = SPIFFS.open("/ThinkspeakMapping.json");
         //We need to read the file into the ArduinoJson Parser
          /*
         ReadBufferingStream bufferingStream(file, 64);
         deserialzeJson(doc, bufferingStream);
         */
-        
         const size_t capacity = JSON_ARRAY_SIZE(64) + JSON_OBJECT_SIZE(1) + 64*JSON_OBJECT_SIZE(3) + 1580;
         DynamicJsonDocument doc(capacity);
-        deserializeJson(doc, file);
-        JsonArray SenseboxMapping = doc["Mapping"];
+        
+        ReadLoggingStream loggingStream(file, Serial);
+        DeserializationError err = deserializeJson(doc, file);
+        if(err) {
+          Serial.print(F("deserializeJson() failed with code "));
+          Serial.println(err.c_str());
+        }
+        JsonArray ThingspeakMapping = doc["Mapping"];
+        if(ThingspeakMapping.isNull()==true){
+          Serial.println("Thingspeak dezerilize failed");
+        }
         for(uint8_t i=0;i<( sizeof(Mapping) / sizeof( Mapping[0] ));i++){
-            JsonObject MappingObj = SenseboxMapping[i];
-           
-            Mapping[i].enable =MappingObj["Enabled"];
-            Mapping[i].StationChannelIdx = MappingObj["Channel"];
+
+            Mapping[i].enable =ThingspeakMapping[i]["Enabled"];
+            Mapping[i].StationChannelIdx = ThingspeakMapping[i]["Channel"];
+          
+            Serial.print("Read form File for Thingspeak Channel");
+            Serial.println(i);
+            Serial.print("Mapped to Station Channel:");
+            Serial.println(Mapping[i].StationChannelIdx);
+            if(Mapping[i].enable==true){
+              Serial.println("Channel is Enabled");
+            } else {
+            Serial.println("Channel is Disabled");
+            }
         }
     } else {
         //We need to create a blank mapping scheme
         for(uint32_t i=0;i<( sizeof(Mapping) / sizeof( Mapping[0] )  );i++){
-              Mapping[i].enable;
-              Mapping[i].StationChannelIdx;
+              Mapping[i].enable=false;
+              Mapping[i].StationChannelIdx=0;
          }
-         Serial.println("ThinkspeakUpload: Write blank config");
+         Serial.println("ThingspeakUpload: Write blank config");
          WriteMapping();
     }
 
@@ -97,15 +116,7 @@ void ThinkspeakUpload::ReadMapping( void ){
 
 void ThinkspeakUpload::WriteSettings(){
 
-/*
-{
- "SenseboxID": "000000000000000000000000000000",
- "UploadInterval":15,
- "Enabled":false
-}
-*/
-
-    File file = SPIFFS.open("/ThinkspeakSetting.json", FILE_WRITE);
+    File file = SPIFFS.open("/ThingSpeakSetting.json", FILE_WRITE);
     const size_t capacity = JSON_ARRAY_SIZE(64) + JSON_OBJECT_SIZE(1) + 64*JSON_OBJECT_SIZE(3)+(64*16);
     DynamicJsonDocument doc(capacity);
 
@@ -113,7 +124,7 @@ void ThinkspeakUpload::WriteSettings(){
     doc["UploadInterval"] = Settings.UploadInterval; //Interval in minutes for new data
     doc["Enabled"] = Settings.Enabled; //If the uplaod is enabled or not 
     serializeJson(doc, file);
-
+    xSemaphoreGive(TaskData.CfgSem);
 
 }
 
@@ -121,8 +132,8 @@ void ThinkspeakUpload::ReadSettings(){
     const size_t capacity = JSON_ARRAY_SIZE(64) + JSON_OBJECT_SIZE(1) + 64*JSON_OBJECT_SIZE(3)+(64*16);
     DynamicJsonDocument doc(capacity);
 
-      if(SPIFFS.exists("/ThinkspeakSetting.json")){
-        File file = SPIFFS.open("/ThinkspeakSetting.json");
+      if(SPIFFS.exists("/ThingSpeakSetting.json")){
+        File file = SPIFFS.open("/ThingSpeakSetting.json");
         deserializeJson(doc, file);
         
         const char* SenseboxID = doc["ThinkspeakAPIKey"]; 
@@ -166,14 +177,14 @@ bool ThinkspeakUpload::PostData(  ThinkspeakUpload* obj ) {
   String thingspeakApi = String(obj->Settings.ThingspealAPIKey);
 
   if(false == obj->Settings.Enabled){
-    Serial.println("Thinkspeak upload disabled");
+    Serial.println("ThingSpeak upload disabled");
     return false;
   }
   if (0 == obj->Settings.ThingspealAPIKey[0]) {
-    Serial.println("Thinkspeak API Key not set");
+    Serial.println("ThingSpeak API Key not set");
     return false;
   } 
-  Serial.println("Start Uploading to Thinkspeak");
+  Serial.println("Start Uploading to ThingSpeak");
   
   //As we still use the HTTP POST we need to generate the POST String
   String thingspeakHost = "api.thingspeak.com";
@@ -187,14 +198,14 @@ bool ThinkspeakUpload::PostData(  ThinkspeakUpload* obj ) {
       if(obj->DaFnc != nullptr ){
         if(true == obj->DaFnc(&value, obj->Mapping[i].StationChannelIdx) ){
           //Okay we got a reading, we add the data to the sting
-           thingspeakUrl += "&field" + String(i) + "=" + String(value); 
+           thingspeakUrl += "&field" + String((i+1)) + "=" + String(value); 
            added_fields++;
         } else {
           //We have a mapping problem at all.....
-          Serial.printf(" Thinkspeak upload: Requested Channel %i : No Mapped  for Stationchanne %i", i, obj->Mapping[i].StationChannelIdx);
+          Serial.printf(" ThigSpeak upload: Requested Channel %i : No Mapped  for Stationchanne %i", i, obj->Mapping[i].StationChannelIdx);
         }
       } else {
-        Serial.printf(" Thinkspeak upload: Requested Channel %i : no DataSource", i, obj->Mapping[i].StationChannelIdx);
+        Serial.printf(" ThingSpeak upload: Requested Channel %i : no DataSource", i, obj->Mapping[i].StationChannelIdx);
       }
         
     }
@@ -206,11 +217,11 @@ bool ThinkspeakUpload::PostData(  ThinkspeakUpload* obj ) {
   Serial.println("# End of String #");
   //Sainity check if we have any data
   if (0 ==added_fields) {
-    Serial.println("Thinkspeak API: Channels all disabled or mapping broken");
+    Serial.println("ThingSpeak API: Channels all disabled or mapping broken");
     return false;
   }
   
-  Serial.println("Uploading to thingspeak");  
+  Serial.println("Uploading to ThingSpeak");  
  
   if(true == obj->usesecure){
       clientptr=obj->clientS;
@@ -226,8 +237,10 @@ bool ThinkspeakUpload::PostData(  ThinkspeakUpload* obj ) {
     String resp ="";
     if(true==obj->usesecure){
       resp = performRequest(clientptr, thingspeakHost, thingspeakUrl,443);
+      Serial.println("Try to use HTTPS@443 for Thingspeak");
     } else {
-      resp = performRequest(clientptr, thingspeakHost, thingspeakUrl);
+      resp = performRequest(clientptr, thingspeakHost, thingspeakUrl,80);
+      Serial.println("Try to use HTTP@80 for Thingspeak");
     }
     ReleaseWiFiConnection();
     return (resp != "" && !resp.startsWith("0"));
@@ -257,11 +270,18 @@ String ThinkspeakUpload::performRequest(WiFiClient* c , String host, String url,
       c->stop();
       return "";
     }
+    delay(1);
   }
   //read client reply
   String response;
   while(c->available()) {
-    response = c->readStringUntil('\r');
+    char data = c->read();
+    response  = response + data;
+    if(data=='\r'){
+      break;
+    }
+    delay(1);
+
   }
   Serial.println("Response: " + response);
   c->stop();
@@ -288,13 +308,16 @@ void ThinkspeakUpload::UploadTaskFnc(void* params){
     } else {
       WaitTime = portMAX_DELAY;
     }
+    Serial.print("Thingspeak will upload in ");
+    Serial.print(WaitTime);
+    Serial.println(" Ticks( ms )");
     if( false == xSemaphoreTake( TaskData->CfgSem, WaitTime ) ){
       //No Configchange at all we can simpy upload the data 
-      Serial.println("Thinkspeak: Prepare Upload ( insert code here )");
+      Serial.println("Thingspeak: Prepare Upload ( insert code here )");
       PostData(TaskData->obj);
     } else {
       //We have a configchange 
-      Serial.println("Thinkspeak: Config changed, apply settings");
+      Serial.println("Thingspeak: Config changed, apply settings");
 
     }
 
@@ -312,18 +335,20 @@ uint8_t ThinkspeakUpload::GetMaxMappingChannels( void ){
 void ThinkspeakUpload::SetThinkspeakAPIKey( String ID ) {
   
   strncpy(Settings.ThingspealAPIKey, ID.c_str(), sizeof(Settings.ThingspealAPIKey));
-
+  WriteSettings();
 }
 
 void ThinkspeakUpload::SetThinkspeakEnable( bool Enable ) {
 
   Settings.Enabled=Enable;
+  WriteSettings();
 
 }
 
 void ThinkspeakUpload::SetThinkspeakUploadInterval( uint16_t Interval ) {
 
   Settings.UploadInterval=Interval;
+  WriteSettings();
 
 }
 
@@ -333,7 +358,7 @@ void ThinkspeakUpload::SetMapping(uint8_t Channel, ThinkspeakMapping_t Map){
   }
 
   Mapping[Channel] = Map;
-
+  WriteMapping();
 
 }
 
@@ -350,9 +375,17 @@ uint16_t ThinkspeakUpload::GetThinkspeakUploadInterval( void ) {
 }
 ThinkspeakUpload::ThinkspeakMapping_t ThinkspeakUpload::GetMapping(uint8_t Channel ){
    if( Channel >= ( sizeof(Mapping) / sizeof( Mapping[0] )  )  ){
-    Channel= ( sizeof(Mapping) / sizeof( Mapping[0] )  ) - 1;
+    Channel = ( sizeof(Mapping) / sizeof( Mapping[0] )  ) - 1;
   }
-
+  Serial.print("Return Thingspeak Channel");
+  Serial.println(Channel);
+  Serial.print("Mapped to Station Channel:");
+  Serial.println(Mapping[Channel].StationChannelIdx);
+  if(Mapping[Channel].enable==true){
+    Serial.print("Channel is Enabled");
+  } else {
+   Serial.print("Channel is Disabled");
+  }
   return Mapping[Channel];
 
 }
