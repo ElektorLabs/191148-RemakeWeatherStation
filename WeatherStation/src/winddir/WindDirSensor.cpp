@@ -96,6 +96,7 @@ WindDir_t WindDirSensor::GetAverage_10Sec( void ){
   // We now have an angle between 0° and 359°
   // Next is to divide it by 45° to get the enmum value
   uint8_t dir_en = dir_angle / 45;
+  
   return (WindDir_t)dir_en;
 }
 

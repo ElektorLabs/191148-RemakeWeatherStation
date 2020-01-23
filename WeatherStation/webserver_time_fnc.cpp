@@ -179,10 +179,10 @@ void ntp_settings_update( ){ /* needs to process NTP_ON, NTPWebTimeSvrName and N
     NTPCPtr->SetNTPSyncEna(true);  
   }
 
-  if( ! WebTimeSvr->hasArg("NTPWebTimeSvrName") || WebTimeSvr->arg("NTPWebTimeSvrName") == NULL ) { // If the POST request doesn't have username and password data
+  if( ! WebTimeSvr->hasArg("NTPServerName") || WebTimeSvr->arg("NTPServerName") == NULL ) { // If the POST request doesn't have username and password data
       
   } else {
-     NTPCPtr->SetServerName( WebTimeSvr->arg("NTPWebTimeSvrName") );
+     NTPCPtr->SetServerName( WebTimeSvr->arg("NTPServerName") );
   }
 
   if( ! WebTimeSvr->hasArg("ntp_update_delta") || WebTimeSvr->arg("ntp_update_delta") == NULL ) { // If the POST request doesn't have username and password data

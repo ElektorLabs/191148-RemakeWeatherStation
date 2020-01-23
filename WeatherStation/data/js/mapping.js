@@ -7,6 +7,7 @@ var connectedsensors_json = ["/devices/connectedsensors.json", null];
 var supportedsensors_json = ["/devices/supportedsensors.json",null];
 var mapping_json = [ "/mapping/mappingdata.json", null];
 var MappingDataToLoad = [connectedsensors_json, supportedsensors_json, mapping_json ];
+var SelectList=[]; //Will be array of array here....
 
 function load_mapping_data( callback_on_done){
     
@@ -134,6 +135,7 @@ const myNode = document.getElementById("ChannelMappingTableBtn");
 //Next is to rebuild the table....
 
 for(var x =0; x< 64;x++){
+    var ListEntry = [];
     var row = myNode.insertRow(-1);
     var cell1 = row.insertCell(0);
     var cell2 = row.insertCell(1);
@@ -146,7 +148,7 @@ for(var x =0; x< 64;x++){
    
     //Create and append select list
     var selectList = document.createElement("select");
-    selectList.setAttribute("id", "mySelect");
+    selectList.setAttribute("id", "MappingChSelectList"+x);
     selectList.setAttribute('onchange','MappingSelectionChanged('+x+');');
     cell2.appendChild(selectList);
 
@@ -163,6 +165,15 @@ for(var x =0; x< 64;x++){
         option.setAttribute("value",val);
         option.text = connectedsensors.SensorList[i].Name;
         selectList.appendChild(option);
+        var SensorX =[];
+        var Bus = connectedsensors.SensorList[i].Bus;
+        SensorX.push(Bus);
+        var ValueType = connectedsensors.SensorList[i].ValueType;
+        SensorX.push(ValueType);
+        var Channel =  connectedsensors.SensorList[i].Channel;
+        SensorX.push(Channel);
+        ListEntry.push(SensorX);
+        
     }
 
     //We now get the mapped channel and select the propper entry 
@@ -195,6 +206,16 @@ for(var x =0; x< 64;x++){
                     option.setAttribute("value",val);
                     option.text = "(unconnected) "+supportedsensors.SensorList[i].Name;
                     selectList.appendChild(option);
+                    var SensorX =[];
+                    var Bus = supportedsensors.SensorList[i].Bus;
+                    SensorX.push(Bus);
+                    var ValueType = supportedsensors.SensorList[i].ValueType;
+                    SensorX.push(ValueType);
+                    var Channel =  supportedsensors.SensorList[i].Channel;
+                    SensorX.push(Channel);
+                    ListEntry.push(SensorX);
+                   
+                   
 
                     selectList.value= val;
                     foundconnected = true;
@@ -209,10 +230,56 @@ for(var x =0; x< 64;x++){
         selectList.value=  "unmapped";
     }
 
-
+    SelectList.push(ListEntry);
   }
 }
 
 function MappingSelectionChanged( id ){
    //We need here to submitt the new settings !
+   //MAPPEDCHANNEL
+   //BUS
+   //MESSURMENTVALTYPE
+   //VALCHANNEL
+   //We need here to grab the select element and the selected index!
+   var el = document.getElementById("MappingChSelectList"+id);
+   var selctedidx = el.value;
+   //Value is like 2,0,0 ->Bus / ValueType / Channel
+   //Grab from the array the right parameter
+   var mBus = 0;
+   var mType = 0;
+   var mChannel = 0;
+   var mMappedChannel=id;
+
+   if(selctedidx==="unmapped"){
+        mBus = 0;
+        mType = 0;
+        mChannel = 0;
+        mMappedChannel=id;
+    } else {
+         var Elements = selctedidx.split(',');
+         mBus = Elements[0];
+         mType = Elements[1];
+         mChannel = Elements[2];
+         mMappedChannel=id;
+     
+    }
+  
+   //Prepare post...
+   var url = GenerateHostUrl("/mapping/set");
+   var data = [];
+   data.push({key:"MAPPEDCHANNEL",
+              value: mMappedChannel});
+   
+   data.push({key:"BUS",
+        value: mBus});
+   
+   data.push({key:"MESSURMENTVALTYPE",
+        value: mType});
+   
+   data.push({key:"VALCHANNEL",
+        value: mChannel});
+   
+   sendData(url,data); 
+
+
 }

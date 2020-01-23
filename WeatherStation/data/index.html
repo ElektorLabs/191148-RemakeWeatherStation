@@ -33,8 +33,8 @@
             <a class="menuBtn" id="TimeSettingsBtn" href="javascript:showTimeSettings()">Time settings</a>
             <a class="menuBtn" id="SDCARDBtn" href="javascript:showSDCARD()">SD-Card</a>
             <h1 class="menuLbl">ESP32</h1>
-            <a class="menuBtn" id="restartBtn" href="javascript:restart()">Update Firmware</a>
-            <a class="menuBtn" id="restartBtn" href="javascript:restart()">Update Webpages</a>
+            <a class="menuBtn" id="restartBtn" href="javascript:showUpdateFirmware()">Update Firmware</a>
+            <a class="menuBtn" id="restartBtn" href="javascript:showUpdateWebpages()">Update Webpages</a> 
             <a class="menuBtn" id="restartBtn" href="javascript:restart()">Restart</a>
        </div>
 		
@@ -429,6 +429,17 @@
                             </td>   
                            
                                 
+                           </tr>
+                           <tr>
+                               <td>
+                                    ioBroker compatibility
+                               </td>
+                               <td colspan="2">
+                                    <select id="MQTT_IOBROKER">
+                                            <option value="true">True</option>
+                                            <option value="false">False</option>
+                                    </select>
+                               </td>
                            </tr>
                            <tr>
                             <td>
@@ -1014,6 +1025,13 @@
     
         
     </div><!-- End of TimeSettings -->
+    <div id="FirmwareUpdate" class="views grid">
+        <form method='POST' action='/update/fimrware' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update Firmware'></form>
+    </div>
+
+    <div id="WebpageUpdate" class="views grid">
+            <form method='POST' action='/update/fimrware' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update Webpages(SPIFFS)'></form>
+    </div>
 
 
             <div id="notification" class="notification">
@@ -1030,6 +1048,14 @@
         } else {
             showDashboard();
         }
+    }
+
+    function showUpdateFirmware(){
+        showView("FirmwareUpdate");
+    }
+
+    function showUpdateWebpages(){
+        showView("WebpageUpdate");
     }
 
   

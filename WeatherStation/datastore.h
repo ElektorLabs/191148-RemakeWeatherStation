@@ -27,6 +27,7 @@ typedef struct {
   char mqtttopic[501];
   char mqtthostname[65];
   uint16_t mqtttxintervall;
+  bool useIoBrokerMsgStyle;
 }mqttsettings_t; /*956 byte */
 
 typedef struct{
@@ -184,6 +185,24 @@ void write_timecoreconf(timecoreconf_t c);
  *    Remarks       : none
  **************************************************************************************************/
 timecoreconf_t read_timecoreconf( void );
+
+/**************************************************************************************************
+ *    Function      : read_thingspeakmapping
+ *    Description   : reads the thingspeakmapping
+ *    Input         : none
+ *    Output        : timecoreconf_t
+ *    Remarks       : none
+ **************************************************************************************************/
+String read_thingspeakmapping( void );
+
+/**************************************************************************************************
+ *    Function      : write_thingspeakmapping
+ *    Description   : write the thingspeakmapping
+ *    Input         : none
+ *    Output        : none
+ *    Remarks       : none
+ **************************************************************************************************/
+void write_thingspeakmapping( String MappingJSON );
 
 
 /**************************************************************************************************

@@ -67,7 +67,7 @@ void write_wifi_config(wifi_param_config_t c){
 wifi_param_config_t read_wifi_config( void ){
   wifi_param_config_t retval;
   if(false ==  nvsread_struct( (void*)(&retval), sizeof(wifi_param_config_t) , WIFI_CONFIG_START ) ){
-    Serial.println("WIFI CONF");
+    Serial.println("Create blank WIFI Config");
     bzero((void*)&retval,sizeof( wifi_param_config_t ));
     write_wifi_config(retval);
   } 
@@ -95,7 +95,7 @@ void write_ntp_config(ntp_config_t c){
 ntp_config_t read_ntp_config( void ){
   ntp_config_t retval;
   if(false ==  nvsread_struct( (void*)(&retval), sizeof(ntp_config_t) , NTP_START ) ){
-    Serial.println("NTP CONF");
+    Serial.println("Create blank NTP Config");
     bzero((void*)&retval,sizeof( ntp_config_t ));
     write_ntp_config(retval);
   } 
@@ -124,7 +124,7 @@ void write_credentials(credentials_t c){
 credentials_t read_credentials( void ){
   credentials_t retval;
   if(false == nvsread_struct( (void*)(&retval), sizeof(credentials_t) , CREDENTIALS_START ) ){ 
-    Serial.println("WIFI CONF");
+    Serial.println("Create blank WIFI Config");
     bzero((void*)&retval,sizeof( credentials_t ));
     write_credentials(retval);
   }
@@ -142,7 +142,6 @@ credentials_t read_credentials( void ){
  **************************************************************************************************/
 bool nvsread_struct( void* element, uint32_t e_size, const char* key  ){
   bool done = false;
-  Serial.println("Read NVS");
   if( e_size != prefs.getBytes(key, element, e_size) ){
     done = false;
   } else {
@@ -165,7 +164,6 @@ void nvswrite_struct(void* data_in, uint32_t e_size,const char* key ){
     Serial.printf("Write Error NVS, Bytes written %u, Bytes to write %u \n\r", data_written, e_size);
   } else {
     /* Write done */
-    Serial.println("Write NVS");
   }
 
 }
@@ -228,7 +226,7 @@ mqttsettings_t read_mqttsettings( void ){
   
   mqttsettings_t retval;
   if(false == nvsread_struct( (void*)(&retval), sizeof(mqttsettings_t) , MQTT_START ) ){ 
-    Serial.println("MQTT CONF");
+    Serial.println("Create blank MQTT Config");
     bzero((void*)&retval,sizeof( mqttsettings_t ));
     write_mqttsettings(retval);
   }
@@ -280,6 +278,35 @@ void write_timecoreconf(timecoreconf_t c){
 
 
 /**************************************************************************************************
+ *    Function      : read_thingspeakmapping
+ *    Description   : reads the thingspeakmapping
+ *    Input         : none
+ *    Output        : timecoreconf_t
+ *    Remarks       : none
+ **************************************************************************************************/
+String read_thingspeakmapping( void ){
+  return prefs.getString("ThingSpeakMapping");
+}
+
+/**************************************************************************************************
+ *    Function      : write_thingspeakmapping
+ *    Description   : write the thingspeakmapping
+ *    Input         : none
+ *    Output        : none
+ *    Remarks       : none
+ **************************************************************************************************/
+void write_thingspeakmapping( String MappingJSON ){
+  String result = "";
+  prefs.putString("ThingSpeakMapping", MappingJSON);
+  result = prefs.getString("ThingSpeakMapping");
+  if(MappingJSON!= result){
+    Serial.println("Write failed @ ThingSpeakMapping");
+    Serial.println(result);
+  }
+}
+
+
+/**************************************************************************************************
  *    Function      : read_timecoreconf
  *    Description   : reads the time core config
  *    Input         : none
@@ -289,7 +316,7 @@ void write_timecoreconf(timecoreconf_t c){
 timecoreconf_t read_timecoreconf( void ){
   timecoreconf_t retval;
   if(false == nvsread_struct( (void*)(&retval), sizeof(timecoreconf_t) , TIMECORECONFIG_START ) ){ 
-    Serial.println("TIME CONF");
+     Serial.println("Create blank TIME Config");
     retval = Timecore::GetDefaultConfig();
     write_timecoreconf(retval);
   }

@@ -11,8 +11,8 @@ void GetSettings( void );
 void UpdateSettings( void );
 void Webserver_SDCard_FunctionsRegister(WebServer* server){
     SDCardWebServer = server;
-    server->on("/sdlog/settings.dat", HTTP_GET, UpdateSettings );
-    server->on("/sdlog/settings.json", HTTP_POST, GetSettings );
+    server->on("/sdlog/settings.dat", HTTP_POST, UpdateSettings );
+    server->on("/sdlog/settings.json", HTTP_GET, GetSettings );
     server->on("/sdlog/sd/mount", MountCard);
     server->on("/sdlog/sd/umount", UmountCard);
     server->on("/sdlog/sd/status", GetMountStatus);

@@ -1,9 +1,8 @@
 #include <ArduinoJson.h>
 #include "datastore.h"
+#include "./src/MQTTConnector/mqtt_task.h"
 #include "webserver_mqtt_fnc.h"
 
-
-extern TaskHandle_t MQTTTaskHandle; //Still not good to have that here .....
 static WebServer * MQTTWebserver=nullptr;
 
 static void request_mqttsetting( void );
@@ -24,11 +23,12 @@ void mqttsettings_update( ){
       return;
   }
   mqttsettings_t Data = read_mqttsettings();
-  
+   
   if( ! server->hasArg("MQTT_USER") || server->arg("MQTT_USER") == NULL ) { 
     /* we are missong something here */
   } else { 
     String value = server->arg("MQTT_USER");
+    bzero(Data.mqttusername,sizeof(Data.mqttusername));
     strncpy(Data.mqttusername, value.c_str(),128);
   }
 
@@ -36,6 +36,7 @@ void mqttsettings_update( ){
     /* we are missong something here */
   } else { 
     String value = server->arg("MQTT_PASS");
+    bzero(Data.mqttpassword,sizeof(Data.mqttpassword));
     strncpy(Data.mqttpassword, value.c_str(),128);
   }
 
@@ -43,6 +44,7 @@ void mqttsettings_update( ){
     /* we are missong something here */
   } else { 
     String value = server->arg("MQTT_SERVER");
+    bzero(Data.mqttservername,sizeof(Data.mqttservername));
     strncpy(Data.mqttservername, value.c_str(),128);
   }
 
@@ -50,6 +52,7 @@ void mqttsettings_update( ){
     /* we are missong something here */
   } else { 
     String value = server->arg("MQTT_HOST");
+    bzero(Data.mqtthostname,sizeof(Data.mqtthostname));
     strncpy(Data.mqtthostname, value.c_str(),64);
   }
 
@@ -66,6 +69,7 @@ void mqttsettings_update( ){
     /* we are missong something here */
   } else { 
     String value = server->arg("MQTT_TOPIC");
+    bzero(Data.mqtttopic,sizeof(Data.mqtttopic));
     strncpy(Data.mqtttopic, value.c_str(),500);
   }
 
@@ -85,11 +89,25 @@ void mqttsettings_update( ){
     uint32_t value = server->arg("MQTT_TXINTERVALL").toInt();
     Data.mqtttxintervall = value;
   }
+
+  if( ! server->hasArg("MQTT_IOBROKER") || server->arg("MQTT_IOBROKER") == NULL ) { 
+    /* we are missing something here */
+  } else { 
+    bool value = false;
+    if(server->arg("MQTT_IOBROKER")=="true"){
+      value = true;
+    }
+    Data.useIoBrokerMsgStyle = value;
+  }
   
   /* write data to the eeprom */
   write_mqttsettings(Data);
-  
-  xTaskNotify( MQTTTaskHandle, 0x01, eSetBits );
+  TaskHandle_t MQTTTaskHandle = GetMQTTTaskHandle();
+  if(MQTTTaskHandle!=nullptr){
+    xTaskNotify( MQTTTaskHandle, 0x01, eSetBits );
+  } else {
+    Serial.println("MQTTTask Handle is null");
+  }
   server->send(200); 
 
 }
@@ -118,6 +136,7 @@ void request_mqttsetting(){
   root["mqttuser"] = String(Data.mqttusername);
   root["mqtttopic"] = String(Data.mqtttopic);
   root["mqtttxintervall"] = Data.mqtttxintervall;
+  root["mqtte_iobrokermode"] = Data.useIoBrokerMsgStyle;
   if(Data.mqttpassword[0]!=0){
     root["mqttpass"] = "********";
   } else {

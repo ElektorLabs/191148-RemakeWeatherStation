@@ -13,7 +13,7 @@
  *    Remarks       : none
  **************************************************************************************************/
  Timecore::Timecore(){
-  local_config = GetConfig();
+  local_config = GetDefaultConfig();
   LoadTimezone(local_config.TimeZone);
  };
 
@@ -42,6 +42,9 @@ void Timecore::begin( bool use_ticker  ){
   if(true == use_ticker ){
     OneSecondTicker.attach(1,Timecore::RTC_Tick,this );
   }
+  //We also load the config from the Datastore now....
+  local_config = read_timecoreconf(); 
+  LoadTimezone(local_config.TimeZone);
 }
 
 /**************************************************************************************************

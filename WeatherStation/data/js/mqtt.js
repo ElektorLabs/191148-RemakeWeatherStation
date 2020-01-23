@@ -20,7 +20,8 @@ function read_mqttsettings( msg ){
         document.getElementById("MQTT_TOPIC").value = jsonObj.mqtttopic;
         document.getElementById("MQTT_PASS").type = "password";
         document.getElementById("MQTT_ENA").value = jsonObj.mqttena;
-        document.getElementById("MQTT_UPDATE_INT").value = jsonObj.mqtttxintervall;    
+        document.getElementById("MQTT_UPDATE_INT").value = jsonObj.mqtttxintervall;  
+        document.getElementById("MQTT_IOBROKER").value = jsonObj.mqtte_iobrokermode;  
     } catch{
         document.getElementById("MQTT_USER").value = "";
         document.getElementById("MQTT_HOST").value = "Unknown";
@@ -31,6 +32,7 @@ function read_mqttsettings( msg ){
         document.getElementById("MQTT_PASS").type = "password";
         document.getElementById("MQTT_ENA").value = false;
         document.getElementById("MQTT_UPDATE_INT").value = 60;
+        document.getElementById("MQTT_IOBROKER").value = false;
     }
     
 }
@@ -48,9 +50,12 @@ function SubmitMQTT( ){
     var mqtt_topic =  document.getElementById("MQTT_TOPIC").value;
     var mqtt_ena = document.getElementById("MQTT_ENA").value;
     var mqtt_txintervall =  document.getElementById("MQTT_UPDATE_INT").value;
+    var mqtt_iobrokermode = document.getElementById("MQTT_IOBROKER").value;
     var data = [];
     data.push({key:"MQTT_ENA",
                    value: mqtt_ena}); 
+    data.push({key:"MQTT_IOBROKER",
+                    value: mqtt_iobrokermode});
     
     data.push({key:"MQTT_PORT",
                    value: mqtt_port});

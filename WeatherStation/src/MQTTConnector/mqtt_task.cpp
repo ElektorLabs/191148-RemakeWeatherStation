@@ -4,6 +4,8 @@
 #include <WiFiClient.h>
 #include <WiFiClientSecure.h>
 #include "../ValueMapping/ValueMapping.h"
+#include "../../datastore.h" //May this also is moved to a file in JSON format on SPIFFS
+
 
 /* on header as last one */
 #include "mqtt_task.h"
@@ -49,6 +51,7 @@ typedef struct{
 void callback(char* topic, byte* payload, unsigned int length);
 void SendIoBrokerSingleMSG(mqttsettings_t* settings,const char* subtopic, const MQTT_Value_t value);
 void MQTT_Task( void* prarm );
+
 void MQTTRegisterMappingAccess(VALUEMAPPING* Mp){
 Mapping = Mp;
 }
@@ -64,6 +67,10 @@ void MQTTTaskStart( void ){
    &MQTTTaskHandle,
    1);
 
+}
+
+TaskHandle_t GetMQTTTaskHandle( void ){
+   return MQTTTaskHandle;
 }
 
 mqttsettings_t GetMQTTSettings( void ){
@@ -120,6 +127,7 @@ void MQTT_Task( void* prarm ){
             }
        } else{
             mqttclient.loop();                            // loop on client
+            IOBrokerMode = Settings.useIoBrokerMsgStyle;
             /* Check if we need to send data to the MQTT Topic, currently hardcode intervall */
             uint32_t intervall_end = last_message +( Settings.mqtttxintervall * 1000 );
             if( ( Settings.mqtttxintervall > 0) && ( intervall_end  <  millis() ) ){

@@ -14,7 +14,7 @@ function AutomaticUpdate(){
         return;
     }
     var el = document.getElementById("MainPage");
-    if(el.visible === false){
+    if(el.style.display === "none" ){
         clearInterval(AutoUpdate);
         AutoUpdate=null;
     }

@@ -52,7 +52,7 @@ function SDCardLogIntChanged(){
     var data = [];
     data.push({key:"SDLOG_INT",
                value: el.value});
-       
+    sendData(url,data);    
 }
 
 function UpadteSDStatus(data){

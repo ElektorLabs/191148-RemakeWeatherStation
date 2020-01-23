@@ -95,19 +95,19 @@ int32_t iValueChannel=0;
 
       if(false == fault ){
         //We can try to buld the element
-        /*
+        
         Serial.println("Data Received");
         Serial.printf("iBus=%i ,",iBus);
         Serial.printf("iValueType=%i ,",iValueType);
         Serial.printf("iValueChannel=%i ,",iValueChannel);
         Serial.printf("iMappedChannel=%i \n\r",iMappedChannel);
-        */
+        
         VALUEMAPPING::SensorElementEntry_t Element;
         Element.Bus = (VALUEMAPPING::SensorBus_t)(iBus);
         Element.ValueType = (DATAUNITS::MessurmentValueType_t )(iValueType);
         Element.ChannelIDX = (uint8_t)iValueChannel;
         SensorMapping.SetMappingForChannel(iMappedChannel, Element);
-        //Serial.println("Upadte Mapping");
+        Serial.println("Upadte Mapping");
       } else {
 
       }

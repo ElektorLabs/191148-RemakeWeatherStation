@@ -71,6 +71,7 @@
 #include "./src/sdcard/sdcard_if.h"
 
 #include "./datastore.h"
+#include "./src/MQTTConnector/mqtt_task.h"
 
 #include "webserver_map_fnc.h"
 #include "webserver_sensebox_fnc.h"
@@ -165,7 +166,30 @@ void setup() {
   /* We check if the boot button is pressed ( IO00 ) */
   WiFiClientEnable(true); //Force WiFi on 
   WiFiForceAP(false); //Diable Force AP
-  if(0 != digitalRead(USERBTN0 )){
+  Serial.println("Continue boot");
+  if ( false == LORAWAN.begin( RFM95_NSS, 0xFF , 0xFF, RFM95_DIO0, RFM95_DIO1, RFM95_DIO2 ) ){
+    //LoRa Module not found, we won't schedule any transmission
+  } else {
+    //LoRa WAN Enabled
+  }
+  
+  TimeCore.begin(true);
+
+  //We need to register the drivers
+  SensorMapping.RegisterInternalSensors(&IntSensors);
+  SensorMapping.RegisterI2CBus(&TwoWireSensors);
+  SensorMapping.RegisterUartSensors(&PMSensor);
+  //
+  SensorMapping.begin();
+  //We need to setup the Dataloggin parts now
+  ThinkSpeak.begin(false); //We need to stick to HTTP
+  SenseBox.begin();
+ 
+  
+  SenseBox.RegisterDataAccess( ReadSensorData );
+  ThinkSpeak.RegisterDataAccess( ReadSensorData );
+  
+if(0 != digitalRead(USERBTN0 )){
     initWiFi( false, false );
   } else {
     Serial.println("Force System to AP");
@@ -176,31 +200,12 @@ void setup() {
     vTaskDelay(1);
     NetworkLoopTask();
   } 
-  Serial.println("Continue boot");
-  if ( false == LORAWAN.begin( RFM95_NSS, 0xFF , 0xFF, RFM95_DIO0, RFM95_DIO1, RFM95_DIO2 ) ){
-    //LoRa Module not found, we won't schedule any transmission
-  } else {
-    //LoRa WAN Enabled
-  }
-  
-  TimeCore.begin(true);
+  MQTTTaskStart();
   Webserver_Time_FunctionRegisterTimecore(&TimeCore);
   Webserver_Time_FunctionRegisterNTPClient(&NTPC);
 
-
-  //We need to register the drivers
-  SensorMapping.RegisterInternalSensors(&IntSensors);
-  SensorMapping.RegisterI2CBus(&TwoWireSensors);
-  SensorMapping.RegisterUartSensors(&PMSensor);
-  //
-  SensorMapping.begin();
-  //We need to setup the Dataloggin parts now
-  SenseBox.begin();
-  SenseBox.RegisterDataAccess( ReadSensorData );
+  
   Webserver_SenseBox_RegisterSensebox(&SenseBox);
-
-  ThinkSpeak.begin(false); //We need to stick to HTTP
-  ThinkSpeak.RegisterDataAccess( ReadSensorData );
   Webserver_Thinkspeak_RegisterThinkspeak(&ThinkSpeak);
   //Next is the SD-Card access, and this is a bit tricky
   SDCardRegisterMappingAccess(&SensorMapping);
@@ -211,7 +216,7 @@ void setup() {
   setup_sdcard(SD_SCK ,SD_MISO, SD_MOSI, SD_CS0 );
   sdcard_mount();
   
-  
+
     xTaskCreatePinnedToCore(
                     DataLoggingTask,   /* Function to implement the task */
                     "DataLogging",  /* Name of the task */
@@ -229,13 +234,7 @@ void setup() {
       1,              /* Priority of the task */
       NULL,           /* Task handle. */
       1); 
-
-
- sdcard_log_int( 0 );
- sdcard_log_enable( true );
-
-
- 
+       
 }
 
 

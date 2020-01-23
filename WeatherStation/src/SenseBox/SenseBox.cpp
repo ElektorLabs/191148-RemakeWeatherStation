@@ -51,6 +51,7 @@ void SenseBoxUpload::RegisterDataAccess(SenseBoxUpload::DataAccesFnc Fnc){
 }
 
 void SenseBoxUpload::WriteMapping( void ){
+  String JSONData = "";
   //This will just convert the Mapping to JSON and write it to the local filesystem
    File file = SPIFFS.open("/SenseBoxMapping.json", FILE_WRITE);
     const size_t capacity = JSON_ARRAY_SIZE(64) + JSON_OBJECT_SIZE(1) + 64*JSON_OBJECT_SIZE(3)+(64*16);
@@ -68,27 +69,44 @@ void SenseBoxUpload::WriteMapping( void ){
               MappingObj["Key"] = "";
             }
     }
-    serializeJson(doc, file);
+    serializeJson(doc, JSONData);
+    file.print(JSONData);
     file.close();
+    Serial.print("JSONData");
+    Serial.println(JSONData);
+    file = SPIFFS.open("/SenseBoxMapping.json");
+    Serial.print("File content:");
+    while(file.available()){
+      char ch = file.read();
+      Serial.print(ch);
+    }
+    Serial.println("End of File");
+    file.close();
+
 }
 
 void SenseBoxUpload::ReadMapping( void ){
-
+String JSONData ="";
 //Config will be stored as JSON String on SPIFFS
     //This makes mapping more complicated but will easen web access
     if(SPIFFS.exists("/SenseBoxMapping.json")){
         File file = SPIFFS.open("/SenseBoxMapping.json");
-        //We need to read the file into the ArduinoJson Parser
-         /*
-        ReadBufferingStream bufferingStream(file, 64);
-        deserialzeJson(doc, bufferingStream);
-        */
-        
+        Serial.print("Filesize:");
+        Serial.println(file.available());
+        while(file.available()){
+          char ch = file.read();
+          Serial.print(ch);
+          JSONData=JSONData+ch;
+        }
+        Serial.println("");
+        Serial.print("JSON:");
+        Serial.println(JSONData);
+     
         const size_t capacity = JSON_ARRAY_SIZE(64) + JSON_OBJECT_SIZE(1) + 64*JSON_OBJECT_SIZE(3) + 1580;
         DynamicJsonDocument doc(capacity);
-        deserializeJson(doc, file);
-        DeserializationError err =  deserializeJson(doc, file);
+        DeserializationError err =  deserializeJson(doc, JSONData);
         if(err) {
+          Serial.print("/SenseBoxMapping.json ");
           Serial.print(F("deserializeJson() failed with code "));
           Serial.println(err.c_str());
         }
@@ -110,6 +128,7 @@ void SenseBoxUpload::ReadMapping( void ){
             }
 
         }
+        file.close();
     } else {
         //We need to create a blank mapping scheme
         for(uint32_t i=0;i<( sizeof(Mapping) / sizeof( Mapping[0] )  );i++){
@@ -126,14 +145,6 @@ void SenseBoxUpload::ReadMapping( void ){
 }
 
 void SenseBoxUpload::WriteSettings(){
-
-/*
-{
- "SenseboxID": "000000000000000000000000000000",
- "UploadInterval":15,
- "Enabled":false
-}
-*/
 
     File file = SPIFFS.open("/SenseBoxSetting.json", FILE_WRITE);
     const size_t capacity = JSON_ARRAY_SIZE(64) + JSON_OBJECT_SIZE(1) + 64*JSON_OBJECT_SIZE(3)+(64*16);
@@ -156,7 +167,12 @@ void SenseBoxUpload::ReadSettings(){
     DynamicJsonDocument doc(capacity);
       if(SPIFFS.exists("/SenseBoxSetting.json")){
         File file = SPIFFS.open("/SenseBoxSetting.json");
-        deserializeJson(doc, file);
+         DeserializationError err =  deserializeJson(doc, file);
+        if(err) {
+          Serial.print("/SenseBoxSetting.json ");
+          Serial.print(F("deserializeJson() failed with code "));
+          Serial.println(err.c_str());
+        }
         
         const char* SenseboxID = doc["SenseboxID"]; 
         int UploadInterval = doc["UploadInterval"]; 
@@ -176,7 +192,7 @@ void SenseBoxUpload::ReadSettings(){
         
         Settings.UploadInterval=UploadInterval; //Interval in minutes for new data
         Settings.Enabled = Enabled; //If the uplaod is enabled or not 
-
+        file.close();
 
       } else {
         //We generate an empty file

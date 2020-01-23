@@ -23,6 +23,7 @@ uint16_t LogInterval = 15;
 void SDCardDataLog( void );
 void SDCardLoging( void* param);
 void SdCardLog_WriteConfig( void );
+void SDCardLog_ReadConfig( void );
 
 void SDCardRegisterMappingAccess(VALUEMAPPING* Mapping){
   DataMapping = Mapping;
@@ -46,6 +47,7 @@ void setup_sdcard( int8_t sd_sck_pin , int8_t sd_miso_pin, int8_t sd_mosi_pin, i
   if( nullptr == SDCfgSem){
     abort();
   }
+  SDCardLog_ReadConfig();
   //We also start the Logging Task if requiered.....
   xTaskCreate(
                     SDCardLoging,          /* Task function. */
@@ -134,27 +136,40 @@ void SdCardLog_WriteConfig( void ){
 }
 
 void SDCardLog_ReadConfig( void ){
-
+String JSONData="";
 //Config will be stored as JSON String on SPIFFS
     //This makes mapping more complicated but will easen web access
     if(SPIFFS.exists("/sdcardlog.json")){
         File file = SPIFFS.open("/sdcardlog.json");
-        //We need to read the file into the ArduinoJson Parser
-         /*
-        ReadBufferingStream bufferingStream(file, 64);
-        deserialzeJson(doc, bufferingStream);
-        */
         
+        Serial.print("Filesize:");
+        Serial.println(file.available());
+        while(file.available()){
+          char ch = file.read();
+          Serial.print(ch);
+          JSONData=JSONData+ch;
+        }
+        Serial.println("");
+        Serial.print("JSON:");
+        Serial.println(JSONData);
+     
         const size_t capacity = JSON_ARRAY_SIZE(64) + JSON_OBJECT_SIZE(1) + 64*JSON_OBJECT_SIZE(3) + 1580;
         DynamicJsonDocument doc(capacity);
-        deserializeJson(doc, file);
-        doc["enabled"] = false;
-        doc["interval"] = 15; //Log every 15 minutes
+        DeserializationError err =  deserializeJson(doc, JSONData);
+        if(err) {
+          Serial.print("/sdcardlog.json ");
+          Serial.print(F("deserializeJson() failed with code "));
+          Serial.println(err.c_str());
+        }
+
+        LogEnable = doc["enabled"];
+        LogInterval = doc["interval"];
         file.close();
         
     } else {
+        Serial.println("Read for /sdcardlog.json failed");
         LogEnable = false;
-        LogInterval = 15;
+        LogInterval = 1;
         SdCardLog_WriteConfig();
       //We need to create a default config
     }
@@ -164,6 +179,9 @@ void SDCardLog_ReadConfig( void ){
 //Capacity in MB
 uint32_t sdcard_GetCapacity( void ){
   uint32_t size_mb=0;
+  if(SDCardAccessSem==nullptr){
+    return 0;
+  }
   if (false == xSemaphoreTake(SDCardAccessSem, 5)){
     Serial.println("SD Card Semaphore locked");
     return 0;
@@ -181,6 +199,9 @@ uint32_t sdcard_GetCapacity( void ){
 
 //FreeSpace in MB
 uint32_t sdcard_GetFreeSpace( void  ){
+  if(SDCardAccessSem==nullptr){
+    return 0;
+  }
   if (false == xSemaphoreTake(SDCardAccessSem, 5)){
     Serial.println("SD Card Semaphore locked");
     return 0;
@@ -211,7 +232,7 @@ void SDCardLoging( void* param){
     //We need to load the ionterval for the logging
     //We run in minutes
     if( LoggingEnable == true ){
-      Interval= LogInterval*1000;
+      Interval= LogInterval*60*1000; 
       if(Interval<1){
         Interval=10*1000; //1 Minute min Time;
       }
@@ -219,6 +240,9 @@ void SDCardLoging( void* param){
       Interval = portMAX_DELAY;
       Serial.println("SDLog: Entering Sleep");
     }
+    Serial.print("Next SDLog in ");
+    Serial.print(Interval);
+    Serial.println(" Ticks (ms)");
     if( false == xSemaphoreTake( SDCfgSem, Interval ) ){
       //No Configchange at all we can simpy upload the data 
       SDCardDataLog();
