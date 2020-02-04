@@ -82,7 +82,13 @@ Ticker AutoReconnect;
 
 
 
-
+/**************************************************************************************************
+ *    Function      : WiFiEvent
+ *    Description   : Callback for the WiFi driver to handle events
+ *    Input         : WiFiEvent_t , system_event_info_t 
+ *    Output        : none
+ *    Remarks       : none
+ **************************************************************************************************/ 
 void WiFiEvent(WiFiEvent_t event, system_event_info_t info)
 {
     //Serial.printf("[WiFi-event] event: %d\n", event);
@@ -198,7 +204,14 @@ void WiFiEvent(WiFiEvent_t event, system_event_info_t info)
             break;
     }
 }
-//WPS Functions 
+
+/**************************************************************************************************
+ *    Function      : wpsInitConfig
+ *    Description   : Will setup the WPS 
+ *    Input         : none
+ *    Output        : none
+ *    Remarks       : none
+ **************************************************************************************************/ 
 void wpsInitConfig(){
   wps_config.crypto_funcs = &g_wifi_default_wps_crypto_funcs;
   wps_config.wps_type = ESP_WPS_MODE;
@@ -208,6 +221,14 @@ void wpsInitConfig(){
   strcpy(wps_config.factory_info.device_name, ESP_DEVICE_NAME);
 }
 
+
+/**************************************************************************************************
+ *    Function      : wpspin2string
+ *    Description   : Helper function to outut the WPS Pin
+ *    Input         : uint8_t []
+ *    Output        : String
+ *    Remarks       : none
+ **************************************************************************************************/ 
 String wpspin2string(uint8_t a[]){
   char wps_pin[9];
   for(int i=0;i<8;i++){
@@ -217,6 +238,14 @@ String wpspin2string(uint8_t a[]){
   return (String)wps_pin;
 }
 
+
+  /**************************************************************************************************
+ *    Function      : WPS_Start
+ *    Description   : Will start a WPS Join ( Button Mode )
+ *    Input         : none
+ *    Output        : none
+ *    Remarks       : none 
+ **************************************************************************************************/
 void WPS_Start(){
   //This will only work is the statio is not connected to a wifi and also not configured to do so
   WPS_Running = true;
@@ -235,30 +264,14 @@ void WPS_Start(){
 }
 
 
-
-
-void WiFiGotIP(WiFiEvent_t event, WiFiEventInfo_t info)
-{
-    //Serial.println("WiFi connected");
-    //Serial.println("IP address: ");
-    //Serial.println(IPAddress(info.got_ip.ip_info.ip.addr));
-}
-
-void ProcessWifiScan(WiFiEvent_t event, WiFiEventInfo_t info){
-  /* We assume scan is run okay */
-  int16_t status = WiFi.scanComplete();
-  if(status < 0 ){
-    /*  This indicates an error */
-  } else {
-    /* We need to send a new list of wifi stations */
-  }
-  
-}
-
-
-
-
-void ReScanNetworks(bool WaitForReady , bool ScanForHiddenNetworks){
+/**************************************************************************************************
+ *    Function      : ReScanNetworks
+ *    Description   : this will scan for WiFi Networks
+ *    Input         : bool, bool
+ *    Output        : none
+ *    Remarks       : none 
+ **************************************************************************************************/
+ void ReScanNetworks(bool WaitForReady , bool ScanForHiddenNetworks){
   int16_t ScanResult=-1;
   WiFi.scanDelete();
   WiFi.scanNetworks(true, ScanForHiddenNetworks);
@@ -276,6 +289,13 @@ void ReScanNetworks(bool WaitForReady , bool ScanForHiddenNetworks){
  
 }
 
+ /**************************************************************************************************
+ *    Function      : LastScanWiFiNetworksFound
+ *    Description   : Will return the result for the last WiFi Scan
+ *    Input         : none
+ *    Output        : none
+ *    Remarks       : none
+ **************************************************************************************************/
 uint16_t LastScanWiFiNetworksFound(){
   int16_t status = WiFi.scanComplete();
   if(status < 0 ){
@@ -286,6 +306,13 @@ uint16_t LastScanWiFiNetworksFound(){
   }
 }
 
+ /**************************************************************************************************
+ *    Function      : GetEncryptioModeStr
+ *    Description   : Will give a String for an Encryptiomode
+ *    Input         : wifi_auth_mode_t
+ *    Output        : String
+ *    Remarks       : none
+ **************************************************************************************************/
 char* GetEncryptioModeStr(wifi_auth_mode_t mode ){
    char* ENCRYPTION= (char*)String("NDEF").c_str();
    switch(mode){
@@ -316,6 +343,13 @@ char* GetEncryptioModeStr(wifi_auth_mode_t mode ){
   return ENCRYPTION;
 }
 
+/**************************************************************************************************
+ *    Function      : GetScanResultOfIDX
+ *    Description   : This will give a result of the Scanlist
+ *    Input         : wifi_scan_result_t* , uint8_t
+ *    Output        : bool
+ *    Remarks       : none
+ **************************************************************************************************/
 bool GetScanResultOfIDX( wifi_scan_result_t* result, uint8_t index){
 int16_t status = WiFi.scanComplete();
 if( ( status <0 ) || ( status < index ) ) {
@@ -330,22 +364,49 @@ if( ( status <0 ) || ( status < index ) ) {
   return true;
 }
 
-
+ /**************************************************************************************************
+ *    Function      : WiFiStop
+ *    Description   : This will disable WiFI
+ *    Input         : none
+ *    Output        : none
+ *    Remarks       : none
+ **************************************************************************************************/
 void WiFiStop( void  ){
     //If we are on SDK 3.2  / ESP32 Arduino 1.0.4 this will cause a kernel panic
     WiFi.mode(WIFI_OFF);
 }
 
+  /**************************************************************************************************
+ *    Function      : WiFiStart
+ *    Description   : This will enable WiFi
+ *    Input         : none
+ *    Output        : none
+ *    Remarks       : none 
+ **************************************************************************************************/
 void WiFiStart( void ){
   WiFi.setSleep(false);
   esp_wifi_start();
 }
 
+ /**************************************************************************************************
+ *    Function      : WiFiForceSleep
+ *    Description   : This will put WiFi into SleepMode 
+ *    Input         : none
+ *    Output        : none
+ *    Remarks       : none
+ **************************************************************************************************/
 void WiFiForceSleep( void ){
   WiFi.setSleep(true);
   delay(1);
 }
 
+ /**************************************************************************************************
+ *    Function      : WiFiClientEnable
+ *    Description   : This will force the WiFi in ClientMode
+ *    Input         : bool
+ *    Output        : none
+ *    Remarks       : none
+ **************************************************************************************************/
 void WiFiClientEnable(bool Ena){
   wifi_param_config_t settings = read_wifi_config();
   settings.WIFI_Ena = Ena;
@@ -353,6 +414,13 @@ void WiFiClientEnable(bool Ena){
   
 }
 
+  /**************************************************************************************************
+ *    Function      : WiFiForceAP
+ *    Description   : This will force the WiFi into AP Config
+ *    Input         : bool
+ *    Output        : none
+ *    Remarks       : none
+ **************************************************************************************************/
 void WiFiForceAP( bool Ena){
    wifi_param_config_t settings = read_wifi_config();
   settings.AP_Mode = Ena;
@@ -473,8 +541,6 @@ xConnections = xSemaphoreCreateCounting(16,0);
 xSemaphoreGive( xConTaskStartMtx );
 /* Setup WiFi Events */
 WiFi.onEvent(WiFiEvent);
-WiFi.onEvent(WiFiGotIP, WiFiEvent_t::SYSTEM_EVENT_STA_GOT_IP);
-WiFi.onEvent(ProcessWifiScan, WiFiEvent_t::SYSTEM_EVENT_SCAN_DONE);
 
 if(forceAP == true ){
     wifi_param_config_t settings = read_wifi_config();
@@ -492,6 +558,14 @@ if(false == force_openap ){
    
 }
 
+
+/**************************************************************************************************
+ *    Function      : ConnetToAP
+ *    Description   : This will connect to a given SSID
+ *    Input         : none
+ *    Output        : none
+ *    Remarks       : none
+ **************************************************************************************************/
 bool ConnetToAP(const char* AP_SSID, const char* AP_PASS ){
   ssid=AP_SSID;
   pass=AP_PASS;
@@ -633,7 +707,13 @@ void configureSoftAP( bool use_wifi_config ) {
   configureServer();
 }
 
-
+/**************************************************************************************************
+ *    Function      : eventConnectToApFailed
+ *    Description   : Will be called if connection to ap failed
+ *    Input         : wifi_connect_param_t
+ *    Output        : none
+ *    Remarks       : none
+ **************************************************************************************************/
 void eventConnectToApFailed( wifi_connect_param_t* params ){
  
  if( params->connected == false ) {
@@ -650,7 +730,13 @@ void eventConnectToApFailed( wifi_connect_param_t* params ){
 
 }
 
-
+/**************************************************************************************************
+ *    Function      : StartDelayedReconnect
+ *    Description   : Delay for reconnect
+ *    Input         : none
+ *    Output        : none
+ *    Remarks       : none
+ **************************************************************************************************/
 void StartDelayedReconnect( void ){
 
   AutoReconnect.once_ms( ( 5 * 60 *1000 ) , ReconnectWiFi );
@@ -729,6 +815,13 @@ void NetworkLoopTask( void ){
    WebserverLoopTask();
 }
 
+ /**************************************************************************************************
+ *    Function      : WiFiGetChannel
+ *    Description   : Return the currently used WiFi Channel
+ *    Input         : none
+ *    Output        : none
+ *    Remarks       : none
+ **************************************************************************************************/
 uint8_t WiFiGetChannel(void){
  uint8_t primaryChan;
  wifi_second_chan_t secondChan;
@@ -736,12 +829,26 @@ uint8_t WiFiGetChannel(void){
  return primaryChan;
 }
 
+ /**************************************************************************************************
+ *    Function      : WiFiGetRSSI
+ *    Description   : This will return the RSSI in dBm
+ *    Input         : none
+ *    Output        : int16_t
+ *    Remarks       : none
+ **************************************************************************************************/
 int16_t WiFiGetRSSI(void){
   int16_t RSSI = -1;
   RSSI = WiFi.RSSI();
   return RSSI;
 }
 
+/**************************************************************************************************
+ *    Function      : RegisterCbWiFiScanDone
+ *    Description   : Will take a Function to be called if a WiFi Scan is done
+ *    Input         : none
+ *    Output        : none
+ *    Remarks       : none 
+ **************************************************************************************************/
 bool RegisterCbWiFiScanDone( void (*cb_ptr)(void) ){
     bool registered = false;
     for(uint32_t i = 0; i < ( sizeof(scandone_cb)/sizeof(scandone_cb[0]) ); i++){    
@@ -754,6 +861,13 @@ bool RegisterCbWiFiScanDone( void (*cb_ptr)(void) ){
     return registered;
 }
 
+ /**************************************************************************************************
+ *    Function      : DeleteCbWiFiScanDone
+ *    Description   : This can delete a callback for WiFi Scan done
+ *    Input         : none
+ *    Output        : none
+ *    Remarks       : none
+ **************************************************************************************************/
 bool DeleteCbWiFiScanDone( void (*cb_ptr)(void) ){
     bool del = false;
     for(uint32_t i = 0; i < ( sizeof(scandone_cb)/sizeof(scandone_cb[0]) ); i++){    
@@ -766,7 +880,13 @@ bool DeleteCbWiFiScanDone( void (*cb_ptr)(void) ){
 
 }
 
-
+  /**************************************************************************************************
+ *    Function      : WiFiRSSItoPercent
+ *    Description   : Will calcualte a connection status in % from RSSI value
+ *    Input         : int16_t
+ *    Output        : nouint8_t
+ *    Remarks       : This will invalidate all user data 
+ **************************************************************************************************/
 uint8_t WiFiRSSItoPercent(int16_t dBm){
 if (dBm <= -100)
     return 0;
@@ -775,7 +895,14 @@ if (dBm <= -100)
   return 2 * (dBm + 100);
 }
 
-void GetWiFiConnectionInfo( wifi_connection_info_t* ConnectionInfo){
+ /**************************************************************************************************
+ *    Function      : GetWiFiConnectionInfo
+ *    Description   : Get the current connection information
+ *    Input         : wifi_connection_info_t*
+ *    Output        : none
+ *    Remarks       : none
+ **************************************************************************************************/
+ void GetWiFiConnectionInfo( wifi_connection_info_t* ConnectionInfo){
   wifi_mode_t mode;
   esp_wifi_get_mode(&mode);
 
@@ -836,7 +963,13 @@ void GetWiFiConnectionInfo( wifi_connection_info_t* ConnectionInfo){
 
 }
 
-
+/**************************************************************************************************
+ *    Function      : RequestWiFiConnection
+ *    Description   : If in StartStop mode this will try to establis a WiFi Connection again
+ *    Input         : none
+ *    Output        : none
+ *    Remarks       : Used to inform the system that someone is using the WiFi
+ **************************************************************************************************/
 bool RequestWiFiConnection( void ){ //This will give a semaphore as the connection is needed
   //We need to also lock this sequence.....
   if( xSemaphoreGive( xConnections ) != pdTRUE ){
@@ -858,6 +991,13 @@ bool RequestWiFiConnection( void ){ //This will give a semaphore as the connecti
   return true;
 }
 
+ /**************************************************************************************************
+ *    Function      : ReleaseWiFiConnection
+ *    Description   : Informs the System that someone won't need WiFi anymore
+ *    Input         : none
+ *    Output        : none
+ *    Remarks       : This must be called after WiFi is claimed with RequestWiFiConnection
+ **************************************************************************************************/
 void ReleaseWiFiConnection( void ){ //This will remove a semaphore as the connection can be shut down
       
       if(false ==  xSemaphoreTake( xConnections, ( TickType_t ) 0 ) )
@@ -874,7 +1014,14 @@ void ReleaseWiFiConnection( void ){ //This will remove a semaphore as the connec
          
 }
 
-
+ /**************************************************************************************************
+ *    Function      : EnableStartStopMode
+ *    Description   : StartStop Mode for WiFi
+ *    Input         : bool
+ *    Output        : none
+ *    Remarks       : If enabled WiFi will be switched off if no longer needed
+ *                    also Web access won't work any longer if WiFi is disabled
+ **************************************************************************************************/
 void EnableStartStopMode( bool ena ){
   StarStopeMode=ena;
   if(false == ena) {

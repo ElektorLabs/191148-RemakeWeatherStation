@@ -8,19 +8,37 @@
 #include "thingspeak.h"
 
 
-
+/**************************************************************************************************
+ *    Function      : ThinkspeakUpload
+ *    Description   : Constructor
+ *    Input         : void
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 ThinkspeakUpload::ThinkspeakUpload( void ){
-
   //For the Upload we also use a mapping table but limit the amount of data currently to 16 entrys
   //For every entry we have a internal channel no and also a senseBoxID at hand ( hopfully )
-
-
 }
 
+/**************************************************************************************************
+ *    Function      : ThinkspeakUpload
+ *    Description   : Destructor
+ *    Input         : void
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 ThinkspeakUpload::~ThinkspeakUpload( void ){
 
 }
 
+
+/**************************************************************************************************
+ *    Function      : begin
+ *    Description   : Sets up the Thingspeak Task
+ *    Input         : bool usehttps
+ *    Output        : void
+ *    Remarks       : Thingspeak don't linke HTTPS for now
+ **************************************************************************************************/
 void ThinkspeakUpload::begin(  bool usehttps ){
   usesecure = usehttps;
   TaskData.obj=this;
@@ -43,11 +61,24 @@ void ThinkspeakUpload::begin(  bool usehttps ){
 
 }
 
+/**************************************************************************************************
+ *    Function      : RegisterDataAccess
+ *    Description   : Register a function to access the mapped sensor values
+ *    Input         : ThinkspeakUpload::DataAccesFnc Fnc
+ *    Output        : void
+ *    Remarks       : Thingspeak don't linke HTTPS for now
+ **************************************************************************************************/
 void ThinkspeakUpload::RegisterDataAccess(ThinkspeakUpload::DataAccesFnc Fnc){
   DaFnc = Fnc; //Register the pointer...
 }
 
-
+/**************************************************************************************************
+ *    Function      : WriteMapping
+ *    Description   : Writes the Mapping to a JSON file
+ *    Input         : void
+ *    Output        : void
+ *    Remarks       : void
+ **************************************************************************************************/
 void ThinkspeakUpload::WriteMapping( void ){
   //This will just convert the Mapping to JSON and write it to the local filesystem
     String JSONData="";
@@ -77,6 +108,14 @@ void ThinkspeakUpload::WriteMapping( void ){
 
 }
 
+
+/**************************************************************************************************
+ *    Function      : ReadMapping
+ *    Description   : Read the Mapping from a JSON file
+ *    Input         : void
+ *    Output        : void
+ *    Remarks       : void
+ **************************************************************************************************/
 void ThinkspeakUpload::ReadMapping( void ){
 const size_t capacity = JSON_ARRAY_SIZE(64) + JSON_OBJECT_SIZE(1) + 64*JSON_OBJECT_SIZE(3) + 1580;
 DynamicJsonDocument doc(capacity);
@@ -134,6 +173,15 @@ String JSONData="";
 
 }
 
+
+
+/**************************************************************************************************
+ *    Function      : WriteSettings
+ *    Description   : Write the Settings to a JSON file
+ *    Input         : void
+ *    Output        : void
+ *    Remarks       : void
+ **************************************************************************************************/
 void ThinkspeakUpload::WriteSettings(){
     Serial.println("Write to /ThingSpeakSetting.json");
     File file = SPIFFS.open("/ThingSpeakSetting.json", FILE_WRITE);
@@ -149,6 +197,14 @@ void ThinkspeakUpload::WriteSettings(){
 
 }
 
+
+/**************************************************************************************************
+ *    Function      : ReadSettings
+ *    Description   : Read the Settings from a JSON file
+ *    Input         : void
+ *    Output        : void
+ *    Remarks       : void
+ **************************************************************************************************/
 void ThinkspeakUpload::ReadSettings(){
     const size_t capacity = JSON_ARRAY_SIZE(64) + JSON_OBJECT_SIZE(1) + 64*JSON_OBJECT_SIZE(3)+(64*16);
     DynamicJsonDocument doc(capacity);
@@ -199,6 +255,13 @@ void ThinkspeakUpload::ReadSettings(){
 
 
 
+/**************************************************************************************************
+ *    Function      : PostData
+ *    Description   : This will prepare data to be send and try to 
+ *    Input         : ThinkspeakUpload* obj
+ *    Output        : bool
+ *    Remarks       : void
+ **************************************************************************************************/
 bool ThinkspeakUpload::PostData(  ThinkspeakUpload* obj ) {
   WiFiClient* clientptr = nullptr;
   String thingspeakApi = String(obj->Settings.ThingspealAPIKey);
@@ -275,7 +338,13 @@ bool ThinkspeakUpload::PostData(  ThinkspeakUpload* obj ) {
 
 }
 
-//request the specified url of the specified host
+/**************************************************************************************************
+ *    Function      : performRequest
+ *    Description   : This will perfrom a request to thingspeak
+ *    Input         : WiFiClient* c , String host, String url, int port , String method , String headers , String data
+ *    Output        : String
+ *    Remarks       : void
+ **************************************************************************************************/
 String ThinkspeakUpload::performRequest(WiFiClient* c , String host, String url, int port , String method , String headers , String data ) {
   
   Serial.println("Connecting to host '" + host + "' on port " + String(port));
@@ -315,6 +384,13 @@ String ThinkspeakUpload::performRequest(WiFiClient* c , String host, String url,
   return response;
 }
 
+/**************************************************************************************************
+ *    Function      : UploadTaskFnc
+ *    Description   : Task for the 
+ *    Input         : void* params
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 void ThinkspeakUpload::UploadTaskFnc(void* params){
   uint32_t WaitTime = portMAX_DELAY;
   TaskData_t* TaskData = (TaskData_t*) params;
@@ -355,16 +431,39 @@ void ThinkspeakUpload::UploadTaskFnc(void* params){
 
 }
 
+
+/**************************************************************************************************
+ *    Function      : GetMaxMappingChannels
+ *    Description   : Returns the max amount of channels supported by this driver
+ *    Input         : void
+ *    Output        : uint8_t
+ *    Remarks       : none
+ **************************************************************************************************/
 uint8_t ThinkspeakUpload::GetMaxMappingChannels( void ){
   return ( sizeof(Mapping) / sizeof( Mapping[0] )  );
 }
 
+
+/**************************************************************************************************
+ *    Function      : SetThinkspeakAPIKey
+ *    Description   : Sets the Key used for the Upload 
+ *    Input         : ID
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 void ThinkspeakUpload::SetThinkspeakAPIKey( String ID ) {
   
   strncpy(Settings.ThingspealAPIKey, ID.c_str(), sizeof(Settings.ThingspealAPIKey));
   WriteSettings();
 }
 
+/**************************************************************************************************
+ *    Function      : SetThinkspeakEnable
+ *    Description   : Enables or disbales the Upload
+ *    Input         : bool
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 void ThinkspeakUpload::SetThinkspeakEnable( bool Enable ) {
 
   Settings.Enabled=Enable;
@@ -372,6 +471,13 @@ void ThinkspeakUpload::SetThinkspeakEnable( bool Enable ) {
 
 }
 
+/**************************************************************************************************
+ *    Function      : SetThinkspeakUploadInterval
+ *    Description   : Sets the intervall in minutes for the upload
+ *    Input         : bool
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 void ThinkspeakUpload::SetThinkspeakUploadInterval( uint16_t Interval ) {
 
   Settings.UploadInterval=Interval;
@@ -379,6 +485,14 @@ void ThinkspeakUpload::SetThinkspeakUploadInterval( uint16_t Interval ) {
 
 }
 
+
+/**************************************************************************************************
+ *    Function      : SetMapping
+ *    Description   : Sets the mapping for one channel
+ *    Input         : uint8_t Channel, ThinkspeakMapping_t Map
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 void ThinkspeakUpload::SetMapping(uint8_t Channel, ThinkspeakMapping_t Map){
   if( Channel >= ( sizeof(Mapping) / sizeof( Mapping[0] )  )  ){
     Channel=0;
@@ -391,17 +505,49 @@ void ThinkspeakUpload::SetMapping(uint8_t Channel, ThinkspeakMapping_t Map){
 
 }
 
+/**************************************************************************************************
+ *    Function      : GetThinkspeakAPIKey
+ *    Description   : Gets the used API Key
+ *    Input         : void
+ *    Output        : String
+ *    Remarks       : none
+ **************************************************************************************************/
 String ThinkspeakUpload::GetThinkspeakAPIKey( void ) {
   return String(Settings.ThingspealAPIKey);
 }
+
+/**************************************************************************************************
+ *    Function      : GetThinkspeakEnable
+ *    Description   : Returns if the Upload is enabled
+ *    Input         : void
+ *    Output        : String
+ *    Remarks       : none
+ **************************************************************************************************/
 bool ThinkspeakUpload::GetThinkspeakEnable( void ) {
   return  Settings.Enabled;
 
 }
+
+/**************************************************************************************************
+ *    Function      : GetThinkspeakUploadInterval
+ *    Description   : Gets the current upload intervall
+ *    Input         : void
+ *    Output        : uint16_t
+ *    Remarks       : none
+ **************************************************************************************************/
 uint16_t ThinkspeakUpload::GetThinkspeakUploadInterval( void ) {
   return  Settings.UploadInterval;
 
 }
+
+
+/**************************************************************************************************
+ *    Function      : GetThinkspeakUploadInterval
+ *    Description   : Gets the current mapping for one channel
+ *    Input         : uint8_t Channel
+ *    Output        : ThinkspeakUpload::ThinkspeakMapping_t
+ *    Remarks       : none
+ **************************************************************************************************/
 ThinkspeakUpload::ThinkspeakMapping_t ThinkspeakUpload::GetMapping(uint8_t Channel ){
    if( Channel >= ( sizeof(Mapping) / sizeof( Mapping[0] )  )  ){
     Channel = ( sizeof(Mapping) / sizeof( Mapping[0] )  ) - 1;

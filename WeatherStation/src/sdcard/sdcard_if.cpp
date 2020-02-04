@@ -25,14 +25,35 @@ void SDCardLoging( void* param);
 void SdCardLog_WriteConfig( void );
 void SDCardLog_ReadConfig( void );
 
+/**************************************************************************************************
+ *    Function      : SDCardRegisterTimecore
+ *    Description   : Will register access to the vlauemapper
+ *    Input         : Timecore*
+ *    Output        : void 
+ *    Remarks       : none
+ **************************************************************************************************/
 void SDCardRegisterMappingAccess(VALUEMAPPING* Mapping){
   DataMapping = Mapping;
 }
 
+/**************************************************************************************************
+ *    Function      : SDCardRegisterTimecore
+ *    Description   : Will register a timesource for logging
+ *    Input         : Timecore*
+ *    Output        : void 
+ *    Remarks       : none
+ **************************************************************************************************/
 void SDCardRegisterTimecore( Timecore* TC){
   SDTimeCorePtr=TC;
 }
 
+/**************************************************************************************************
+ *    Function      : setup_sdcard
+ *    Description   : This will prepare the sd-card interface
+ *    Input         : int8_t sd_sck_pin , int8_t sd_miso_pin, int8_t sd_mosi_pin,  int8_t sd_cs_pin
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 void setup_sdcard( int8_t sd_sck_pin , int8_t sd_miso_pin, int8_t sd_mosi_pin, int8_t sd_cs_pin ){
   
   SDSPI.begin(sd_sck_pin, sd_miso_pin, sd_mosi_pin, -1);
@@ -60,6 +81,13 @@ void setup_sdcard( int8_t sd_sck_pin , int8_t sd_miso_pin, int8_t sd_mosi_pin, i
 
 }
 
+/**************************************************************************************************
+ *    Function      : sdcard_umount
+ *    Description   : this will try to unmount the sd card
+ *    Input         : void
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 void sdcard_umount(){
     if (false == xSemaphoreTake(SDCardAccessSem, portMAX_DELAY ) ){
       return;
@@ -71,6 +99,13 @@ void sdcard_umount(){
 
 }
 
+/**************************************************************************************************
+ *    Function      : sdcard_mount
+ *    Description   : this will try to mount the sd card
+ *    Input         : void
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 void sdcard_mount(){
     if (false == xSemaphoreTake(SDCardAccessSem, portMAX_DELAY )){
       return;
@@ -86,6 +121,13 @@ void sdcard_mount(){
   xSemaphoreGive(SDCardAccessSem);
 }
 
+/**************************************************************************************************
+ *    Function      : sdcard_getmounted
+ *    Description   : returns if the card is mounted
+ *    Input         : void
+ *    Output        : bool
+ *    Remarks       : none
+ **************************************************************************************************/
 bool sdcard_getmounted( void ){
   if(  card_eject == true){
     return false;
@@ -94,30 +136,72 @@ bool sdcard_getmounted( void ){
   }
 }
 
+/**************************************************************************************************
+ *    Function      : sdcard_log_enable
+ *    Description   : Enables or disables value logging to sd-card
+ *    Input         : bool
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 void sdcard_log_enable( bool ena){
       LogEnable = ena;
       SdCardLog_WriteConfig();
 }
 
+/**************************************************************************************************
+ *    Function      : sdcard_log_int
+ *    Description   : Sets the log interval for the sdcard
+ *    Input         : uint16_t
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 void sdcard_log_int( uint16_t interval){
       LogInterval = interval;
       SdCardLog_WriteConfig();
 }
 
+/**************************************************************************************************
+ *    Function      : sdcard_log_getenable
+ *    Description   : Checks if the logging is enabled
+ *    Input         : uint16_t
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 bool sdcard_log_getenable( void ){
   return LogEnable;
 }
 
+/**************************************************************************************************
+ *    Function      : sdcard_log_getinterval
+ *    Description   : gets the log intervall
+ *    Input         : void
+ *    Output        : uint16_t
+ *    Remarks       : none
+ **************************************************************************************************/
 uint16_t sdcard_log_getinterval( void ){
   return LogInterval;
 }
 
+/**************************************************************************************************
+ *    Function      : sdcard_log_writesettings
+ *    Description   : Writes config to SPIFFS
+ *    Input         : bool ena, uint16_t interval
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 void sdcard_log_writesettings(bool ena, uint16_t interval){
    LogEnable = ena;
    LogInterval = interval;
    SdCardLog_WriteConfig();
 }
 
+/**************************************************************************************************
+ *    Function      : SdCardLog_WriteConfig
+ *    Description   : Writes JSON Config to SPIFFS
+ *    Input         : void
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 void SdCardLog_WriteConfig( void ){
     //This will just convert the Mapping to JSON and write it to the local filesystem
     Serial.println("Write /sdcardlog.json ");
@@ -176,7 +260,13 @@ String JSONData="";
 
 }
 
-//Capacity in MB
+/**************************************************************************************************
+ *    Function      : sdcard_GetCapacity
+ *    Description   : Gets the disk capacity in MB
+ *    Input         : void
+ *    Output        : uint32_t
+ *    Remarks       : none
+ **************************************************************************************************/
 uint32_t sdcard_GetCapacity( void ){
   uint32_t size_mb=0;
   if(SDCardAccessSem==nullptr){
@@ -197,7 +287,13 @@ uint32_t sdcard_GetCapacity( void ){
   return size_mb;
 } 
 
-//FreeSpace in MB
+/**************************************************************************************************
+ *    Function      : sdcard_GetFreeSpace
+ *    Description   : Gets the free disk space in MB
+ *    Input         : void
+ *    Output        : uint32_t
+ *    Remarks       : none
+ **************************************************************************************************/
 uint32_t sdcard_GetFreeSpace( void  ){
   if(SDCardAccessSem==nullptr){
     return 0;
@@ -212,7 +308,13 @@ uint32_t sdcard_GetFreeSpace( void  ){
   return MBFree;
 }
 
-
+/**************************************************************************************************
+ *    Function      : SDCardLoging
+ *    Description   : Task for Datalogging
+ *    Input         : void* param
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 void SDCardLoging( void* param){
   bool LoggingEnable = true ;
   uint32_t Interval = portMAX_DELAY;
@@ -260,7 +362,13 @@ void SDCardLoging( void* param){
 
 }
 
-
+/**************************************************************************************************
+ *    Function      : SDCardDataLog
+ *    Description   : Writs a set of values to a logfile
+ *    Input         : void
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 void SDCardDataLog( void ){
   
   /* 

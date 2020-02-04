@@ -1,8 +1,22 @@
 #include "sds011.h"
 
+ /**************************************************************************************************
+ *    Function      : Constructor
+ *    Description   : Will setup the class
+ *    Input         : Stream &_ser
+ *    Output        : bool
+ *    Remarks       : Nees a stram as input
+ **************************************************************************************************/
 SDS011::SDS011(Stream &_ser):ser(_ser) {
 }
 
+ /**************************************************************************************************
+ *    Function      : sendData
+ *    Description   : This will send data to the sensor
+ *    Input         : byte *buf, int len
+ *    Output        : bool
+ *    Remarks       : Nees a stram as input
+ **************************************************************************************************/
 void SDS011::sendData(byte *buf, int len) {
   byte cmd[SDS_SEND_DATA_LENGTH] = {0xAA, 0xB4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, queryId[0], queryId[1], 0, 0xAB};
 
@@ -23,7 +37,13 @@ void SDS011::sendData(byte *buf, int len) {
   #endif
 }
 
-//receive data starting with 0xAA and store this in buf
+ /**************************************************************************************************
+ *    Function      : receiveData
+ *    Description   : This will send data to the sensor
+ *    Input         : byte *buf
+ *    Output        : bool
+ *    Remarks       : receive data starting with 0xAA and store this in buf
+ **************************************************************************************************/
 bool SDS011::receiveData(byte *buf) {
   bool start = false;
   int nr = 0;
@@ -62,7 +82,13 @@ bool SDS011::receiveData(byte *buf) {
   return recChk == buf[SDS_RECV_DATA_LENGTH-2];
 }
 
-//send a command to the sds011 and receive the data it sends back
+ /**************************************************************************************************
+ *    Function      : sendCommand
+ *    Description   : send a command to the sds011 and receive the data it sends back
+ *    Input         : byte *buf, int len, byte *recBuf
+ *    Output        : bool
+ *    Remarks       : none
+ **************************************************************************************************/
 bool SDS011::sendCommand(byte *buf, int len, byte *recBuf) {
   ser.flush(); //clear the buffer
   sendData(buf, len);
@@ -79,19 +105,38 @@ bool SDS011::sendCommand(byte *buf, int len, byte *recBuf) {
   return false;
 }
 
+ /**************************************************************************************************
+ *    Function      : getQueryId
+ *    Description   : get the ID of the sensor of which data should be requested
+ *    Input         : byte *buf
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 //get the ID of the sensor of which data should be requested
 void SDS011::getQueryId(byte *buf) {
   buf[0] = queryId[0];
   buf[1] = queryId[1];
 }
 
-//set the ID of the sensor of which data should be requested
+ /**************************************************************************************************
+ *    Function      : setQueryId
+ *    Description   : set the ID of the sensor of which data should be requested
+ *    Input         : byte *buf
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 void SDS011::setQueryId(byte *buf) {
   queryId[0] = buf[0];
   queryId[1] = buf[1];
 }
 
-//get the current mode of the sensor (continuous or query)
+ /**************************************************************************************************
+ *    Function      : setQueryId
+ *    Description   : et the current mode of the sensor (continuous or query)
+ *    Input         : bool *m
+ *    Output        : bool
+ *    Remarks       : none
+ **************************************************************************************************/
 bool SDS011::getMode(bool *m) {
   byte buf[2] = {SDS_CMD_SET_MODE, SDS_GET_MODE};
   byte recBuf[SDS_RECV_DATA_LENGTH] = {0};
@@ -100,7 +145,13 @@ bool SDS011::getMode(bool *m) {
   return s;
 }
 
-//set the current mode of the sensor (continuous or query)
+/**************************************************************************************************
+ *    Function      : setQueryId
+ *    Description   : set the current mode of the sensor (continuous or query
+ *    Input         : bool m
+ *    Output        : bool
+ *    Remarks       : none
+ **************************************************************************************************/
 bool SDS011::setMode(bool m) {
   byte buf[3] = {SDS_CMD_SET_MODE, SDS_SET_MODE, m};
   byte recBuf[SDS_RECV_DATA_LENGTH] = {0};
@@ -109,7 +160,13 @@ bool SDS011::setMode(bool m) {
   return s;
 }
 
-//get the measurements of the sensor
+/**************************************************************************************************
+ *    Function      : getData
+ *    Description   : get the measurements of the sensor
+ *    Input         : float *p25, float *p10
+ *    Output        : bool
+ *    Remarks       : none
+ **************************************************************************************************/
 bool SDS011::getData(float *p25, float *p10) {
   byte buf[1] = {SDS_CMD_QUERY_DATA};
   byte recBuf[SDS_RECV_DATA_LENGTH] = {0};
@@ -121,6 +178,13 @@ bool SDS011::getData(float *p25, float *p10) {
   return s;
 }
 
+/**************************************************************************************************
+ *    Function      : setDeviceId
+ *    Description   : get the measurements of the sensor
+ *    Input         : byte *id
+ *    Output        : bool
+ *    Remarks       : none
+ **************************************************************************************************/
 bool SDS011::setDeviceId(byte *id) {
   byte buf[13] = {SDS_CMD_SET_DEVICE_ID, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, id[0], id[1]};
   byte recBuf[SDS_RECV_DATA_LENGTH] = {0};
@@ -128,7 +192,13 @@ bool SDS011::setDeviceId(byte *id) {
   return s;
 }
 
-//get the sleep mode of the sensor
+/**************************************************************************************************
+ *    Function      : getSleepMode
+ *    Description   : get the sleep mode of the sensor
+ *    Input         : bool *m
+ *    Output        : bool
+ *    Remarks       : none
+ **************************************************************************************************/
 bool SDS011::getSleepMode(bool *m) {
   byte buf[2] = {SDS_CMD_SET_SLEEP, SDS_GET_MODE};
   byte recBuf[SDS_RECV_DATA_LENGTH] = {0};
@@ -137,7 +207,13 @@ bool SDS011::getSleepMode(bool *m) {
   return s;
 }
 
-//set the sleep mode of the sensor
+/**************************************************************************************************
+ *    Function      : setSleepMode
+ *    Description   : set the sleep mode of the sensor
+ *    Input         : bool m
+ *    Output        : bool
+ *    Remarks       : none
+ **************************************************************************************************/
 bool SDS011::setSleepMode(bool m) {
   byte buf[3] = {SDS_CMD_SET_SLEEP, SDS_SET_MODE, m};
   byte recBuf[SDS_RECV_DATA_LENGTH] = {0};
@@ -145,7 +221,13 @@ bool SDS011::setSleepMode(bool m) {
   return s;
 }
 
-//get the working period of the sensor (0 is continuous, 1 - 30 min is the measurement interval in minutes)
+/**************************************************************************************************
+ *    Function      : getWorkingPeriod
+ *    Description   : sget the working period of the sensor (0 is continuous, 1 - 30 min is the measurement interval in minute
+ *    Input         : int *per
+ *    Output        : bool
+ *    Remarks       : none
+ **************************************************************************************************/
 bool SDS011::getWorkingPeriod(int *per) {
   byte buf[2] = {SDS_CMD_SET_WORKING_PERIOD, SDS_GET_MODE};
   byte recBuf[SDS_RECV_DATA_LENGTH] = {0};
@@ -154,7 +236,13 @@ bool SDS011::getWorkingPeriod(int *per) {
   return s;
 }
 
-//set the working period of the sensor
+/**************************************************************************************************
+ *    Function      : setWorkingPeriod
+ *    Description   : set the working period of the sensor
+ *    Input         : int period
+ *    Output        : bool
+ *    Remarks       : none
+ **************************************************************************************************/
 bool SDS011::setWorkingPeriod(int period) {
   byte buf[3] = {SDS_CMD_SET_WORKING_PERIOD, SDS_SET_MODE, (byte)period};
   byte recBuf[SDS_RECV_DATA_LENGTH] = {0};
@@ -162,7 +250,13 @@ bool SDS011::setWorkingPeriod(int period) {
   return s;
 }
 
-//get the firmware version of the sensor
+/**************************************************************************************************
+ *    Function      : getFirmwareVersion
+ *    Description   : get the firmware version of the sensor
+ *    Input         : byte *ver
+ *    Output        : bool
+ *    Remarks       : none
+ **************************************************************************************************/
 bool SDS011::getFirmwareVersion(byte *ver) {
   byte buf[1] = {SDS_CMD_CHECK_FIRMWARE_VERSION};
   byte recBuf[SDS_RECV_DATA_LENGTH] = {0};
@@ -173,6 +267,14 @@ bool SDS011::getFirmwareVersion(byte *ver) {
   return s;
 }
 
+
+/**************************************************************************************************
+ *    Function      : printBuf
+ *    Description   : Prints Buffercontent as HEX
+ *    Input         : byte *buf, int len
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 void printBuf(byte *buf, int len) {
   for (int i = 0; i < len; i++) {
     Serial.print("0x");

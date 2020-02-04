@@ -14,6 +14,13 @@ void response_connectedsensors( void );
 void process_setmapping( void );
 void response_channelvalue( void );
 
+/**************************************************************************************************
+ *    Function      : Webserver_Map_FunctionsRegister
+ *    Description   : Registers new URL for handling
+ *    Input         : WebServer* serverptr 
+ *    Output        : none
+ *    Remarks       : None
+ **************************************************************************************************/
 void Webserver_Map_FunctionsRegister( WebServer* serverptr){
 MappingServer=serverptr;
 MappingServer->on("/mapping/mappingdata.json", HTTP_GET, response_mappingdata);
@@ -25,8 +32,13 @@ MappingServer->on("/mapping/{}/value",HTTP_GET, response_channelvalue);
 
 }
 
-/* ------------------------------------------- */
-
+/**************************************************************************************************
+ *    Function      : process_setmapping
+ *    Description   : Processes POST for new mapping
+ *    Input         : none 
+ *    Output        : none
+ *    Remarks       : None
+ **************************************************************************************************/
 void process_setmapping( void ){
 //We need here the element eqivalent for the mapping
 //Also we make sure that this is a valid element
@@ -120,7 +132,13 @@ int32_t iValueChannel=0;
 
 }
 
-
+/**************************************************************************************************
+ *    Function      : response_mappingdata
+ *    Description   : Sends mappingdatat to client
+ *    Input         : none 
+ *    Output        : none
+ *    Remarks       : None
+ **************************************************************************************************/
 void response_mappingdata( void ){
     if(SPIFFS.exists("/mapping.json")){
       File file = SPIFFS.open("/mapping.json", "r");
@@ -132,7 +150,13 @@ void response_mappingdata( void ){
     }
 }
 
-
+/**************************************************************************************************
+ *    Function      : response_connectedsensors
+ *    Description   : Sends connected sensors to client
+ *    Input         : none 
+ *    Output        : none
+ *    Remarks       : None
+ **************************************************************************************************/
 void response_connectedsensors( void ){
     //We need to collect a whole buch of data for this one......
     VALUEMAPPING::SensorElementEntry_t SensorList[64];
@@ -160,6 +184,13 @@ void response_connectedsensors( void ){
     MappingServer->send(200, "text/plain", data);
 }
 
+/**************************************************************************************************
+ *    Function      : response_supportedsensors
+ *    Description   : Sends supported sensors to client
+ *    Input         : none 
+ *    Output        : none
+ *    Remarks       : None
+ **************************************************************************************************/
 void response_supportedsensors( void ){
     //We need to collect a whole buch of data for this one......
     VALUEMAPPING::SensorElementEntry_t SensorList[64];
@@ -187,6 +218,13 @@ void response_supportedsensors( void ){
     MappingServer->send(200, "text/plain", data);
 }
 
+/**************************************************************************************************
+ *    Function      : response_channelvalue
+ *    Description   : Sends the value of a channel back to the client
+ *    Input         : none 
+ *    Output        : none
+ *    Remarks       : None
+ **************************************************************************************************/
 void response_channelvalue( void ){
     float value = 0;
     WebServer * server = MappingServer;

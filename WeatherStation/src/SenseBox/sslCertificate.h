@@ -1,6 +1,7 @@
 #ifndef SSLCERTIFICATE_H
 #define SSLCERTIFICATE_H
-
+//This is the ssl cerificate used by the EPS32
+//Must be changed by use to ensure security !
 const char* ssl_sb_certificate= \
   "-----BEGIN CERTIFICATE-----\n" \
   "MIIEkjCCA3qgAwIBAgIQCgFBQgAAAVOFc2oLheynCDANBgkqhkiG9w0BAQsFADA/\n" \

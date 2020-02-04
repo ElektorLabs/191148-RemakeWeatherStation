@@ -6,19 +6,36 @@
 /* This is code that will be shifted to the ULP in the future */
 Ticker WindSpeedCapture;
 
-void IRAM_ATTR test_irs( ){
-   Serial.println("X");
-}
-
-
+/**************************************************************************************************
+ *    Function      : WindSpeedSensor 
+ *    Description   : Constructor
+ *    Input         : void 
+ *    Output        : void
+ *    Remarks       : Values shall be put every 10 seconds
+ **************************************************************************************************/
 WindSpeedSensor::WindSpeedSensor( void )  {
   xSemaphore = xSemaphoreCreateCounting( 500, 0 );
-
-  
- 
-
 }
 
+/**************************************************************************************************
+ *    Function      : WindSpeedSensor 
+ *    Description   : Destructror
+ *    Input         : void
+ *    Output        : void
+ *    Remarks       : None
+ **************************************************************************************************/
+WindSpeedSensor::~WindSpeedSensor() {
+		detachInterrupt( digitalPinToInterrupt(PIN) );
+	}
+
+
+/**************************************************************************************************
+ *    Function      : begin 
+ *    Description   : Set up the sensor
+ *    Input         : int _speedPin 
+ *    Output        : void
+ *    Remarks       : needs a digital io with interrupt capability
+ **************************************************************************************************/
 void WindSpeedSensor::begin( int _speedPin  ){
   PIN = _speedPin;
   pinMode(PIN, INPUT);
@@ -26,6 +43,13 @@ void WindSpeedSensor::begin( int _speedPin  ){
   attachInterrupt( digitalPinToInterrupt(PIN), std::bind(&WindSpeedSensor::WindSpeedPinISR,this), FALLING);
 }
 
+/**************************************************************************************************
+ *    Function      : CalculateSpeed 
+ *    Description   : calculates the current speed
+ *    Input         : WindSpeedSensor* obj
+ *    Output        : void
+ *    Remarks       : None
+ **************************************************************************************************/
 void WindSpeedSensor::CalculateSpeed( WindSpeedSensor* obj ){
   // This is called once a second 
   uint16_t pulsecount = uxSemaphoreGetCount ( obj->xSemaphore );
@@ -42,6 +66,13 @@ void WindSpeedSensor::CalculateSpeed( WindSpeedSensor* obj ){
 
 }
 
+/**************************************************************************************************
+ *    Function      : AddToPulses_10Sec 
+ *    Description   : Adds the pulses for a 10 second intervall
+ *    Input         : uint32_t
+ *    Output        : void
+ *    Remarks       : None
+ **************************************************************************************************/
 void WindSpeedSensor::AddToPulses_10Sec(uint32_t pulses ){
     static uint8_t _10SecondAVG_oldest_idx=0;
     _10SecondAVG[_10SecondAVG_oldest_idx]=pulses;
@@ -54,6 +85,13 @@ void WindSpeedSensor::AddToPulses_10Sec(uint32_t pulses ){
 
 }
 
+/**************************************************************************************************
+ *    Function      : AddToPulses_60Sec 
+ *    Description   : Adds the pulses for a 60 second intervall
+ *    Input         : uint32_t
+ *    Output        : void
+ *    Remarks       : None
+ **************************************************************************************************/
 void WindSpeedSensor::AddToPulses_60Sec(uint32_t pulses ){
     static uint8_t _60SecondAVG_oldest_idx=0;
     _60SecondAVG[_60SecondAVG_oldest_idx]=pulses;
@@ -66,6 +104,13 @@ void WindSpeedSensor::AddToPulses_60Sec(uint32_t pulses ){
 
 }
 
+/**************************************************************************************************
+ *    Function      : AddToPulses_3600Sec 
+ *    Description   : Adds the pulses for a 3600 second intervall
+ *    Input         : uint32_t
+ *    Output        : void
+ *    Remarks       : None
+ **************************************************************************************************/
 void WindSpeedSensor::AddToPulses_3600Sec(uint32_t  pulses ){
     static uint8_t _3600SecondAVG_oldest_idx=0;
     _3600SecondAVG[_3600SecondAVG_oldest_idx]=pulses;
@@ -77,6 +122,13 @@ void WindSpeedSensor::AddToPulses_3600Sec(uint32_t  pulses ){
 
 }
 
+/**************************************************************************************************
+ *    Function      : GetPulses_10Sec 
+ *    Description   : Gets the pulses for 10 seconds AVG
+ *    Input         : void
+ *    Output        : uint32_t
+ *    Remarks       : None
+ **************************************************************************************************/
 uint32_t WindSpeedSensor::GetPulses_10Sec( void ){
   
   uint32_t pulses = 0;
@@ -87,6 +139,13 @@ uint32_t WindSpeedSensor::GetPulses_10Sec( void ){
   return pulses;
 }
 
+/**************************************************************************************************
+ *    Function      : GetPulses_60Sec 
+ *    Description   : Gets the pulses for 60 seconds AVG
+ *    Input         : void
+ *    Output        : uint32_t
+ *    Remarks       : None
+ **************************************************************************************************/
 uint32_t WindSpeedSensor::GetPulses_60Sec( void ){
 
   uint32_t pulses = 0;
@@ -98,10 +157,16 @@ uint32_t WindSpeedSensor::GetPulses_60Sec( void ){
 
 }
 
+/**************************************************************************************************
+ *    Function      : GetPulses_3600Sec 
+ *    Description   : Gets the pulses for 3600 seconds AVG
+ *    Input         : void
+ *    Output        : uint32_t
+ *    Remarks       : None
+ **************************************************************************************************/
 uint32_t WindSpeedSensor::GetPulses_3600Sec( void ){
 
   uint32_t pulses = 0;
-
   for( uint8_t i=0; i<60; i++ ){
     pulses +=  _3600SecondAVG[i];
   }
@@ -109,6 +174,13 @@ uint32_t WindSpeedSensor::GetPulses_3600Sec( void ){
 
 }
 
+/**************************************************************************************************
+ *    Function      : GetAverageSpeed 
+ *    Description   : Gets the pulses average pluses for a given time
+ *    Input         : SpeedAVG_t type
+ *    Output        : float
+ *    Remarks       : None
+ **************************************************************************************************/
 float WindSpeedSensor::GetAverageSpeed( SpeedAVG_t type ){
  float speed = 0;
  uint32_t pulses=0;
@@ -148,9 +220,6 @@ float WindSpeedSensor::GetAverageSpeed( SpeedAVG_t type ){
   return speed ;
 }
 
-WindSpeedSensor::~WindSpeedSensor() {
-		detachInterrupt( digitalPinToInterrupt(PIN) );
-	}
 
 
 /* Code fore reading milliseconds in isr */
@@ -179,6 +248,13 @@ unsigned long IRAM_ATTR isr_millis()
 }
 
 
+/**************************************************************************************************
+ *    Function      : WindSpeedPinISR 
+ *    Description   : Interrupt for a windspeed pulse
+ *    Input         : void
+ *    Output        : void
+ *    Remarks       : None
+ **************************************************************************************************/
 void IRAM_ATTR WindSpeedSensor::WindSpeedPinISR(){
     static uint32_t last_millis = 0;
     uint32_t millis = isr_millis();

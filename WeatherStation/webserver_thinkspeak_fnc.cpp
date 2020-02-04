@@ -14,7 +14,13 @@ void GetThinkspeakMapping( void );
 
 
 
-
+/**************************************************************************************************
+ *    Function      : Webserver_Thinkspeak_FunctionsRegister
+ *    Description   : Registers new URL for handling
+ *    Input         : WebServer* serverptr 
+ *    Output        : none
+ *    Remarks       : None
+ **************************************************************************************************/
 void Webserver_Thinkspeak_FunctionsRegister(WebServer* server){
 
     if(server == nullptr ){
@@ -31,11 +37,26 @@ void Webserver_Thinkspeak_FunctionsRegister(WebServer* server){
     
 }
 
+/**************************************************************************************************
+ *    Function      : Webserver_Thinkspeak_RegisterThinkspeak
+ *    Description   : Registers access to ThinkspeakUpload Object
+ *    Input         : ThinkspeakUpload * Thptr 
+ *    Output        : none
+ *    Remarks       : None
+ **************************************************************************************************/
 void Webserver_Thinkspeak_RegisterThinkspeak( ThinkspeakUpload * Thptr){
      Thsp = Thptr;
 
 }
 
+
+/**************************************************************************************************
+ *    Function      : GetThinkspeakSeverSettings
+ *    Description   : response with settings to client
+ *    Input         : void
+ *    Output        : none
+ *    Remarks       : None
+ **************************************************************************************************/
 void GetThinkspeakSeverSettings(){
     WebServer * server = ThinkspeakWebserver;
     if(server == nullptr){
@@ -59,7 +80,13 @@ void GetThinkspeakSeverSettings(){
 
 
 
-//General settings
+/**************************************************************************************************
+ *    Function      : SetThinkspeakServerSettings
+ *    Description   : Process POST with new Settings
+ *    Input         : void
+ *    Output        : none
+ *    Remarks       : None
+ **************************************************************************************************/
 void SetThinkspeakServerSettings( void ){
     WebServer * server = ThinkspeakWebserver;
     if(server == nullptr){
@@ -106,7 +133,13 @@ void SetThinkspeakServerSettings( void ){
      server->send(200); 
 }
 
-
+/**************************************************************************************************
+ *    Function      : GetThinkspeakChMapping
+ *    Description   : Send current Mapping to Client
+ *    Input         : void
+ *    Output        : none
+ *    Remarks       : None
+ **************************************************************************************************/
 void GetThinkspeakChMapping( void ){
     WebServer * server = ThinkspeakWebserver;
     if(server == nullptr){
@@ -140,13 +173,13 @@ void GetThinkspeakChMapping( void ){
 
 }
 
-/*
-
-    bool enable;
-    uint8_t StationChannelIdx;
-    char SenseBoxSensorID[32]; //We reserve 32 chars for this..... 
-
-*/
+/**************************************************************************************************
+ *    Function      : SetThinkspeakChMapping
+ *    Description   : process POST for new channel mapping
+ *    Input         : void
+ *    Output        : none
+ *    Remarks       : Uses wildcard in URL
+ **************************************************************************************************/
 void SetThinkspeakChMapping( void ){
     WebServer * server = ThinkspeakWebserver;
     if(server == nullptr){
@@ -198,6 +231,13 @@ void SetThinkspeakChMapping( void ){
 
 }
 
+/**************************************************************************************************
+ *    Function      : GetThinkspeakMapping
+ *    Description   : Get mapping for one Channel
+ *    Input         : void
+ *    Output        : none
+ *    Remarks       : none
+ **************************************************************************************************/
 void GetThinkspeakMapping( void ){
     WebServer * server = ThinkspeakWebserver;
     if(server == nullptr){

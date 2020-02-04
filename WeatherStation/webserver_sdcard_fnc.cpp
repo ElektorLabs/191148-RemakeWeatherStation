@@ -9,6 +9,14 @@ void MountCard(void);
 void GetMountStatus( void );
 void GetSettings( void );
 void UpdateSettings( void );
+
+/**************************************************************************************************
+ *    Function      : Webserver_SDCard_FunctionsRegister
+ *    Description   : Registers new URL for handling
+ *    Input         : WebServer* serverptr 
+ *    Output        : none
+ *    Remarks       : None
+ **************************************************************************************************/
 void Webserver_SDCard_FunctionsRegister(WebServer* server){
     SDCardWebServer = server;
     server->on("/sdlog/settings.dat", HTTP_POST, UpdateSettings );
@@ -18,10 +26,13 @@ void Webserver_SDCard_FunctionsRegister(WebServer* server){
     server->on("/sdlog/sd/status", GetMountStatus);
 }
 
-//We need to get a mount status 
-//also a mount and unmount
-
-
+/**************************************************************************************************
+ *    Function      : UmountCard
+ *    Description   : Will unmount SD-Card
+ *    Input         : void
+ *    Output        : none
+ *    Remarks       : None
+ **************************************************************************************************/
 void UmountCard( void ){
     WebServer * server = SDCardWebServer;
     if(server == nullptr){
@@ -32,6 +43,13 @@ void UmountCard( void ){
     server->send(200);
 }
 
+/**************************************************************************************************
+ *    Function      : MountCard
+ *    Description   : Will mount SD-Card
+ *    Input         : void
+ *    Output        : none
+ *    Remarks       : None
+ **************************************************************************************************/
 void MountCard( void ){
  WebServer * server = SDCardWebServer;
     if(server == nullptr){
@@ -43,6 +61,13 @@ void MountCard( void ){
 
 }
 
+/**************************************************************************************************
+ *    Function      : GetMountStatus
+ *    Description   : Will report the SD-Card status
+ *    Input         : void
+ *    Output        : none
+ *    Remarks       : None
+ **************************************************************************************************/
 void GetMountStatus( void ){
     bool mounted = sdcard_getmounted();
     //We return a json for this, also some other infos
@@ -62,6 +87,14 @@ void GetMountStatus( void ){
 
 }
 
+
+/**************************************************************************************************
+ *    Function      : UpdateSettings
+ *    Description   : Will process POST with new settings
+ *    Input         : void
+ *    Output        : none
+ *    Remarks       : None
+ **************************************************************************************************/
 void UpdateSettings( void ){
     WebServer * server = SDCardWebServer;
     if(server == nullptr){
@@ -94,6 +127,13 @@ void UpdateSettings( void ){
     server->send(200); 
 }
 
+/**************************************************************************************************
+ *    Function      : GetSettings
+ *    Description   : Will report settings
+ *    Input         : void
+ *    Output        : none
+ *    Remarks       : None
+ **************************************************************************************************/
 void GetSettings( void ){
 
     //We just have log enable and also the interval

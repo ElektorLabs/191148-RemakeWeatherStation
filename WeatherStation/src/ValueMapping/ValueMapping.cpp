@@ -3,7 +3,13 @@
 #include <ArduinoJson.h>
 #include "../I2C_Sensors/i2c_sensors.h"
 
-
+ /**************************************************************************************************
+ *    Function      : VALUEMAPPING
+ *    Description   : Constructor
+ *    Input         : void
+ *    Output        : bool
+ *    Remarks       : None
+ **************************************************************************************************/
 VALUEMAPPING::VALUEMAPPING( void ){
     
     for(uint8_t i=0;i< ( sizeof(MappingTable) / sizeof( MappingTable[0] )  ) ; i++   ){
@@ -11,28 +17,69 @@ VALUEMAPPING::VALUEMAPPING( void ){
     }
 }
 
+ /**************************************************************************************************
+ *    Function      : VALUEMAPPING
+ *    Description   : Destructor
+ *    Input         : void
+ *    Output        : bool
+ *    Remarks       : None
+ **************************************************************************************************/
 VALUEMAPPING::~VALUEMAPPING( void ){
 
 }
 
+/**************************************************************************************************
+ *    Function      : RegisterI2CBus
+ *    Description   : Will add a I2C Bus to the Mapper
+ *    Input         : I2C_Sensors* Sensors
+ *    Output        : void
+ *    Remarks       : None
+ **************************************************************************************************/
 void VALUEMAPPING::RegisterI2CBus(I2C_Sensors* Sensors ){
     I2CSensorBus = Sensors;
 }
 
+/**************************************************************************************************
+ *    Function      : RegisterUartSensors
+ *    Description   : Will add a UART Sensors to the Mapper
+ *    Input         : UART_PM_Sensors* Sensors
+ *    Output        : void
+ *    Remarks       : None
+ **************************************************************************************************/
 void VALUEMAPPING::RegisterUartSensors(UART_PM_Sensors* Sensors){
     PMSensors=Sensors;
 }
 
+/**************************************************************************************************
+ *    Function      : RegisterOneWire
+ *    Description   : Will add a OneWire-Bus to the Mapper
+ *    Input         : void
+ *    Output        : void
+ *    Remarks       : Not supported yet
+ **************************************************************************************************/
 void VALUEMAPPING::RegisterOneWire( void){
     //Not supported yet
 }
 
 
-
+/**************************************************************************************************
+ *    Function      : RegisterInternalSensors
+ *    Description   : Will add internal sensors to the mapper
+ *    Input         : InternalSensors* Sensors
+ *    Output        : void
+ *    Remarks       : None
+ **************************************************************************************************/
 void VALUEMAPPING::RegisterInternalSensors(InternalSensors* Sensors){
     IntSensors = Sensors;
 }
 
+/**************************************************************************************************
+ *    Function      : begin
+ *    Description   : Will read and apply the sored config
+ *    Input         : void
+ *    Output        : void
+ *    Remarks       : None
+ **************************************************************************************************/
 void VALUEMAPPING::begin( void ){
 
     //We collect all know bus devices here
@@ -42,6 +89,13 @@ void VALUEMAPPING::begin( void ){
 
 }
 
+/**************************************************************************************************
+ *    Function      : GetConnectedSensors
+ *    Description   :  Will return the connected sensors at the system
+ *    Input         : SensorElementEntry_t* List, uint8_t capacity
+ *    Output        : uint8_t
+ *    Remarks       : None
+ **************************************************************************************************/
 uint8_t VALUEMAPPING::GetConnectedSensors( SensorElementEntry_t* List, uint8_t capacity ){
     InternalSensors::SensorUnitInfo_t IntSensorList[15];
     I2C_Sensors::SensorUnitInfo_t I2CSensorList[30];
@@ -121,7 +175,13 @@ uint8_t VALUEMAPPING::GetConnectedSensors( SensorElementEntry_t* List, uint8_t c
     return used_capacity;
 }
 
-
+/**************************************************************************************************
+ *    Function      : GetSensors
+ *    Description   :  Will return the supported sensors at the system
+ *    Input         : SensorElementEntry_t* List, uint8_t capacity
+ *    Output        : uint8_t
+ *    Remarks       : None
+ **************************************************************************************************/
 uint8_t VALUEMAPPING::GetSensors( SensorElementEntry_t* List, uint8_t capacity){
 
  
@@ -203,7 +263,13 @@ uint8_t VALUEMAPPING::GetSensors( SensorElementEntry_t* List, uint8_t capacity){
     return used_capacity;
 }
 
-
+/**************************************************************************************************
+ *    Function      : ReadMappedValue
+ *    Description   : Will return a mapped value
+ *    Input         : float* Value, uint8_t Channel
+ *    Output        : bool
+ *    Remarks       : None
+ **************************************************************************************************/
 bool VALUEMAPPING::ReadMappedValue( float* Value, uint8_t Channel ){
     float value = NAN;
     if(Channel>= ( ( sizeof(MappingTable) / sizeof( MappingTable[0] )  ) )){
@@ -255,10 +321,24 @@ bool VALUEMAPPING::ReadMappedValue( float* Value, uint8_t Channel ){
 
 }
 
+/**************************************************************************************************
+ *    Function      : PrintElementData
+ *    Description   : Debug function to display element content 
+ *    Input         : SensorElementEntry_t Element 
+ *    Output        : void
+ *    Remarks       : None
+ **************************************************************************************************/
 void VALUEMAPPING::PrintElementData( SensorElementEntry_t Element ){
     Serial.printf("Element: Bus=%i, ValueType=%i, Channel=%i\n\r",Element.Bus,Element.ValueType,Element.ChannelIDX);
 }
 
+/**************************************************************************************************
+ *    Function      : SetMappingForChannel
+ *    Description   : Will set a mapping for an internal channel
+ *    Input         : uint8_t MappedChannelIndex, SensorElementEntry_t Element
+ *    Output        : void
+ *    Remarks       : None
+ **************************************************************************************************/
 void VALUEMAPPING::SetMappingForChannel( uint8_t MappedChannelIndex, SensorElementEntry_t Element ){
 
      if(MappedChannelIndex<( ( sizeof(MappingTable) / sizeof( MappingTable[0] )  ) )){
@@ -272,6 +352,13 @@ void VALUEMAPPING::SetMappingForChannel( uint8_t MappedChannelIndex, SensorEleme
     }
 }
 
+/**************************************************************************************************
+ *    Function      : GetMappingForChannel
+ *    Description   : Will return the mapping for a given channel
+ *    Input         : uint8_t MappedChannelIndex 
+ *    Output        : VALUEMAPPING::SensorElementEntry_t
+ *    Remarks       : None
+ **************************************************************************************************/
 VALUEMAPPING::SensorElementEntry_t VALUEMAPPING::GetMappingForChannel( uint8_t MappedChannelIndex){
     VALUEMAPPING::SensorElementEntry_t Element;
     Element.Bus=NOTMAPPED;
@@ -281,7 +368,13 @@ VALUEMAPPING::SensorElementEntry_t VALUEMAPPING::GetMappingForChannel( uint8_t M
     return Element;
 }
 
-//This will fetch the corresponding Sensorname for better human identificaion
+/**************************************************************************************************
+ *    Function      : GetSensorName
+ *    Description   : Will return the frinedly name for a sensor 
+ *    Input         : VALUEMAPPING::SensorElementEntry_t Element
+ *    Output        : String
+ *    Remarks       : None
+ **************************************************************************************************/
 String VALUEMAPPING::GetSensorName( VALUEMAPPING::SensorElementEntry_t Element){
     String Sensorname;
     String BusName;
@@ -325,6 +418,13 @@ String VALUEMAPPING::GetSensorName( VALUEMAPPING::SensorElementEntry_t Element){
 
 }
 
+/**************************************************************************************************
+ *    Function      : GetSensorNameByChannel
+ *    Description   : Will return the frinedly name for a sensor 
+ *    Input         : uint8_t Channel
+ *    Output        : String
+ *    Remarks       : None
+ **************************************************************************************************/
 String VALUEMAPPING::GetSensorNameByChannel(uint8_t Channel){
      String Name;
      VALUEMAPPING::SensorElementEntry_t Element;
@@ -341,6 +441,13 @@ String VALUEMAPPING::GetSensorNameByChannel(uint8_t Channel){
    return Name;
 }
 
+/**************************************************************************************************
+ *    Function      : GetSensorValue
+ *    Description   : Will return value of a sensor if mapped correctly
+ *    Input         : float* Value, VALUEMAPPING::SensorElementEntry_t Element
+ *    Output        : bool
+ *    Remarks       : None
+ **************************************************************************************************/
  bool VALUEMAPPING::GetSensorValue( float* Value, VALUEMAPPING::SensorElementEntry_t Element ){
     float value = NAN;
     switch(Element.Bus){
@@ -389,6 +496,13 @@ String VALUEMAPPING::GetSensorNameByChannel(uint8_t Channel){
 
 }
 
+/**************************************************************************************************
+ *    Function      : ReadConfig
+ *    Description   : Will read and apply config from SPIFFS
+ *    Input         : void
+ *    Output        : void
+ *    Remarks       : None
+ **************************************************************************************************/
 void VALUEMAPPING::ReadConfig( void ){
 
     //Config will be stored as JSON String on SPIFFS
@@ -469,6 +583,14 @@ void VALUEMAPPING::ReadConfig( void ){
 
 }
 
+
+/**************************************************************************************************
+ *    Function      : WriteConfig
+ *    Description   : Will write config to SPIFFS
+ *    Input         : void
+ *    Output        : void
+ *    Remarks       : None
+ **************************************************************************************************/
 void VALUEMAPPING::WriteConfig( void ){
 
     File file = SPIFFS.open("/mapping.json", FILE_WRITE);
@@ -488,6 +610,13 @@ void VALUEMAPPING::WriteConfig( void ){
 
 }
 
+/**************************************************************************************************
+ *    Function      : GetMaxMappedChannels
+ *    Description   : Will get the max channels by the mapper
+ *    Input         : void
+ *    Output        : void
+ *    Remarks       : None
+ **************************************************************************************************/
 uint8_t VALUEMAPPING::GetMaxMappedChannels( void ){
     return ( sizeof(MappingTable) / sizeof( MappingTable[0] )  );
 }

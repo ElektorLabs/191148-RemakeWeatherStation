@@ -48,14 +48,46 @@ typedef struct{
     valuetype_t Type;
 }MQTT_Value_t;
 
+
+/**************************************************************************************************
+ *    Function      : callback
+ *    Description   : none
+ *    Input         : char* topic, byte* payload, unsigned int length
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 void callback(char* topic, byte* payload, unsigned int length);
+
+
+/**************************************************************************************************
+ *    Function      : SendIoBrokerSingleMSG
+ *    Description   : Will send messages compatibel with the ioBroker 
+ *    Input         : void* prarm 
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 void SendIoBrokerSingleMSG(mqttsettings_t* settings,const char* subtopic, const MQTT_Value_t value);
+
 void MQTT_Task( void* prarm );
 
+/**************************************************************************************************
+ *    Function      : MQTTRegisterMappingAccess
+ *    Description   : This registers a function to get access to the mapped values
+ *    Input         : VALUEMAPPING* 
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 void MQTTRegisterMappingAccess(VALUEMAPPING* Mp){
-Mapping = Mp;
+  Mapping = Mp;
 }
 
+/**************************************************************************************************
+ *    Function      : MQTTTaskStart
+ *    Description   : This will start the MQTT Task
+ *    Input         : void 
+ *    Output        : TaskHandle_t
+ *    Remarks       : none
+ **************************************************************************************************/
 void MQTTTaskStart( void ){
 /* This will created the MQTT task pinned to core 1 with prio 1 */
    xTaskCreatePinnedToCore(
@@ -69,14 +101,35 @@ void MQTTTaskStart( void ){
 
 }
 
+/**************************************************************************************************
+ *    Function      : GetMQTTTaskHandle
+ *    Description   : This will read the MQTT Handle
+ *    Input         : void 
+ *    Output        : TaskHandle_t
+ *    Remarks       : none
+ **************************************************************************************************/
 TaskHandle_t GetMQTTTaskHandle( void ){
    return MQTTTaskHandle;
 }
 
+/**************************************************************************************************
+ *    Function      : GetMQTTSettings
+ *    Description   : This will read the MQTT Settings from datastore
+ *    Input         : void* prarm 
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 mqttsettings_t GetMQTTSettings( void ){
   return read_mqttsettings();
 }
 
+/**************************************************************************************************
+ *    Function      : MQTT_Task
+ *    Description   : Task to handle MQTT 
+ *    Input         : void* prarm 
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 void MQTT_Task( void* prarm ){
    DynamicJsonDocument  root(4096);
    String JsonString = "";
@@ -191,13 +244,15 @@ void MQTT_Task( void* prarm ){
  }
 }
 
-/***************************
- * callback - MQTT message
- ***************************/
-void callback(char* topic, byte* payload, unsigned int length) {
 
-}
 
+/**************************************************************************************************
+ *    Function      : SendIoBrokerSingleMSG
+ *    Description   : Will send messages compatibel with the ioBroker 
+ *    Input         : void* prarm 
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 void SendIoBrokerSingleMSG(mqttsettings_t* settings,const char* subtopic, const MQTT_Value_t value) {
   /* Topic can be up to 500 cahrs long and we need also to add a 
    * name for each subtopic 
@@ -271,4 +326,18 @@ void SendIoBrokerSingleMSG(mqttsettings_t* settings,const char* subtopic, const 
          Serial.println( valuestr );
     }
   }
+}
+
+/***************************
+ * callback - MQTT message
+ ***************************/
+/**************************************************************************************************
+ *    Function      : callback
+ *    Description   : none
+ *    Input         : char* topic, byte* payload, unsigned int length
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
+void callback(char* topic, byte* payload, unsigned int length) {
+
 }

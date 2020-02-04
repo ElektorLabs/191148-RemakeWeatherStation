@@ -1,18 +1,46 @@
 #include "HPMA115S0.h"
 
+ /**************************************************************************************************
+ *    Function      : Constructor
+ *    Description   : none
+ *    Input         : Stream &_ser
+ *    Output        : none
+ *    Remarks       : Needs a Stream as input
+ **************************************************************************************************/
 HPMA115S0::HPMA115S0(Stream &_ser):ser(_ser){
 
 }
 
+ /**************************************************************************************************
+ *    Function      : Destructor
+ *    Description   : none
+ *    Input         : Stream &_ser
+ *    Output        : none
+ *    Remarks       : Needs a Stream as input
+ **************************************************************************************************/
 HPMA115S0::~HPMA115S0( void){
 
 }
 
+ /**************************************************************************************************
+ *    Function      : begin
+ *    Description   : none
+ *    Input         : void
+ *    Output        : void
+ *    Remarks       : None
+ **************************************************************************************************/
  bool HPMA115S0::begin ( void ){
      
  }
 
 
+ /**************************************************************************************************
+ *    Function      : ReadMesurement
+ *    Description   : This will read the PM2.5 and PM10 value
+ *    Input         : uint16_t* pm2_5 , uint16_t* pm10
+ *    Output        : void
+ *    Remarks       : None
+ **************************************************************************************************/
 bool HPMA115S0::ReadMesurement(uint16_t* pm2_5 , uint16_t* pm10 ){
     //Flush everthing that is in the receive buffer
     bool readok = false;
@@ -73,6 +101,14 @@ bool HPMA115S0::ReadMesurement(uint16_t* pm2_5 , uint16_t* pm10 ){
     return readok;
 }
 
+
+ /**************************************************************************************************
+ *    Function      : StartMesurment
+ *    Description   : This will send a start messurment command to the sensor
+ *    Input         : void
+ *    Output        : bool
+ *    Remarks       : None
+ **************************************************************************************************/
 bool HPMA115S0::StartMesurment( ){
 
 
@@ -86,6 +122,15 @@ bool HPMA115S0::StartMesurment( ){
     return ProcessACKNACK();
 
 }
+
+
+ /**************************************************************************************************
+ *    Function      : StopMesurment
+ *    Description   : This will send a stop messurment command to the sensor
+ *    Input         : void
+ *    Output        : bool
+ *    Remarks       : None
+ **************************************************************************************************/
 bool HPMA115S0::StopMesurment( ){
 
    
@@ -99,6 +144,14 @@ bool HPMA115S0::StopMesurment( ){
 
 
 }
+
+ /**************************************************************************************************
+ *    Function      : SetCustomAdjustmentCoefficent
+ *    Description   : This will set a custom coefficent ( see manual for more info )
+ *    Input         : uint8_t coefficent
+ *    Output        : bool
+ *    Remarks       : None
+ **************************************************************************************************/
 bool HPMA115S0::SetCustomAdjustmentCoefficent( uint8_t coefficent ){
     if(coefficent<30){
         coefficent=30;
@@ -107,10 +160,26 @@ bool HPMA115S0::SetCustomAdjustmentCoefficent( uint8_t coefficent ){
     return ProcessACKNACK();
 }
 
+
+ /**************************************************************************************************
+ *    Function      : GetCustomAdjustmentCoefficent
+ *    Description   : not supported
+ *    Input         : uint8_t* coefficent
+ *    Output        : bool
+ *    Remarks       : Not supported
+ **************************************************************************************************/
 bool HPMA115S0::GetCustomAdjustmentCoefficent( uint8_t* coefficent){
     return false;
 }
 
+
+ /**************************************************************************************************
+ *    Function      : StopAutoSend
+ *    Description   : Will disable autosend
+ *    Input         : void
+ *    Output        : bool
+ *    Remarks       : None
+ **************************************************************************************************/
 bool HPMA115S0::StopAutoSend( ){
 
        
@@ -123,6 +192,14 @@ bool HPMA115S0::StopAutoSend( ){
     return ProcessACKNACK();
 
 }
+
+ /**************************************************************************************************
+ *    Function      : EnableAutoSend
+ *    Description   : Will enable autosend
+ *    Input         : void
+ *    Output        : bool
+ *    Remarks       : None
+ **************************************************************************************************/
 bool HPMA115S0::EnableAutoSend( ){
 
     SendCommand(HPMA115S0_COMMAND_t::STARTAUTOSEND);
@@ -135,7 +212,13 @@ bool HPMA115S0::EnableAutoSend( ){
 
 }
 
-
+ /**************************************************************************************************
+ *    Function      : SendCommand
+ *    Description   : Will send a command to the sensor
+ *    Input         : HPMA115S0_COMMAND_t
+ *    Output        : bool
+ *    Remarks       : None
+ **************************************************************************************************/
  void HPMA115S0::SendCommand( HPMA115S0_COMMAND_t command){
 
     //uint8_t Data[4]={104,1,0x00,0x00}; 
@@ -154,6 +237,13 @@ bool HPMA115S0::EnableAutoSend( ){
     }
  }
 
+ /**************************************************************************************************
+ *    Function      : SendCommandParameter
+ *    Description   : Will send a command with parameter to the sensor
+ *    Input         : HPMA115S0_COMMAND_t command, uint8_t parameter
+ *    Output        : bool
+ *    Remarks       : None
+ **************************************************************************************************/
 void HPMA115S0::SendCommandParameter(HPMA115S0_COMMAND_t command, uint8_t parameter){
            //uint8_t Data[4]={104,1,0x00,0x00}; 
     uint8_t Data[5]={0x68,0x01,0x00,0x00,0x00};
@@ -172,6 +262,14 @@ void HPMA115S0::SendCommandParameter(HPMA115S0_COMMAND_t command, uint8_t parame
     }
    }
 
+
+ /**************************************************************************************************
+ *    Function      : ProcessACKNACK
+ *    Description   : Waits for a NAK / ACK from the sensor or a timout
+ *    Input         : void
+ *    Output        : bool
+ *    Remarks       : None
+ **************************************************************************************************/
 bool HPMA115S0::ProcessACKNACK( void ){
 
     bool readok = false;

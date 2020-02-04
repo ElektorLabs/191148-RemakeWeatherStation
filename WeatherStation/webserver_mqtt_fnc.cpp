@@ -8,6 +8,13 @@ static WebServer * MQTTWebserver=nullptr;
 static void request_mqttsetting( void );
 static void mqttsettings_update( void );
 
+/**************************************************************************************************
+ *    Function      : Webserver_MQTT_FunctionsRegister
+ *    Description   : Registers new URL for handling
+ *    Input         : WebServer* serverptr 
+ *    Output        : none
+ *    Remarks       : None
+ **************************************************************************************************/
 void Webserver_MQTT_FunctionsRegister(WebServer* server){
     if(server == nullptr){
         return;
@@ -17,6 +24,13 @@ void Webserver_MQTT_FunctionsRegister(WebServer* server){
     server->on("/mqtt/settings",HTTP_GET, request_mqttsetting);
 }
 
+/**************************************************************************************************
+ *    Function      : mqttsettings_update
+ *    Description   : Updates the MQTT settings
+ *    Input         : none
+ *    Output        : none
+ *    Remarks       : None
+ **************************************************************************************************/
 void mqttsettings_update( ){
   WebServer* server = MQTTWebserver;
   if(server == nullptr){
@@ -113,14 +127,13 @@ void mqttsettings_update( ){
 }
 
 
-/*
-  char mqttservename[129];
-  uint16_t mqttserverport;
-  char mqttusername[129];
-  char mqttpassword[129];
-  char mqtttopic[501];
-  char mqtthostname[65];
- */
+/**************************************************************************************************
+ *    Function      : request_mqttsetting
+ *    Description   : Sends MQTT settings to client
+ *    Input         : none
+ *    Output        : none
+ *    Remarks       : Passwort is not transmitted ony if one is set
+ **************************************************************************************************/
 void request_mqttsetting(){
   WebServer* server = MQTTWebserver; 
   if(server == nullptr){

@@ -60,6 +60,13 @@ static bool DisplayAttached = false;
 void LCDisplayTask( void* param);
 void NoneDisplayTask( void* param);
 
+/**************************************************************************************************
+ *    Function      : LCDMenu
+ *    Description   : Will setup the functions for the LCD menu
+ *    Input         : int16_t btn, int16_t btn2
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 void LCDMenu( int16_t btn, int16_t btn2 ){
     if(btn < 0){
       //No Button defined we will disbale the display at all, as we expect the boot button to be present
@@ -108,6 +115,13 @@ void LCDMenu( int16_t btn, int16_t btn2 ){
 
 }
 
+/**************************************************************************************************
+ *    Function      : DisableLCD
+ *    Description   : This will power down the lcd
+ *    Input         : void
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 void DisableLCD( void ){
     if(false == DisplayAttached){
       return;
@@ -120,6 +134,13 @@ void DisableLCD( void ){
     i2c_unlock_bus();
 }
 
+/**************************************************************************************************
+ *    Function      : EnableLCD
+ *    Description   : This will power up the lcd
+ *    Input         : void
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 void EnableLCD( void ){
     if(false == DisplayAttached){
       return;
@@ -133,6 +154,13 @@ void EnableLCD( void ){
 }
 
 
+/**************************************************************************************************
+ *    Function      : DefaultDisplay
+ *    Description   : Function to updatet the LCD content
+ *    Input         : void
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 void DefaultDisplay( void ){
   if(false == DisplayAttached){
     return;
@@ -192,6 +220,13 @@ void DefaultDisplay( void ){
 
 }
 
+/**************************************************************************************************
+ *    Function      : LCDisplayTask
+ *    Description   : Task to handle the display and user input
+ *    Input         : void* param
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 void LCDisplayTask( void* param){
   wifi_connection_info_t ConnectionInfo;
   bool displayoff = false;
@@ -256,7 +291,13 @@ void LCDisplayTask( void* param){
   }
 }
 
-
+/**************************************************************************************************
+ *    Function      : NoneDisplayTask
+ *    Description   : Task to run if no Display is persent
+ *    Input         : void* param
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 void NoneDisplayTask( void* param){
   //This needs a second button ( sort of )
   //If we have a second use button we will use it to dismount the sdcard
@@ -340,7 +381,13 @@ unsigned long IRAM_ATTR BTN_isr_millis()
 	return divs1000_BTN(esp_timer_get_time());
 }
 
-
+/**************************************************************************************************
+ *    Function      : UserBtnISR
+ *    Description   : Interrupt to handle button input
+ *    Input         : void
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 void IRAM_ATTR UserBtnISR(){
     static uint32_t last_millis = 0;
     uint32_t millis = BTN_isr_millis();

@@ -7,7 +7,13 @@
 
 
 
-
+/**************************************************************************************************
+ *    Function      : SenseBoxUpload
+ *    Description   : Constructor
+ *    Input         : void
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 SenseBoxUpload::SenseBoxUpload( void ){
 
   //For the Upload we also use a mapping table but limit the amount of data currently to 16 entrys
@@ -15,10 +21,24 @@ SenseBoxUpload::SenseBoxUpload( void ){
 
 }
 
+/**************************************************************************************************
+ *    Function      : SenseBoxUpload
+ *    Description   : Destructor
+ *    Input         : void
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 SenseBoxUpload::~SenseBoxUpload( void ){
 
 }
 
+/**************************************************************************************************
+ *    Function      : begin
+ *    Description   : Sets up the SenseBox upload
+ *    Input         : void
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 void SenseBoxUpload::begin( bool usehttps){
   
   this->usesecure = usehttps;
@@ -46,10 +66,24 @@ void SenseBoxUpload::begin( bool usehttps){
 
 }
 
+/**************************************************************************************************
+ *    Function      : RegisterDataAccess
+ *    Description   : Gets a pointer for access to the sensor values
+ *    Input         : SenseBoxUpload::DataAccesFnc Fnc
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 void SenseBoxUpload::RegisterDataAccess(SenseBoxUpload::DataAccesFnc Fnc){
   DaFnc = Fnc; //Register the pointer...
 }
 
+/**************************************************************************************************
+ *    Function      : WriteMapping
+ *    Description   : Writes the current mapping to a JSON file on SPIFFS
+ *    Input         : void
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 void SenseBoxUpload::WriteMapping( void ){
   String JSONData = "";
   //This will just convert the Mapping to JSON and write it to the local filesystem
@@ -85,6 +119,14 @@ void SenseBoxUpload::WriteMapping( void ){
 
 }
 
+
+/**************************************************************************************************
+ *    Function      : ReadMapping
+ *    Description   : Reads the current mapping form SPIFFS
+ *    Input         : void
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 void SenseBoxUpload::ReadMapping( void ){
 String JSONData ="";
 //Config will be stored as JSON String on SPIFFS
@@ -144,6 +186,13 @@ String JSONData ="";
 
 }
 
+/**************************************************************************************************
+ *    Function      : WriteSettings
+ *    Description   : Writes the Config settings to JSON file 
+ *    Input         : void
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 void SenseBoxUpload::WriteSettings(){
 
     File file = SPIFFS.open("/SenseBoxSetting.json", FILE_WRITE);
@@ -162,6 +211,13 @@ void SenseBoxUpload::WriteSettings(){
 
 }
 
+/**************************************************************************************************
+ *    Function      : ReadSettings
+ *    Description   : Read the Config settings to JSON file 
+ *    Input         : void
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 void SenseBoxUpload::ReadSettings(){
     const size_t capacity = JSON_ARRAY_SIZE(64) + JSON_OBJECT_SIZE(1) + 64*JSON_OBJECT_SIZE(3)+(64*16);
     DynamicJsonDocument doc(capacity);
@@ -209,7 +265,13 @@ void SenseBoxUpload::ReadSettings(){
 }
 
 
-
+/**************************************************************************************************
+ *    Function      : PostData
+ *    Description   : This will try to send the mapped Data  
+ *    Input         : SenseBoxUpload* obj
+ *    Output        : bool
+ *    Remarks       : Returns true if upload passed
+ **************************************************************************************************/
 bool SenseBoxUpload::PostData(  SenseBoxUpload* obj ) {
   WiFiClient* clientptr=nullptr;
   if(false == obj->Settings.Enabled){
@@ -281,7 +343,13 @@ bool SenseBoxUpload::PostData(  SenseBoxUpload* obj ) {
 
 }
 
-//request the specified url of the specified host
+/**************************************************************************************************
+ *    Function      : performRequest
+ *    Description   : This will do the actual request to the webservice
+ *    Input         : WiFiClient* c , String host, String url, int port , String method , String headers , String data
+ *    Output        : String
+ *    Remarks       : Returns the response from the other system
+ **************************************************************************************************/
 String SenseBoxUpload::performRequest(WiFiClient* c , String host, String url, int port , String method , String headers , String data ) {
   Serial.println("Connecting to host '" + host + "' on port " + String(port));
   if(false == c->connect(host.c_str(), port)){
@@ -318,7 +386,13 @@ String SenseBoxUpload::performRequest(WiFiClient* c , String host, String url, i
 }
 
 
-
+/**************************************************************************************************
+ *    Function      : UploadTaskFnc
+ *    Description   : Task that will handle the upload timing
+ *    Input         : void* params
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 void SenseBoxUpload::UploadTaskFnc(void* params){
   uint32_t WaitTime = portMAX_DELAY;
   TaskData_t* TaskData = (TaskData_t*) params;
@@ -361,21 +435,49 @@ void SenseBoxUpload::UploadTaskFnc(void* params){
 }
 
 
+/**************************************************************************************************
+ *    Function      : SetSensBoxID
+ *    Description   : This will set the SenseBox ID to be used
+ *    Input         : string
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 void SenseBoxUpload::SetSensBoxID( String ID ){
   strncpy(Settings.SenseBoxID,ID.c_str(),sizeof(Settings.SenseBoxID) );
   WriteSettings();
 }
 
+/**************************************************************************************************
+ *    Function      : SetSensBoxEnable
+ *    Description   : This will enable or disable the SenseBox Datatransfer
+ *    Input         : bool
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 void SenseBoxUpload::SetSensBoxEnable( bool Enable ){
    Settings.Enabled = Enable;
    WriteSettings();
 }
 
+/**************************************************************************************************
+ *    Function      : SetSensBoxUploadInterval
+ *    Description   : This will set the intervall for the upload in minutes
+ *    Input         : uint16_t Interval
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 void SenseBoxUpload::SetSensBoxUploadInterval( uint16_t Interval ){
    Settings.UploadInterval = Interval;
    WriteSettings();
 }
 
+/**************************************************************************************************
+ *    Function      : SetMapping
+ *    Description   : This will set the mapping for a channel
+ *    Input         : uint8_t Channel, SensBoxMapping_t Map
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 void SenseBoxUpload::SetMapping(uint8_t Channel, SensBoxMapping_t Map){
    if(  ( sizeof(Mapping) / sizeof( Mapping[0] )) <= Channel ){
      return;
@@ -385,22 +487,50 @@ void SenseBoxUpload::SetMapping(uint8_t Channel, SensBoxMapping_t Map){
    WriteMapping();
 }
 
+/**************************************************************************************************
+ *    Function      : GetSensBoxID
+ *    Description   : Returns the SensBox ID currently used
+ *    Input         : void
+ *    Output        : String
+ *    Remarks       : none
+ **************************************************************************************************/
 String SenseBoxUpload::GetSensBoxID( void ){
 
   return String(Settings.SenseBoxID);
    
 }
 
+/**************************************************************************************************
+ *    Function      : GetSensBoxEnable
+ *    Description   : Returns if SenseBox upload is enabled or not 
+ *    Input         : void
+ *    Output        : bool
+ *    Remarks       : none
+ **************************************************************************************************/
 bool SenseBoxUpload::GetSensBoxEnable( void ){
   return Settings.Enabled;
    
 }
 
+/**************************************************************************************************
+ *    Function      : GetSensBoxUploadInterval
+ *    Description   : Returns if SenseBox upload intervall in minutes
+ *    Input         : void
+ *    Output        : uint16_t
+ *    Remarks       : none
+ **************************************************************************************************/
 uint16_t SenseBoxUpload::GetSensBoxUploadInterval( void ){
   return Settings.UploadInterval;
    
 }
 
+/**************************************************************************************************
+ *    Function      : GetMapping
+ *    Description   : Returns the mapping for a given channel
+ *    Input         : uint8_t Channel
+ *    Output        : SenseBoxUpload::SensBoxMapping_t
+ *    Remarks       : none
+ **************************************************************************************************/
 SenseBoxUpload::SensBoxMapping_t SenseBoxUpload::GetMapping(uint8_t Channel ){
    if(  ( sizeof(Mapping) / sizeof( Mapping[0] )) <= Channel ){
      Channel = 0;
@@ -408,7 +538,13 @@ SenseBoxUpload::SensBoxMapping_t SenseBoxUpload::GetMapping(uint8_t Channel ){
    return Mapping[Channel];
 }
 
-    
+/**************************************************************************************************
+ *    Function      : GetMaxMappingChannels
+ *    Description   : Returns max amount of channels the module can map
+ *    Input         : void
+ *    Output        : uint8_t
+ *    Remarks       : none
+ **************************************************************************************************/
 uint8_t SenseBoxUpload::GetMaxMappingChannels( void ){
   return ( sizeof(Mapping) / sizeof( Mapping[0] ));
 }

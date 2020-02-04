@@ -18,12 +18,13 @@ class Rainmeter{
             _720Minutes,
             _1440Minutes
         } RainAmountTimespan_t;
-
-        void RainBucketISR( void );
+        
         Rainmeter( void );
         ~Rainmeter( void );
+    
         void begin( int Pin  );
         float GetRainAmount( RainAmountTimespan_t Span);
-
+        void RainBucketISR( void );
+        
 
 };

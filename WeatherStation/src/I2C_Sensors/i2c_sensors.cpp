@@ -10,6 +10,13 @@
 #include "../i2c_access/i2c_access.h"
 #include "i2c_sensors.h"
 
+/**************************************************************************************************
+ *    Function      : Constructor
+ *    Description   : Will build a I2C Sensor object with the given pins for sda and scl
+ *    Input         : none 
+ *    Output        : none
+ *    Remarks       : none 
+ **************************************************************************************************/
 I2C_Sensors::I2C_Sensors( int scl, int sda ){
    SDA = sda;
    SCL = scl;
@@ -21,12 +28,24 @@ I2C_Sensors::I2C_Sensors( int scl, int sda ){
    }
 }
 
+/**************************************************************************************************
+ *    Function      : Deconstructor
+ *    Description   : none
+ *    Input         : none 
+ *    Output        : none
+ *    Remarks       : none 
+ **************************************************************************************************/
 I2C_Sensors::~I2C_Sensors( void ){
-
-
-
+//Nothing to do here...
 }
 
+/**************************************************************************************************
+ *    Function      : begin
+ *    Description   : Will setup the object and search for connected sensors
+ *    Input         : none 
+ *    Output        : none
+ *    Remarks       : none 
+ **************************************************************************************************/
 void I2C_Sensors::begin( void ){
     uint8_t driver_idx=0;
     //20kHz max for the wire, as this may gets a bit longer
@@ -102,7 +121,13 @@ void I2C_Sensors::begin( void ){
     i2c_unlock_bus();
 }
 
-
+/**************************************************************************************************
+ *    Function      : GetBrigtnessChannels
+ *    Description   : Will give a list with all supprted brightness sensors
+ *    Input         : SensorUnitInfo_t**, uint8_t* 
+ *    Output        : none
+ *    Remarks       : none 
+ **************************************************************************************************/
 void I2C_Sensors::GetBrigtnessChannels( SensorUnitInfo_t** List, uint8_t* ListCapacity ){
     //We collect all Brightnesssensors and return a list
     *List = (SensorUnitInfo_t*)(&LIGHTSENSORS[0]);
@@ -110,6 +135,13 @@ void I2C_Sensors::GetBrigtnessChannels( SensorUnitInfo_t** List, uint8_t* ListCa
 
 }
 
+/**************************************************************************************************
+ *    Function      : GetUVChannels
+ *    Description   : Will give a list with all supprted UV sensors
+ *    Input         : SensorUnitInfo_t**, uint8_t* 
+ *    Output        : none
+ *    Remarks       : none 
+ **************************************************************************************************/
 void I2C_Sensors::GetUVChannels( SensorUnitInfo_t** List, uint8_t* ListCapacity ){
     //We collect all UV Sensors and return a list
     *List = (SensorUnitInfo_t*)(&VU_LIGHTSENSORS[0]);
@@ -117,6 +149,13 @@ void I2C_Sensors::GetUVChannels( SensorUnitInfo_t** List, uint8_t* ListCapacity 
 
 }
 
+/**************************************************************************************************
+ *    Function      : GetTemperatureChannels
+ *    Description   : Will give a list with all supprted temperature sensors
+ *    Input         : SensorUnitInfo_t**, uint8_t* 
+ *    Output        : none
+ *    Remarks       : none 
+ **************************************************************************************************/
 void I2C_Sensors::GetTemperatureChannels ( SensorUnitInfo_t** List, uint8_t* ListCapacity ){
     //We collect all Temperatur Sensors and return a list
     *List = (SensorUnitInfo_t*)(&TEMPERATURSENSORS[0]);
@@ -124,12 +163,26 @@ void I2C_Sensors::GetTemperatureChannels ( SensorUnitInfo_t** List, uint8_t* Lis
 
 }
 
+/**************************************************************************************************
+ *    Function      : GetPressureChannels
+ *    Description   : Will give a list with all supprted temperature sensors
+ *    Input         : SensorUnitInfo_t**, uint8_t* 
+ *    Output        : none
+ *    Remarks       : none 
+ **************************************************************************************************/
 void I2C_Sensors::GetPressureChannels( SensorUnitInfo_t** List, uint8_t* ListCapacity ){
     //We collect all Pressure Sensors and return a list
     *List = (SensorUnitInfo_t*)(&PRESSURESENSORS[0]);
     *ListCapacity = ( sizeof( PRESSURESENSORS ) / sizeof( PRESSURESENSORS[0] ) );
 }
 
+/**************************************************************************************************
+ *    Function      : GetHumidutyChannels
+ *    Description   : Will give a list with all supprted himidity sensors
+ *    Input         : SensorUnitInfo_t**, uint8_t* 
+ *    Output        : none
+ *    Remarks       : none 
+ **************************************************************************************************/
 void I2C_Sensors::GetHumidutyChannels( SensorUnitInfo_t** List, uint8_t* ListCapacity ){
     //We collect all Himidity Sensors and return a list
     *List = (SensorUnitInfo_t*)(&HUMIDITYSENSORS[0]);
@@ -137,6 +190,13 @@ void I2C_Sensors::GetHumidutyChannels( SensorUnitInfo_t** List, uint8_t* ListCap
 }
 
 
+/**************************************************************************************************
+ *    Function      : GetUVALevel
+ *    Description   : Will give the UV Level of a channel
+ *    Input         : uint8_t 
+ *    Output        : float
+ *    Remarks       : Will be nan if no sensor is connected to the channel 
+ **************************************************************************************************/
 float I2C_Sensors::GetUVALevel( uint8_t channelidx ){
     float value = NAN;
     switch( channelidx ){
@@ -168,6 +228,14 @@ float I2C_Sensors::GetUVALevel( uint8_t channelidx ){
     return value;
 }
 
+
+/**************************************************************************************************
+ *    Function      : GetUVBLevel
+ *    Description   : Will give the UVB Level of a channel
+ *    Input         : uint8_t 
+ *    Output        : float
+ *    Remarks       : Will be nan if no sensor is connected to the channel 
+ **************************************************************************************************/
 float I2C_Sensors::GetUVBLevel( uint8_t channelidx ){
     float value = NAN;
     switch( channelidx ){
@@ -188,6 +256,13 @@ float I2C_Sensors::GetUVBLevel( uint8_t channelidx ){
 
 }
         
+/**************************************************************************************************
+ *    Function      : GetLightLevel
+ *    Description   : Will give the Light ( visible ) Level of a channel
+ *    Input         : uint8_t 
+ *    Output        : float
+ *    Remarks       : Will be nan if no sensor is connected to the channel 
+ **************************************************************************************************/
 float I2C_Sensors::GetLightLevel( uint8_t channelidx  ){
    float value = NAN;
     switch( channelidx ){
@@ -236,6 +311,14 @@ float I2C_Sensors::GetLightLevel( uint8_t channelidx  ){
     return  value;
 
 }
+
+/**************************************************************************************************
+ *    Function      : GetTemperature
+ *    Description   : Will give the temperature Level of a channel
+ *    Input         : uint8_t 
+ *    Output        : float
+ *    Remarks       : Will be nan if no sensor is connected to the channel 
+ **************************************************************************************************/
 float I2C_Sensors::GetTemperature( uint8_t channelidx ){
 float value = NAN;
     switch( channelidx ){
@@ -266,6 +349,14 @@ float value = NAN;
     return value;
 
 }
+
+/**************************************************************************************************
+ *    Function      : GetPressure
+ *    Description   : Will give the pressure level of a channel
+ *    Input         : uint8_t 
+ *    Output        : float
+ *    Remarks       : Will be nan if no sensor is connected to the channel 
+ **************************************************************************************************/
 float I2C_Sensors::GetPressure( uint8_t channelidx ){
     float pressure=NAN;
     switch( channelidx ){
@@ -297,6 +388,14 @@ float I2C_Sensors::GetPressure( uint8_t channelidx ){
 
 }
 
+
+/**************************************************************************************************
+ *    Function      : GetHumidity
+ *    Description   : Will give the humidity level of a channel
+ *    Input         : uint8_t 
+ *    Output        : float
+ *    Remarks       : Will be nan if no sensor is connected to the channel 
+ **************************************************************************************************/
 float I2C_Sensors::GetHumidity( uint8_t channelidx ){
     float temp=NAN;
     switch( channelidx ){
@@ -317,39 +416,26 @@ float I2C_Sensors::GetHumidity( uint8_t channelidx ){
 
 }
 
-
+/**************************************************************************************************
+ *    Function      : GetIsSensorOnBus
+ *    Description   : Will report if a given sensor is found on the bus
+ *    Input         : SensorType_t 
+ *    Output        : bool
+ *    Remarks       : none
+ **************************************************************************************************/
 bool I2C_Sensors::GetIsSensorOnBus( SensorType_t Sensor ){
 
     return DeviceOnBus[Sensor]; 
 }
 
+/**************************************************************************************************
+ *    Function      : GetChannelIndex
+ *    Description   : Will report the channel id of a given sensor
+ *    Input         : SensorType_t 
+ *    Output        : bool
+ *    Remarks       : none
+ **************************************************************************************************/
 uint8_t I2C_Sensors::GetChannelIndex(SensorType_t Sensor){
-   /* we do a static channel mapping here 
-        Humidity:
-            CH0 = BME280
-        
-        Temperatur
-            CH0 = BME280
-            CH1 = WSEN_PADS
-
-        Pressure
-            CH0 = BME280
-            CH1 = WSEN_PADS
-
-        UV_Light ( A+B )
-            CH0 = VMEL6070
-            CH1 = VMEL6075
-        
-        UV_Light ( A )
-            CH1 = VMEL6075
-
-        UV_Light ( B ) 
-            CH1 = VMEL6075  
-
-        Brightness
-            CH0 = TSL2561
-            CH1 = TSL2591  
-        */
        uint8_t idx=0;
        switch(Sensor){
            case BME280:{
@@ -378,40 +464,25 @@ uint8_t I2C_Sensors::GetChannelIndex(SensorType_t Sensor){
     return idx;
 }
 
+/**************************************************************************************************
+ *    Function      : GetChannelName
+ *    Description   : Will report the channel name of a given sensor and channel
+ *    Input         : SensorType_t, channel
+ *    Output        : string
+ *    Remarks       : Human friendly name for the sensor
+ **************************************************************************************************/
 String I2C_Sensors::GetChannelName(SensorType_t Sensor , uint8_t channel){
     return SensorNames[Sensor];
 }
 
 
-/*
-
- //We have some arrays telling us what type of value we can get from wich sensor
-        const SensorUnitInfo_t TEMPERATURSENSORS[2]={
-            {.Sensor=BME280,.Type=TEMPERATURE,.ChannelID=0},
-            {.Sensor=WSEN_PADS,.Type=TEMPERATURE,.ChannelID=1}
-        };
-
-        const SensorUnitInfo_t PRESSURESENSORS[1]={
-            {.Sensor=BME280,.Type=PRESSURE,.ChannelID=0}    
-        };
-
-        const SensorUnitInfo_t HUMIDITYSENSORS[1]={
-             {.Sensor=BME280,.Type=HUMIDITY,.ChannelID=0}
-        };
-
-        const SensorUnitInfo_t VU_LIGHTSENSORS[2]={
-             {.Sensor=VEML6070,.Type=UV_LIGHT,.ChannelID=0},
-             {.Sensor=VEML6075,.Type=UV_LIGHT,.ChannelID=1}
-        };
-
-        const SensorUnitInfo_t LIGHTSENSORS[2]={
-             {.Sensor=TSL2561,.Type=LIGHT,.ChannelID=0},
-             {.Sensor=TSL2591,.Type=LIGHT,.ChannelID=1},
-        };
-
-
-*/
-
+/**************************************************************************************************
+ *    Function      : GetValue
+ *    Description   : Will read a value form a channel and type combination
+ *    Input         : DATAUNITS::MessurmentValueType_t , uint8_t
+ *    Output        : float
+ *    Remarks       : will return NAN on error
+ **************************************************************************************************/
 float I2C_Sensors::GetValue( DATAUNITS::MessurmentValueType_t Type, uint8_t channel  ){
     float value = NAN;
     //We need at this point to aquiere a mutex as only on task at a time can access the i2c bus */
@@ -463,11 +534,24 @@ float I2C_Sensors::GetValue( DATAUNITS::MessurmentValueType_t Type, uint8_t chan
 }
 
 
-
+/**************************************************************************************************
+ *    Function      : GetSensorList
+ *    Description   : Will return a list of sensors we support
+ *    Input         : SensorUnitInfo_t* , uint8_t, uint8_t*
+ *    Output        : bool
+ *    Remarks       : none
+ **************************************************************************************************/
 bool I2C_Sensors::GetSensorList( SensorUnitInfo_t* List, uint8_t capacity, uint8_t* used_elements ){
     return GetConnectedSensorList( List, capacity, used_elements, false );
 }
 
+/**************************************************************************************************
+ *    Function      : GetSensorList
+ *    Description   : Will return a list of sensors found on the bus
+ *    Input         : SensorUnitInfo_t* , uint8_t, uint8_t*, bool
+ *    Output        : bool
+ *    Remarks       : none
+ **************************************************************************************************/
 bool I2C_Sensors::GetConnectedSensorList( SensorUnitInfo_t* List, uint8_t capacity, uint8_t* used_elements, bool mustbepresent ){
     //We collect everything we have on bus .....
     uint8_t usedcapacity=0;
@@ -528,7 +612,13 @@ bool I2C_Sensors::GetConnectedSensorList( SensorUnitInfo_t* List, uint8_t capaci
 
 }
 
-
+/**************************************************************************************************
+ *    Function      : GetChannelName
+ *    Description   : Will return a redable list of sensornames
+ *    Input         : DATAUNITS::MessurmentValueType_t , uint8_t 
+ *    Output        : String
+ *    Remarks       : none
+ **************************************************************************************************/
  String I2C_Sensors::GetChannelName( DATAUNITS::MessurmentValueType_t Type, uint8_t channel ){
 
      bool found = false;

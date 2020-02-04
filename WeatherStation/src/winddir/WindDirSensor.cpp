@@ -5,11 +5,25 @@
 /* This is code that will be shifted to the ULP in the future */
 Ticker WindDirCapture;
 
+/**************************************************************************************************
+ *    Function      : WindDirSensor
+ *    Description   : Constructor
+ *    Input         : void
+ *    Output        : void
+ *    Remarks       : None
+ **************************************************************************************************/
 WindDirSensor::WindDirSensor() {
   
 
 }
 
+/**************************************************************************************************
+ *    Function      : determineWindDir
+ *    Description   : This will try to determine the wind direction
+ *    Input         : void
+ *    Output        : void
+ *    Remarks       : None
+ **************************************************************************************************/
 void WindDirSensor::determineWindDir( WindDirSensor* obj ) {
   /* We add here 3 averages , 10 seconds , 1 minute and one hour */
   WindDir_t WindDir = WindDir_t::DIR_UNDEFINED;
@@ -34,12 +48,28 @@ void WindDirSensor::determineWindDir( WindDirSensor* obj ) {
   
 }
 
+
+/**************************************************************************************************
+ *    Function      : begin
+ *    Description   : Sets up the hardware for the direction reading
+ *    Input         : int _dirPin
+ *    Output        : void
+ *    Remarks       : Needs an analouge pin to work
+ **************************************************************************************************/
 void WindDirSensor::begin( int _dirPin ){
   dirPin = _dirPin;
   pinMode(dirPin, ANALOG);
   WindDirCapture.attach_ms(1000, determineWindDir , this );
 }
 
+
+/**************************************************************************************************
+ *    Function      : WindDirEnum2Angle
+ *    Description   : Gets from the sector readed an angle in °
+ *    Input         : WindDir_t dir
+ *    Output        : uint16_t
+ *    Remarks       : None
+ **************************************************************************************************/
 uint16_t WindDirSensor::WindDirEnum2Angle( WindDir_t dir){
   if( dir < WindDir_t::DIR_UNDEFINED){
     return 45*dir;
@@ -48,6 +78,15 @@ uint16_t WindDirSensor::WindDirEnum2Angle( WindDir_t dir){
   } 
 }
 
+
+
+/**************************************************************************************************
+ *    Function      : AddToAverage_10Sec
+ *    Description   : Adds the value to the average ( 10s )
+ *    Input         : WindDir_t dir
+ *    Output        : void
+ *    Remarks       : Values shall be put every 10 seconds
+ **************************************************************************************************/
 void WindDirSensor::AddToAverage_10Sec(WindDir_t dir ){
     static uint8_t _10SecondAVG_oldest_idx=0;
     _10SecondAVG[_10SecondAVG_oldest_idx]=dir;
@@ -60,6 +99,13 @@ void WindDirSensor::AddToAverage_10Sec(WindDir_t dir ){
 
 }
 
+/**************************************************************************************************
+ *    Function      : AddToAverage_60Sec
+ *    Description   : Adds the value to the average ( 60s )
+ *    Input         : WindDir_t dir
+ *    Output        : void
+ *    Remarks       : Values shall be put every 10 seconds
+ **************************************************************************************************/
 void WindDirSensor::AddToAverage_60Sec(WindDir_t dir ){
     static uint8_t _60SecondAVG_oldest_idx=0;
     _60SecondAVG[_60SecondAVG_oldest_idx]=dir;
@@ -72,6 +118,13 @@ void WindDirSensor::AddToAverage_60Sec(WindDir_t dir ){
 
 }
 
+/**************************************************************************************************
+ *    Function      : AddToAverage_3600Sec
+ *    Description   : Adds the value to the average ( 3600s )
+ *    Input         : WindDir_t dir
+ *    Output        : void
+ *    Remarks       : Values shall be put every 10 seconds
+ **************************************************************************************************/
 void WindDirSensor::AddToAverage_3600Sec(WindDir_t dir ){
     static uint8_t _3600SecondAVG_oldest_idx=0;
     _3600SecondAVG[_3600SecondAVG_oldest_idx]=dir;
@@ -83,6 +136,13 @@ void WindDirSensor::AddToAverage_3600Sec(WindDir_t dir ){
 
 }
 
+/**************************************************************************************************
+ *    Function      : GetAverage_10Sec
+ *    Description   : Get the averrage for 10s
+ *    Input         : void
+ *    Output        : WindDir_t
+ *    Remarks       : Values shall be put every 10 seconds
+ **************************************************************************************************/
 WindDir_t WindDirSensor::GetAverage_10Sec( void ){
   
   uint32_t dir_angle = 0;
@@ -100,6 +160,13 @@ WindDir_t WindDirSensor::GetAverage_10Sec( void ){
   return (WindDir_t)dir_en;
 }
 
+/**************************************************************************************************
+ *    Function      : GetAverage_60Sec
+ *    Description   : Get the averrage for 60s
+ *    Input         : void
+ *    Output        : WindDir_t
+ *    Remarks       : Values shall be put every 10 seconds
+ **************************************************************************************************/
 WindDir_t WindDirSensor::GetAverage_60Sec( void ){
 
   uint32_t dir_angle = 0;
@@ -117,6 +184,13 @@ WindDir_t WindDirSensor::GetAverage_60Sec( void ){
 
 }
 
+/**************************************************************************************************
+ *    Function      : GetAverage_3600Sec
+ *    Description   : Get the averrage for 60s
+ *    Input         : void
+ *    Output        : WindDir_t
+ *    Remarks       : Values shall be put every 10 seconds
+ **************************************************************************************************/
 WindDir_t WindDirSensor::GetAverage_3600Sec( void ){
 
   uint32_t dir_angle = 0;
@@ -134,7 +208,13 @@ WindDir_t WindDirSensor::GetAverage_3600Sec( void ){
 
 }
 
-
+/**************************************************************************************************
+ *    Function      : GetAverageDir 
+ *    Description   : Get the averrage for a define span
+ *    Input         : DirAVG_t type
+ *    Output        : uint16_t
+ *    Remarks       : Values shall be put every 10 seconds
+ **************************************************************************************************/
 uint16_t WindDirSensor::GetAverageDir( DirAVG_t type ){
   WindDir_t dir = WindDir_t::DIR_UNDEFINED;
   switch(type){

@@ -2,7 +2,13 @@
 
 
 
-
+/**************************************************************************************************
+ *    Function      : UART_PM_Sensors
+ *    Description   : Constructor
+ *    Input         : int16_t rx, int16_t tx
+ *    Output        : void
+ *    Remarks       : TX and RX pins are requiered
+ **************************************************************************************************/
 UART_PM_Sensors::UART_PM_Sensors( int16_t rx, int16_t tx  ){
 
     //Depending on the sensor we will choose which driver to use
@@ -14,6 +20,13 @@ UART_PM_Sensors::UART_PM_Sensors( int16_t rx, int16_t tx  ){
     }
 }
 
+/**************************************************************************************************
+ *    Function      : UART_PM_Sensors
+ *    Description   : Destructor
+ *    Input         : void
+ *    Output        : void
+ *    Remarks       : Will release the memoery resered for driver and IOPins
+ **************************************************************************************************/
 UART_PM_Sensors::~UART_PM_Sensors( void ){
     if(SDS011device != nullptr){
         delete SDS011device;
@@ -28,6 +41,13 @@ UART_PM_Sensors::~UART_PM_Sensors( void ){
     
 }
 
+/**************************************************************************************************
+ *    Function      : begin
+ *    Description   : Sets the sensors auf asn will do autodetect
+ *    Input         : HardwareSerial &_hwserial, SerialSensorDriver_t device
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 void UART_PM_Sensors::begin( HardwareSerial &_hwserial, SerialSensorDriver_t device ){
 
     SerialPort = &_hwserial;
@@ -120,6 +140,13 @@ void UART_PM_Sensors::begin( HardwareSerial &_hwserial, SerialSensorDriver_t dev
     }
 }
 
+/**************************************************************************************************
+ *    Function      : GetParticleCount
+ *    Description   : reads a perticel cout from a senseor
+ *    Input         : float* value, UART_PM_Sensors::ParticleSize_t ps
+ *    Output        : bool
+ *    Remarks       : none
+ **************************************************************************************************/
 bool UART_PM_Sensors::GetParticleCount( float* value, UART_PM_Sensors::ParticleSize_t ps ){
   bool reading_ok= false;
   float p25 = 0, p10 = 0;
@@ -164,6 +191,13 @@ bool UART_PM_Sensors::GetParticleCount( float* value, UART_PM_Sensors::ParticleS
 
  }
 
+/**************************************************************************************************
+ *    Function      : suspend
+ *    Description   : This will put all sensors in suspend if supported
+ *    Input         : void
+ *    Output        : bool
+ *    Remarks       : none
+ **************************************************************************************************/
 void UART_PM_Sensors::suspend( void ){
      if( xSemaphoreTake( xUARTSemaphore, portMAX_DELAY  ) == pdTRUE )
     { 
@@ -187,6 +221,13 @@ void UART_PM_Sensors::suspend( void ){
     }
 }
 
+/**************************************************************************************************
+ *    Function      : wakeup
+ *    Description   : This will wake all sensors if supported
+ *    Input         : void
+ *    Output        : bool
+ *    Remarks       : none
+ **************************************************************************************************/
 void UART_PM_Sensors::wakeup( void ){
      if( xSemaphoreTake( xUARTSemaphore, portMAX_DELAY  ) == pdTRUE )
     {
@@ -212,6 +253,13 @@ void UART_PM_Sensors::wakeup( void ){
 }
 
 
+/**************************************************************************************************
+ *    Function      : GetValue
+ *    Description   : Will read a value from one sensor
+ *    Input         : DATAUNITS::MessurmentValueType_t Type, uint8_t channel 
+ *    Output        : float
+ *    Remarks       : none
+ **************************************************************************************************/
 float UART_PM_Sensors::GetValue( DATAUNITS::MessurmentValueType_t Type, uint8_t channel ){
     float value = NAN;
     
@@ -245,10 +293,24 @@ float UART_PM_Sensors::GetValue( DATAUNITS::MessurmentValueType_t Type, uint8_t 
 
 }
 
-
+/**************************************************************************************************
+ *    Function      : GetSensorList
+ *    Description   : Will return the list of supported sensors
+ *    Input         : SensorUnitInfo_t* List, uint8_t capacity, uint8_t* used_elements
+ *    Output        : bool
+ *    Remarks       : none
+ **************************************************************************************************/
 bool UART_PM_Sensors::GetSensorList( SensorUnitInfo_t* List, uint8_t capacity, uint8_t* used_elements){
     return GetConnectedSensorList(List,capacity,used_elements,false);
 }
+
+/**************************************************************************************************
+ *    Function      : GetConnectedSensorList
+ *    Description   : Will return the list of supported sensors
+ *    Input         : SensorUnitInfo_t* List, uint8_t capacity, uint8_t* used_elements
+ *    Output        : bool
+ *    Remarks       : none
+ **************************************************************************************************/
 bool UART_PM_Sensors::GetConnectedSensorList( SensorUnitInfo_t* List, uint8_t capacity, uint8_t* used_elements, bool mustbedetected){
        
         if( (true == mustbedetected ) && (false == SensorDetected) ){
@@ -290,6 +352,13 @@ bool UART_PM_Sensors::GetConnectedSensorList( SensorUnitInfo_t* List, uint8_t ca
     return true;
 }
 
+/**************************************************************************************************
+ *    Function      : GetChannelName
+ *    Description   : Will return the findly sensorname for the channel
+ *    Input         : SensorType_t Sensor, uint8_t channel
+ *    Output        : String
+ *    Remarks       : none
+ **************************************************************************************************/
 String UART_PM_Sensors::GetChannelName(SensorType_t Sensor, uint8_t channel){
 
     switch( SelectedDriver ){
@@ -318,6 +387,13 @@ String UART_PM_Sensors::GetChannelName(SensorType_t Sensor, uint8_t channel){
 
 }
 
+/**************************************************************************************************
+ *    Function      : GetChannelName
+ *    Description   : Will return the findly sensorname for the channel
+ *    Input         : SensorType_t Sensor, uint8_t channel
+ *    Output        : String
+ *    Remarks       : none
+ **************************************************************************************************/
 String UART_PM_Sensors::GetChannelName( DATAUNITS::MessurmentValueType_t Type, uint8_t channel){
     if(Type==DATAUNITS::MessurmentValueType_t::PARTICLES){
         switch( SelectedDriver ){
@@ -349,7 +425,13 @@ String UART_PM_Sensors::GetChannelName( DATAUNITS::MessurmentValueType_t Type, u
     return "N/A";
 }
 
-
+/**************************************************************************************************
+ *    Function      : SDS011_TEST
+ *    Description   : Testfunction for the SDS011 
+ *    Input         : void
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
 void UART_PM_Sensors::SDS011_TEST( void ){
 
 

@@ -12,6 +12,13 @@ void SetSensboxServerSettings( void );
 void GetSensboxSeverSettings( void );
 void GetSenseboxMapping( void );
 
+/**************************************************************************************************
+ *    Function      : Webserver_SenseBox_FunctionsRegister
+ *    Description   : Registers new URL for handling
+ *    Input         : WebServer* serverptr 
+ *    Output        : none
+ *    Remarks       : None
+ **************************************************************************************************/
 void Webserver_SenseBox_FunctionsRegister(WebServer* server){
 
     if(server == nullptr ){
@@ -27,12 +34,25 @@ void Webserver_SenseBox_FunctionsRegister(WebServer* server){
     server->on("/sensebox/mapping.json",HTTP_GET, GetSenseboxMapping);
 }
 
+/**************************************************************************************************
+ *    Function      : Webserver_SenseBox_RegisterSensebox
+ *    Description   : This will register accesss to the SenseBoxUpload Object
+ *    Input         : SenseBoxUpload * Sbx 
+ *    Output        : none
+ *    Remarks       : None
+ **************************************************************************************************/
 void Webserver_SenseBox_RegisterSensebox( SenseBoxUpload * Sbx){
    Sbxptr = Sbx;
 
 }
 
-
+/**************************************************************************************************
+ *    Function      : GetSensboxSeverSettings
+ *    Description   : Will response with current settings
+ *    Input         : void
+ *    Output        : none
+ *    Remarks       : None
+ **************************************************************************************************/
 void GetSensboxSeverSettings(){
     WebServer * server = SensboxWebserver;
     if(server == nullptr){
@@ -56,7 +76,13 @@ void GetSensboxSeverSettings(){
 
 
 
-//General settings
+/**************************************************************************************************
+ *    Function      : SetSensboxServerSettings
+ *    Description   : Will process POST with current settings
+ *    Input         : void
+ *    Output        : none
+ *    Remarks       : None
+ **************************************************************************************************/
 void SetSensboxServerSettings( void ){
     WebServer * server = SensboxWebserver;
     if(server == nullptr){
@@ -103,7 +129,13 @@ void SetSensboxServerSettings( void ){
      server->send(200); 
 }
 
-
+/**************************************************************************************************
+ *    Function      : GetSenseboxChMapping
+ *    Description   : Will process Request with placeholder
+ *    Input         : void
+ *    Output        : none
+ *    Remarks       : None
+ **************************************************************************************************/
 void GetSenseboxChMapping( void ){
     WebServer * server = SensboxWebserver;
     if(server == nullptr){
@@ -139,13 +171,13 @@ void GetSenseboxChMapping( void ){
 
 }
 
-/*
-
-    bool enable;
-    uint8_t StationChannelIdx;
-    char SenseBoxSensorID[32]; //We reserve 32 chars for this..... 
-
-*/
+/**************************************************************************************************
+ *    Function      : SetSenseboxChMapping
+ *    Description   : Will process POST with mapping for new channel
+ *    Input         : void
+ *    Output        : none
+ *    Remarks       : None
+ **************************************************************************************************/
 void SetSenseboxChMapping( void ){
     WebServer * server = SensboxWebserver;
     if(server == nullptr){
@@ -206,6 +238,14 @@ void SetSenseboxChMapping( void ){
 
 }
 
+
+/**************************************************************************************************
+ *    Function      : GetSenseboxMapping
+ *    Description   : Will response with currrent settings
+ *    Input         : void
+ *    Output        : none
+ *    Remarks       : None
+ **************************************************************************************************/
 void GetSenseboxMapping( void ){
 
     WebServer * server = SensboxWebserver;
@@ -233,20 +273,3 @@ void GetSenseboxMapping( void ){
     serializeJson(doc, response);
     server->send(200, "text/plain", response);
 }
-
-
-/**
- * 
- * 
- * 
- * 
- *             void SetSensBoxID( String ID );
-            void SetSensBoxEnable( bool Enable );
-            void SetSensBoxUploadInterval( uint16_t Interval ); //65535 minutes Max ( 45 days )
-            void SetMapping(uint8_t Channel, SensBoxMapping_t Mapping);
-
-            String GetSensBoxID( void );
-            bool GetSensBoxEnable( void );
-            uint16_t SetSensBoxUploadInterval( void );
-            SensBoxMapping_t GetMapping(uint8_t Channel );
-*/

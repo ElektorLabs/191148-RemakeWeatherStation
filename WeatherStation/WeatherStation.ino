@@ -31,7 +31,6 @@
 //
 //  - LiquidCrystal_I2C ( https://github.com/johnrickman/LiquidCrystal_I2C )
 //  - eHaJo Absolut Pressure AddOn by Hannes Jochriem ( https://github.com/ehajo/WSEN-PADS )
-//  - LoraWAN-MAC-in-C library ( https://github.com/mcci-catena/arduino-lmic )
 //  - Adafruit Unified Sensors
 //  - Adafruit BME280 Library
 //  - Adafruit VEML6070 Library
@@ -43,7 +42,6 @@
 //  - AdrduinoJson 6.x 
 //  - PubSubclient by Nick o'Leary
 //  - NTP Client Lib
-//  - OneWire by Paul Stoffregen ( https://github.com/PaulStoffregen/OneWire )
 //****************************************************************************
 #include <Arduino.h>
 #include <ESPmDNS.h>
@@ -55,9 +53,10 @@
 #include "SPIFFS.h"
 #include <Update.h>
 
-#include "./src/lora_wan/lorawan.h"
-#include "./src/lora_raw/loraraw.h"
 
+#include "./wifi_net.h"
+
+#include "./src/TimeCore/timecore.h"
 #include "./src/NTPClient/ntp_client.h"
 
 #include "./src/I2C_Sensors/i2c_sensors.h"
@@ -65,8 +64,7 @@
 
 #include "./src/ValueMapping/ValueMapping.h"
 #include "./src/InternalSensors/InternalSensors.h"
-#include "./src/TimeCore/timecore.h"
-#include "./wifi_net.h"
+
 
 #include "./src/SenseBox/SenseBox.h"
 #include "./src/ThingSpeak/thingspeak.h"
@@ -84,7 +82,6 @@
 #include "./src/lcd_menu/lcd_menu.h"
 
 /* We define the pins used for the various components */
-
 #define INPUT_RAIN           ( 38 )
 #define INPUT_WINDSPEED      ( 34 )
 #define INPUT_WINDDIR        ( 37 )
@@ -95,16 +92,16 @@
 #define PARTICLESENSOR_RX    ( 10 )
 #define PARTICLESENSOR_TX    (  9 )
 
-//#define SD_MISO              ( 12 )
 #define SD_MISO              ( 15 )
 #define SD_MOSI              ( 13 )
 #define SD_SCK               ( 14 )
-//#define SD_CS0               ( 15 )
 #define SD_CS0               ( 12 )
 
+#define USERBTN0             ( 0 )
+#define USERBTN1             ( 4 )
 
 
-
+//Defined but currently not used
 #define RFM95_MISO           ( 19 )
 #define RFM95_MOSI           ( 23 )
 #define RFM95_SCK            ( 18 )
@@ -114,30 +111,38 @@
 #define RFM95_DIO1           ( 33 )
 #define RFM95_DIO2           ( 32 )
 
-#define USERBTN0             ( 0 )
-#define USERBTN1             ( 4 )
-
-
- lorawan LORAWAN;
-
-
- I2C_Sensors TwoWireSensors(I2C0_SCL, I2C0_SDA );
- UART_PM_Sensors PMSensor( PARTICLESENSOR_RX , PARTICLESENSOR_TX );
- VALUEMAPPING SensorMapping;
- InternalSensors IntSensors;
-
+//--------------------------------------------------------------------------------------------------
+I2C_Sensors TwoWireSensors(I2C0_SCL, I2C0_SDA );
+UART_PM_Sensors PMSensor( PARTICLESENSOR_RX , PARTICLESENSOR_TX );
+VALUEMAPPING SensorMapping;
+InternalSensors IntSensors;
 LiquidCrystal_I2C lcd(0x27,20,4);  // set the LCD address to 0x27 for a 16 chars and 2 line display
-
 Timecore TimeCore;
 NTP_Client NTPC;
-
 SenseBoxUpload SenseBox;
 ThinkspeakUpload ThinkSpeak;
+//--------------------------------------------------------------------------------------------------
 
-void DataLoggingTask(void* param);
-bool ReadSensorData(float* data ,uint8_t ch);
-void SDCardDataLog( void );
 
+/**************************************************************************************************
+ *    Function      : ReadSensorData
+ *    Description   : This will access the function to read sensordata
+ *    Input         : none 
+ *    Output        : none
+ *    Remarks       : none 
+ **************************************************************************************************/
+bool ReadSensorData(float* data ,uint8_t ch){
+  return SensorMapping.ReadMappedValue(data,ch);
+}
+
+
+/**************************************************************************************************
+ *    Function      : setup_iopins
+ *    Description   : This will enable the IO-Pins
+ *    Input         : none 
+ *    Output        : none
+ *    Remarks       : none 
+ **************************************************************************************************/
 void setup_iopins( void ){
   // Every pin that is just IO will be defined here 
   pinMode( USERBTN0, INPUT_PULLUP );
@@ -148,6 +153,14 @@ void setup_iopins( void ){
 
 }
 
+
+/**************************************************************************************************
+ *    Function      : StartOTA
+ *    Description   : This will prepare the OTA Service
+ *    Input         : none 
+ *    Output        : none
+ *    Remarks       : none 
+ **************************************************************************************************/
 void StartOTA(){
   ArduinoOTA
     .onStart([]() {
@@ -179,6 +192,14 @@ void StartOTA(){
 
 }
 
+
+/**************************************************************************************************
+ *    Function      : setup
+ *    Description   : This will onyl run once after boot
+ *    Input         : none 
+ *    Output        : none
+ *    Remarks       : none 
+ **************************************************************************************************/
 void setup() {
   Serial.begin(115200);
   SPIFFS.begin(); /* This can be called multiple times, allready mounted it will just return */
@@ -197,70 +218,55 @@ void setup() {
   //This sould trigger autodetect
   PMSensor.begin( Serial1 , UART_PM_Sensors::SerialSensorDriver_t::NONE );
   //Next step is to setup wifi and check if the configured AP is in range
-  /* We check if the boot button is pressed ( IO00 ) */
   WiFiClientEnable(true); //Force WiFi on 
   WiFiForceAP(false); //Diable Force AP
   Serial.println("Continue boot");
-  if ( false == LORAWAN.begin( RFM95_NSS, 0xFF , 0xFF, RFM95_DIO0, RFM95_DIO1, RFM95_DIO2 ) ){
-    //LoRa Module not found, we won't schedule any transmission
-  } else {
-    //LoRa WAN Enabled
-  }
-  
   TimeCore.begin(true);
-
-  //We need to register the drivers
+  
+  //This will register the driver for the sensors we support
   SensorMapping.RegisterInternalSensors(&IntSensors);
   SensorMapping.RegisterI2CBus(&TwoWireSensors);
   SensorMapping.RegisterUartSensors(&PMSensor);
-  //
   SensorMapping.begin();
-  //We need to setup the Dataloggin parts now
-  ThinkSpeak.begin(false); //We need to stick to HTTP
-  SenseBox.begin();
- 
   
+  //Now we set up the connectors 
+  ThinkSpeak.begin(false); 
+  SenseBox.begin();
   SenseBox.RegisterDataAccess( ReadSensorData );
   ThinkSpeak.RegisterDataAccess( ReadSensorData );
   
-if(0 != digitalRead(USERBTN0 )){
+  //If the USERBTN is pressed we will force the system into AP Mode
+  //the button is low active
+  if(0 != digitalRead(USERBTN0 )){
     initWiFi( false, false );
   } else {
     Serial.println("Force System to AP");
     initWiFi( false , true );   
   }
+  //As the system with all active componentes draws more than 500mA 
+  //we first start the WIFi 
   Serial.println("Reduce powerusage for WiFi(10s)");
   for(uint32_t i=0;i<10000;i++){
     vTaskDelay(1);
     NetworkLoopTask();
   } 
+  //This will start the MQTT Connector
   MQTTTaskStart();
+
+  //We start to register all the added functions for the webserver
   Webserver_Time_FunctionRegisterTimecore(&TimeCore);
   Webserver_Time_FunctionRegisterNTPClient(&NTPC);
-
-  
   Webserver_SenseBox_RegisterSensebox(&SenseBox);
   Webserver_Thinkspeak_RegisterThinkspeak(&ThinkSpeak);
-  //Next is the SD-Card access, and this is a bit tricky
   SDCardRegisterMappingAccess(&SensorMapping);
   SDCardRegisterTimecore(&TimeCore);
-  //As also other parts use the card, if arround to log data
-
-  //Last will be the MQTT Part for now
+ 
+  //We try to start the SD-Card and mount it 
   setup_sdcard(SD_SCK ,SD_MISO, SD_MOSI, SD_CS0 );
   sdcard_mount();
   
-
-    xTaskCreatePinnedToCore(
-                    DataLoggingTask,   /* Function to implement the task */
-                    "DataLogging",  /* Name of the task */
-                    16000,       /* Stack size in words */
-                    NULL,       /* Task input parameter */
-                    5,          /* Priority of the task */
-                    NULL,  /* Task handle. */
-                    0);         /* Core where the task should run */
-
-     xTaskCreatePinnedToCore(
+  //This is a dedecated Task for the NTP Service 
+  xTaskCreatePinnedToCore(
       NTP_Task,       /* Function to implement the task */
       "NTP_Task",  /* Name of the task */
       10000,          /* Stack size in words */
@@ -268,65 +274,30 @@ if(0 != digitalRead(USERBTN0 )){
       1,              /* Priority of the task */
       NULL,           /* Task handle. */
       1); 
- 
+  //Las but not least we start the OTA service for Firmware updates
   StartOTA();
 }
 
-
-bool ReadSensorData(float* data ,uint8_t ch){
-  return SensorMapping.ReadMappedValue(data,ch);
-}
-
-
-
-
-
+/**************************************************************************************************
+ *    Function      : loop
+ *    Description   : Main Loop
+ *    Input         : none 
+ *    Output        : none
+ *    Remarks       : none 
+ **************************************************************************************************/
 void loop() {
-  float value =0;
-  static uint32_t last_ms = 0;
-  uint32_t milli = millis();
   /* This will be executed in the arduino main loop */
-  LORAWAN.LoRaWAN_Task();
   ArduinoOTA.handle();
-  //The Rain and WindSensors are now processed by its own tasks
-  //We can now take care for the important stuff
-  if( (milli - last_ms) > 1000 ){
-    last_ms = milli;
-    //Once a second to be called
-    
-  }
   NetworkLoopTask();
 }
 
-
-/* Datalogging intervall can for the network only set global */
-/* This is a generic test function */
-void DataLoggingTask(void* param){
-  //We will force a mapping for the internal sensors here , just for testing
-
-  
-
-
-  //This will grab every 10 seconds new values from the mapped sensors and display them as test
-  while(1==1){
-    for(uint8_t i=0;i<64;i++){
-      float value = NAN;
-      if(false == SensorMapping.ReadMappedValue(&value,i)){
-        //Serial.printf("Channel %i not mapped\n\r",i);
-      } else {
-        Serial.printf("Channel %i Value %f",i,value );
-        Serial.print(" @ ");
-        String name = SensorMapping.GetSensorNameByChannel(i);
-        Serial.print(name);
-      }
-
-    }
-    Serial.println("");
-  vTaskDelay(60000); //60s delay
-  }
-}
-
-
+/**************************************************************************************************
+ *    Function      : NTP_Task
+ *    Description   : Task for the NTP Sync 
+ *    Input         : none 
+ *    Output        : none
+ *    Remarks       : none 
+ **************************************************************************************************/
 void NTP_Task( void * param){
   Serial.println(F("Start NTP Task now"));
   NTPC.ReadSettings();
