@@ -1,6 +1,5 @@
 //upload the sensor values to senseBox
 #include <ArduinoJson.h>
-#include <StreamUtils.h>
 #include "SPIFFS.h"
 #include "sslCertificate.h"
 #include "../../wifi_net.h"
