@@ -202,6 +202,8 @@ void WiFiEvent(WiFiEvent_t event, system_event_info_t info)
         case SYSTEM_EVENT_ETH_GOT_IP:
             Serial.println("Obtained IP address");
             break;
+        default:
+           break;
     }
 }
 
@@ -905,8 +907,8 @@ if (dBm <= -100)
  void GetWiFiConnectionInfo( wifi_connection_info_t* ConnectionInfo){
   wifi_mode_t mode;
   esp_wifi_get_mode(&mode);
-
-  bzero(ConnectionInfo, sizeof(ConnectionInfo));
+  uint32_t ZeroSize =  sizeof(ConnectionInfo);
+  bzero((void*)ConnectionInfo, ZeroSize);
 
   if(true ==  WPS_Running ){
     ConnectionInfo->WPS_Active = true;

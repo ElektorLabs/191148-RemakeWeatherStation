@@ -174,8 +174,8 @@ String JSONData ="";
     } else {
         //We need to create a blank mapping scheme
         for(uint32_t i=0;i<( sizeof(Mapping) / sizeof( Mapping[0] )  );i++){
-              Mapping[i].enable;
-              Mapping[i].StationChannelIdx;
+              Mapping[i].enable=false;
+              Mapping[i].StationChannelIdx=0;
             for(uint8_t i=0; i< sizeof(Mapping[i].SenseBoxSensorID);i++){
               Mapping[i].SenseBoxSensorID[i]=0;
             }
@@ -300,7 +300,7 @@ bool SenseBoxUpload::PostData(  SenseBoxUpload* obj ) {
           Serial.printf("SensBox upload: Requested Channel %i : No Mapped  for Stationchanne %i", i, obj->Mapping[i].StationChannelIdx);
         }
       } else {
-        Serial.printf("SensBox upload: Requested Channel %i : no DataSource", i, obj->Mapping[i].StationChannelIdx);
+        Serial.printf("SensBox upload: Requested Channel %i : no DataSource", i);
       }
         
     }

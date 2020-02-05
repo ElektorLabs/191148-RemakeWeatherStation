@@ -183,6 +183,10 @@ bool UART_PM_Sensors::GetParticleCount( float* value, UART_PM_Sensors::ParticleS
                 case PM10:{
                     result = p10;
                 } break;
+		
+		default:{
+		    result = 0;
+		} break;
             }
         }
         xSemaphoreGive( xUARTSemaphore );
@@ -290,6 +294,8 @@ float UART_PM_Sensors::GetValue( DATAUNITS::MessurmentValueType_t Type, uint8_t 
                 } break;
             }
     }
+
+   return value;
 
 }
 

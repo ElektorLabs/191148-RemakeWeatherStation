@@ -294,7 +294,7 @@ bool ThinkspeakUpload::PostData(  ThinkspeakUpload* obj ) {
           Serial.printf(" ThigSpeak upload: Requested Channel %i : No Mapped  for Stationchanne %i", i, obj->Mapping[i].StationChannelIdx);
         }
       } else {
-        Serial.printf(" ThingSpeak upload: Requested Channel %i : no DataSource", i, obj->Mapping[i].StationChannelIdx);
+        Serial.printf(" ThingSpeak upload: Requested Channel %i : no DataSource", i);
       }
         
     }

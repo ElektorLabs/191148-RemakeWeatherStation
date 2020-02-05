@@ -183,7 +183,7 @@ void DefaultDisplay( void ){
         lcd.print("192.168.4.1     ");
       } else if(true == ConnectionInfo.IsStation) {
         //We are in STA mode....
-        if(ConnectionInfo.Connected=true){
+        if(ConnectionInfo.Connected==true){
           lcd.setCursor(0,0);
           lcd.print("WiFi:");
           lcd.print(WiFiGetRSSI());

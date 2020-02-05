@@ -55,8 +55,10 @@ void NTP_Client::SyncEvent(NTPSyncEvent_t event){
           Serial.println(F("NTP invalid Address"));
         } break;
 
+	default:{
+	}break;
+        
         }
- 
      
 }
 
