@@ -1,1 +1,0 @@
-bool SerialConsoleProcess( void );
