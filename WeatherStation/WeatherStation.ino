@@ -79,6 +79,8 @@
 #include "webserver_thinkspeak_fnc.h"
 #include "webserver_time_fnc.h"
 
+#include "./src/UDP_UniCastServer/UDP_UniCastServer.h"
+
 #include "./src/lcd_menu/lcd_menu.h"
 
 /* We define the pins used for the various components */
@@ -121,6 +123,7 @@ Timecore TimeCore;
 NTP_Client NTPC;
 SenseBoxUpload SenseBox;
 ThinkspeakUpload ThinkSpeak;
+UDPUniCastSever UDPServer;
 //--------------------------------------------------------------------------------------------------
 
 
@@ -162,6 +165,7 @@ void setup_iopins( void ){
  *    Remarks       : none 
  **************************************************************************************************/
 void StartOTA(){
+  Serial.println("Start OTA Service");
   ArduinoOTA
     .onStart([]() {
       String type;
@@ -189,6 +193,12 @@ void StartOTA(){
     });
 
   ArduinoOTA.begin();
+
+}
+
+void StartUDPServer(){
+  
+  UDPServer.begin();
 
 }
 
@@ -234,7 +244,13 @@ void setup() {
   SenseBox.begin();
   SenseBox.RegisterDataAccess( ReadSensorData );
   ThinkSpeak.RegisterDataAccess( ReadSensorData );
+  UDPServer.RegisterMappingAccess(&SensorMapping);
+  UDPServer.SetTXINtervall(1);
   
+
+  RegisterWiFiConnectedCB(StartOTA);
+  RegisterWiFiConnectedCB(StartUDPServer);
+ 
   //If the USERBTN is pressed we will force the system into AP Mode
   //the button is low active
   if(0 != digitalRead(USERBTN0 )){
@@ -264,7 +280,8 @@ void setup() {
   //We try to start the SD-Card and mount it 
   setup_sdcard(SD_SCK ,SD_MISO, SD_MOSI, SD_CS0 );
   sdcard_mount();
-  
+
+
   //This is a dedecated Task for the NTP Service 
   xTaskCreatePinnedToCore(
       NTP_Task,       /* Function to implement the task */
@@ -275,7 +292,7 @@ void setup() {
       NULL,           /* Task handle. */
       1); 
   //Las but not least we start the OTA service for Firmware updates
-  StartOTA();
+  //StartOTA();
 }
 
 /**************************************************************************************************

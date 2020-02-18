@@ -28,6 +28,8 @@ static esp_wps_config_t wps_config;
 static wifi_config_t wifi_conf;
 
 void (*scandone_cb[4]) (void)={NULL,};
+void (*connectdone_cb[4]) (void)={NULL,};
+
 
 bool StarStopeMode = false;
 
@@ -454,6 +456,18 @@ if(voparam==NULL){
       for (int timeout = 0; timeout < 15; timeout++) { //max 15 seconds
         int status = WiFi.status();
         if ((status == WL_CONNECTED)  || (status == WL_NO_SSID_AVAIL) || (status == WL_CONNECT_FAILED)){
+          //If we are connected we start the OTA Service here else this sh... of library will crash 
+          //see ESP32 OTA Arduino will crash if WiFi not connected. #3456 at https://github.com/espressif/arduino-esp32/issues/3456
+          if(status == WL_CONNECTED){
+              //We could start the OTA service here....
+              Serial.println("Checking connected Callbacks");
+              for(uint32_t i = 0; i < ( sizeof(connectdone_cb)/sizeof(connectdone_cb[0]) ); i++){    
+                if(connectdone_cb[i]!=NULL){
+                      Serial.println("Execute Connected Callback");
+                      connectdone_cb[i]();
+                }
+            }
+          }
           break;
         }
         Serial.print(".");
@@ -1037,3 +1051,40 @@ void EnableStartStopMode( bool ena ){
   }
   
 }
+
+/**************************************************************************************************
+ *    Function      : RegisterCbWiFiScanDone
+ *    Description   : Will take a Function to be called if a WiFi connect is done
+ *    Input         : none
+ *    Output        : none
+ *    Remarks       : none 
+ **************************************************************************************************/
+  bool RegisterWiFiConnectedCB( void (*cb_ptr)(void) ){
+          bool registered = false;
+          for(uint32_t i = 0; i < ( sizeof(connectdone_cb)/sizeof(connectdone_cb[0]) ); i++){    
+            if(connectdone_cb[i]==NULL){
+                    connectdone_cb[i]=cb_ptr;
+                    registered=true;
+                    break;
+            }
+          }
+          return registered;
+  }
+
+  /**************************************************************************************************
+ *    Function      : DeleteCbWiFiScanDone
+ *    Description   : This can delete a callback for WiFi connect done
+ *    Input         : none
+ *    Output        : none
+ *    Remarks       : none
+ **************************************************************************************************/
+  bool DeleteWiFiConnectedCB( void (*cb_ptr)(void) ){
+      bool del = false;
+      for(uint32_t i = 0; i < ( sizeof(connectdone_cb)/sizeof(connectdone_cb[0]) ); i++){    
+        if(connectdone_cb[i]==cb_ptr){
+                connectdone_cb[i]=NULL;
+                del=true;
+        }
+      }
+      return del;
+  }

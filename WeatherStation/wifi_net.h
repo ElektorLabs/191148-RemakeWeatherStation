@@ -262,6 +262,23 @@ typedef struct {
  **************************************************************************************************/
   int WiFigetQuality( void );
 
+/**************************************************************************************************
+ *    Function      : RegisterWiFiConnectedCB
+ *    Description   : Will take a Function to be called if a WiFi Scan is done
+ *    Input         : none
+ *    Output        : none
+ *    Remarks       : none 
+ **************************************************************************************************/
+  bool RegisterWiFiConnectedCB( void (*cb_ptr)(void) );
+
+  /**************************************************************************************************
+ *    Function      : DeleteWiFiConnectedCB
+ *    Description   : This can delete a callback for WiFi Scan done
+ *    Input         : none
+ *    Output        : none
+ *    Remarks       : none
+ **************************************************************************************************/
+  bool DeleteWiFiConnectedCB( void (*cb_ptr)(void) );
 
 
 #endif
