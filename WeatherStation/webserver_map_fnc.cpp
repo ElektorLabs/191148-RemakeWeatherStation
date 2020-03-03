@@ -8,11 +8,22 @@ extern VALUEMAPPING SensorMapping;
 
 static  WebServer* MappingServer = nullptr;
 
+volatile char SupportedSendorsJSON[4096];
+volatile size_t SupportedSendorsJSONSize=0;
+volatile char ConnectedSensorsJSON[4096];
+volatile size_t ConnectedSensorsJSONSize=0;
+
+
 void response_mappingdata( void );
 void response_supportedsensors( void );
 void response_connectedsensors( void );
 void process_setmapping( void );
 void response_channelvalue( void );
+
+void prepare_response_supportedsensors( void );
+void prepare_response_connectedsensors( void );
+
+
 
 /**************************************************************************************************
  *    Function      : Webserver_Map_FunctionsRegister
@@ -23,6 +34,10 @@ void response_channelvalue( void );
  **************************************************************************************************/
 void Webserver_Map_FunctionsRegister( WebServer* serverptr){
 MappingServer=serverptr;
+
+prepare_response_supportedsensors();
+prepare_response_connectedsensors();
+
 MappingServer->on("/mapping/mappingdata.json", HTTP_GET, response_mappingdata);
 MappingServer->on("/devices/supportedsensors.json",HTTP_GET,response_supportedsensors);
 MappingServer->on("/devices/connectedsensors.json",HTTP_GET,response_connectedsensors);
@@ -142,22 +157,22 @@ int32_t iValueChannel=0;
 void response_mappingdata( void ){
     if(SPIFFS.exists("/mapping.json")){
       File file = SPIFFS.open("/mapping.json", "r");
-      MappingServer->streamFile(file, "text/plain");
+      MappingServer->streamFile(file, "application/json");
       file.close();
     } else {
       String data="{}";
-      MappingServer->send(200, "text/plain", data);
+      MappingServer->send(200, "application/json", data);
     }
 }
 
 /**************************************************************************************************
- *    Function      : response_connectedsensors
+ *    Function      : prepare_response_connectedsensors
  *    Description   : Sends connected sensors to client
  *    Input         : none 
  *    Output        : none
  *    Remarks       : None
  **************************************************************************************************/
-void response_connectedsensors( void ){
+void prepare_response_connectedsensors( void ){
     //We need to collect a whole buch of data for this one......
     VALUEMAPPING::SensorElementEntry_t SensorList[64];
     uint8_t SensorCount = SensorMapping.GetConnectedSensors(SensorList,64);
@@ -180,18 +195,28 @@ void response_connectedsensors( void ){
             MappingObj["Channel"] = (uint8_t)(SensorList[i].ChannelIDX);
             MappingObj["Name"]= SensorMapping.GetSensorName( SensorList[i]);
     }
-    serializeJson(doc, data);
-    MappingServer->send(200, "text/plain", data);
+    ConnectedSensorsJSONSize = serializeJson(doc, (char*)ConnectedSensorsJSON, sizeof(ConnectedSensorsJSON) );
 }
 
 /**************************************************************************************************
- *    Function      : response_supportedsensors
- *    Description   : Sends supported sensors to client
+ *    Function      : response_connectedsensors
+ *    Description   : Sends connected sensors to client
  *    Input         : none 
  *    Output        : none
  *    Remarks       : None
  **************************************************************************************************/
-void response_supportedsensors( void ){
+void response_connectedsensors( void ){
+    MappingServer->send_P(200, "application/json", (const char*)ConnectedSensorsJSON, ConnectedSensorsJSONSize);
+}
+
+/**************************************************************************************************
+ *    Function      : prepare_response_supportedsensors
+ *    Description   : Prepares the response fror the supported sensord
+ *    Input         : none 
+ *    Output        : none
+ *    Remarks       : This needs only to be created once
+ **************************************************************************************************/
+void prepare_response_supportedsensors( void ){
     //We need to collect a whole buch of data for this one......
     VALUEMAPPING::SensorElementEntry_t SensorList[64];
     uint8_t SensorCount = SensorMapping.GetSensors(SensorList,64);
@@ -214,8 +239,21 @@ void response_supportedsensors( void ){
             MappingObj["Channel"] = (uint8_t)(SensorList[i].ChannelIDX); 
             MappingObj["Name"]= SensorMapping.GetSensorName( SensorList[i]);
     }
-    serializeJson(doc, data);
-    MappingServer->send(200, "text/plain", data);
+    SupportedSendorsJSONSize = serializeJson(doc, (char*)SupportedSendorsJSON, sizeof(SupportedSendorsJSON) );
+
+    
+}
+
+/**************************************************************************************************
+ *    Function      : response_supportedsensors
+ *    Description   : Send the response fror the supported sensord
+ *    Input         : none 
+ *    Output        : none
+ *    Remarks       : Grab the data prepared at boot
+ **************************************************************************************************/
+void response_supportedsensors( void ){
+
+  MappingServer->send_P(200, "application/json", (const char*)SupportedSendorsJSON, SupportedSendorsJSONSize );
 }
 
 /**************************************************************************************************
@@ -252,7 +290,7 @@ void response_channelvalue( void ){
     root["mapped"]= (bool)mapped;
     root["value"] = value ;
     serializeJson(root, response);
-    server->send(200, "text/plain", response);
+    server->send(200, "application/json", response);
   
 }
 

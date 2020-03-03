@@ -37,7 +37,7 @@ void UDPUniCastSever::RegisterMappingAccess(VALUEMAPPING* Mp){
     for(uint8_t i=0;i<64;i++){
         float value = NAN;
         if(false == Mapping->ReadMappedValue(&value,i)){
-            Serial.printf("UDP Channel %i not mapped\n\r",i);                        
+            Serial.printf("UDP Channel %i not mapped\n\r",i);
         } else {
         Serial.printf("UDP Channel %i Value %f",i,value );
         String name = Mapping->GetSensorNameByChannel(i);

@@ -291,9 +291,7 @@ void setup() {
       1,              /* Priority of the task */
       NULL,           /* Task handle. */
       1); 
-  //Las but not least we start the OTA service for Firmware updates
-  //StartOTA();
-}
+ }
 
 /**************************************************************************************************
  *    Function      : loop
