@@ -43,7 +43,7 @@ MappingServer->on("/devices/supportedsensors.json",HTTP_GET,response_supportedse
 MappingServer->on("/devices/connectedsensors.json",HTTP_GET,response_connectedsensors);
 MappingServer->on("/mapping/set",HTTP_POST,process_setmapping ); //Sets a single mapping for one channel
 MappingServer->on("/mapping/{}/value",HTTP_GET, response_channelvalue);
-
+//Dashboard values will be pushed via WebSockets
 
 }
 
@@ -122,19 +122,21 @@ int32_t iValueChannel=0;
 
       if(false == fault ){
         //We can try to buld the element
-        
-        Serial.println("Data Received");
-        Serial.printf("iBus=%i ,",iBus);
-        Serial.printf("iValueType=%i ,",iValueType);
-        Serial.printf("iValueChannel=%i ,",iValueChannel);
-        Serial.printf("iMappedChannel=%i \n\r",iMappedChannel);
-        
+        #ifdef DEBUG_SERIAL
+          Serial.println("Data Received");
+          Serial.printf("iBus=%i ,",iBus);
+          Serial.printf("iValueType=%i ,",iValueType);
+          Serial.printf("iValueChannel=%i ,",iValueChannel);
+          Serial.printf("iMappedChannel=%i \n\r",iMappedChannel);
+        #endif
         VALUEMAPPING::SensorElementEntry_t Element;
         Element.Bus = (VALUEMAPPING::SensorBus_t)(iBus);
         Element.ValueType = (DATAUNITS::MessurmentValueType_t )(iValueType);
         Element.ChannelIDX = (uint8_t)iValueChannel;
         SensorMapping.SetMappingForChannel(iMappedChannel, Element);
-        Serial.println("Upadte Mapping");
+        #ifdef DEBUG_SERIAL
+          Serial.println("Upadte Mapping");
+        #endif
       } else {
 
       }
@@ -288,7 +290,7 @@ void response_channelvalue( void ){
     DynamicJsonDocument root(2048);
     root["channel"]= Ch;
     root["mapped"]= (bool)mapped;
-    root["value"] = value ;
+    root["value"] = (float)value ;
     serializeJson(root, response);
     server->send(200, "application/json", response);
   

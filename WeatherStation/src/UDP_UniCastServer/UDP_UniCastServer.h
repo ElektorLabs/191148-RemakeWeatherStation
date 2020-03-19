@@ -11,7 +11,7 @@
      void GetDestIPAddeessV4( uint8_t* A3, uint8_t* A2, uint8_t* A1, uint8_t* A0);
      void SetUDPPort( uint16_t Port);
      uint16_t GetUDPPort( void );
-     void SetTXINtervall(uint16_t Minutes);
+     void SetTXInervall(uint16_t Minutes);
      uint16_t GetUpdateIntervall( void );
      /* Mapping is not implemented and this is running a static configuration! */
      void RegisterMappingAccess(VALUEMAPPING* Mp);

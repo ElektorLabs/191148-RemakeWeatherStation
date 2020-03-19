@@ -37,11 +37,15 @@ void UDPUniCastSever::RegisterMappingAccess(VALUEMAPPING* Mp){
     for(uint8_t i=0;i<64;i++){
         float value = NAN;
         if(false == Mapping->ReadMappedValue(&value,i)){
-            Serial.printf("UDP Channel %i not mapped\n\r",i);
+            #ifdef DEBUG_SERIAL
+                Serial.printf("UDP Channel %i not mapped\n\r",i);
+            #endif
         } else {
-        Serial.printf("UDP Channel %i Value %f",i,value );
         String name = Mapping->GetSensorNameByChannel(i);
-        Serial.println(name);
+        #ifdef DEBUG_SERIAL
+            Serial.printf("UDP Channel %i Value %f",i,value );
+            Serial.println(name);
+        #endif
         JsonObject dataobj = data.createNestedObject();
         dataobj["channel"] = i;
         dataobj["value"] = value;
@@ -81,7 +85,7 @@ void UDPUniCastSever::RegisterMappingAccess(VALUEMAPPING* Mp){
             return Port;
  }
  
- void UDPUniCastSever::SetTXINtervall(uint16_t Minutes){
+ void UDPUniCastSever::SetTXInervall(uint16_t Minutes){
             Intervall= Minutes;
  }
  

@@ -52,13 +52,17 @@ static volatile bool pressed = false;
 static volatile uint32_t  press_start = 0;
 static volatile uint32_t  press_end = 0;
 static volatile uint32_t press_duration = 0;
+static volatile uint8_t displaymode = 0;
 SemaphoreHandle_t xBtnSemaphore;
+static volatile uint32_t BtnPressCnt=0;
 
 static bool DisplayAttached = false;
 
 
 void LCDisplayTask( void* param);
 void NoneDisplayTask( void* param);
+
+void LCDMenuShow( uint8_t Menu ); 
 
 /**************************************************************************************************
  *    Function      : LCDMenu
@@ -67,10 +71,13 @@ void NoneDisplayTask( void* param);
  *    Output        : void
  *    Remarks       : none
  **************************************************************************************************/
-void LCDMenu( int16_t btn, int16_t btn2 ){
+void LCDMenu( int16_t btn, int16_t btn2 , uint8_t menuitem ){
+    displaymode = menuitem;
     if(btn < 0){
       //No Button defined we will disbale the display at all, as we expect the boot button to be present
-      Serial.println("No USR Btn defined, disable Display");
+      #ifdef DEBUG_SERIAL
+        Serial.println("No USR Btn defined, disable Display");
+      #endif
       return;
     }
     userbtn = btn;
@@ -84,7 +91,9 @@ void LCDMenu( int16_t btn, int16_t btn2 ){
           Serial.println("PCF8754A found @ 0x27");
           DisplayAttached = true;
         } else {
-          Serial.println("No PCF8754A found");
+          #ifdef DEBUG_SERIAL
+            Serial.println("No PCF8754A found");
+          #endif
           DisplayAttached = false;
         }
     i2c_unlock_bus();
@@ -113,6 +122,16 @@ void LCDMenu( int16_t btn, int16_t btn2 ){
   }
 
 
+}
+
+
+uint32_t ReadButtonPressCnt( void ){
+  uint32_t value = BtnPressCnt;
+  return BtnPressCnt;
+}
+
+void ResetButtonPressCnt( void ){
+   BtnPressCnt=0;
 }
 
 /**************************************************************************************************
@@ -220,21 +239,31 @@ void DefaultDisplay( void ){
 
 }
 
-/**************************************************************************************************
- *    Function      : LCDisplayTask
- *    Description   : Task to handle the display and user input
- *    Input         : void* param
- *    Output        : void
- *    Remarks       : none
- **************************************************************************************************/
-void LCDisplayTask( void* param){
+void DisplayBootToSTA(){
+          lcd.setCursor(0,0);
+          lcd.print("Press Button to ");
+          lcd.setCursor(0,1);
+          lcd.print("force AP mode   ");
+}
+
+void DisplayBootToAP(){
+          lcd.setCursor(0,0);
+          lcd.print("AP mode is now ");
+          lcd.setCursor(0,1);
+          lcd.print("forced         ");
+}
+
+
+void DisplayDefault( bool reset ){
+  static bool displayoff = false;
+  static uint8_t timeout=0;
   wifi_connection_info_t ConnectionInfo;
-  bool displayoff = false;
-  EnableLCD();
-  DefaultDisplay();
-  uint8_t timeout=0;
-  while(1==1){
-    if ( false == xSemaphoreTake( xBtnSemaphore, 1000 ) ){
+  if(true == reset ){
+    displayoff = false;
+    uint8_t timeout=0;
+    EnableLCD();
+  }
+  if ( false == xSemaphoreTake( xBtnSemaphore, 1000 ) ){
       if(timeout < 30 ){
         DefaultDisplay();
         GetWiFiConnectionInfo( &ConnectionInfo );
@@ -288,24 +317,73 @@ void LCDisplayTask( void* param){
         //We have a button down event
       } 
     }
+}
+
+
+void DisplayBootToAPorSTA(bool changed){
+  if(true == changed ){
+    EnableLCD();
+  }
+
+  if ( false == xSemaphoreTake( xBtnSemaphore, 1000 ) ){
+    //Nothing has happened
+  } else {
+    if( ( press_duration > 100 ) && ( press_duration < 7500 ) ){
+      BtnPressCnt++;
+    } else {
+      //Not valid
+    }
+  }
+
+  if(BtnPressCnt==0){
+    DisplayBootToSTA();
+  } else {
+      DisplayBootToAP();    
   }
 }
 
 /**************************************************************************************************
- *    Function      : NoneDisplayTask
- *    Description   : Task to run if no Display is persent
+ *    Function      : LCDisplayTask
+ *    Description   : Task to handle the display and user input
  *    Input         : void* param
  *    Output        : void
  *    Remarks       : none
  **************************************************************************************************/
-void NoneDisplayTask( void* param){
-  //This needs a second button ( sort of )
-  //If we have a second use button we will use it to dismount the sdcard
-  //As we don't have any led the user must trust the statuion
-  //to mount the card again....
-  wifi_connection_info_t ConnectionInfo;
+void LCDisplayTask( void* param){
+  static uint8_t lastmode = 0;
+  bool changed = false;
+
   while(1==1){
-    if ( false == xSemaphoreTake( xBtnSemaphore, 1000 ) ){
+    if(lastmode != displaymode){
+      changed = true;
+      ResetButtonPressCnt();
+    } else {
+      changed = false;
+    }
+    switch( displaymode ){
+      case 0:{
+        DisplayDefault(changed);
+      } break;
+
+      case 1:{
+        DisplayBootToAPorSTA(changed);
+      } break;
+
+      default:{
+        DisplayDefault( changed );
+      }break; 
+    }
+    lastmode = displaymode;    
+  }
+}
+
+
+void NoneDisplayDefault( bool reset ){
+  wifi_connection_info_t ConnectionInfo;
+  if(true == reset ){
+    press_duration=0;
+  }
+  if ( false == xSemaphoreTake( xBtnSemaphore, 1000 ) ){
         GetWiFiConnectionInfo( &ConnectionInfo );
         if(true == ConnectionInfo.WPS_Active){
             //We don't process any buttons now
@@ -344,16 +422,87 @@ void NoneDisplayTask( void* param){
                    }
                 }
               } 
-
-              
-           
           }
         
       }
+}
+
+void ButtonPressCounter( void ){
+  
+  if ( false == xSemaphoreTake( xBtnSemaphore, 1000 ) ){
+  
+  } else {
+    if( ( press_duration > 100 ) && ( press_duration < 7500 ) ){
+      if( BtnPressCnt < UINT32_MAX){
+        BtnPressCnt++;
+      }
+      
+    } else {
+      //Not valid
+    }
+  }
+
+}
+
+/**************************************************************************************************
+ *    Function      : NoneDisplayTask
+ *    Description   : Task to run if no Display is persent
+ *    Input         : void* param
+ *    Output        : void
+ *    Remarks       : none
+ **************************************************************************************************/
+void NoneDisplayTask( void* param){
+  //This needs a second button ( sort of )
+  //If we have a second use button we will use it to dismount the sdcard
+  //As we don't have any led the user must trust the statuion
+  //to mount the card again....
+
+static uint8_t lastmode = 0;
+  bool changed = false;
+
+  while(1==1){
+    if(lastmode != displaymode){
+      changed = true;
+      ResetButtonPressCnt();
+    } else {
+      changed = false;
+    }
+    switch( displaymode ){
+      case 0:{
+        NoneDisplayDefault( changed );     
+      }
+
+      case 1:{
+        //We process and count button presses 
+        ButtonPressCounter();
+      }
+      default:{
+        NoneDisplayDefault( changed );
+      } break;
+    }
+    lastmode = displaymode;    
 
   }   
 
 }
+
+/**************************************************************************************************
+ *    Function      : LCDMenuShow
+ *    Description   : LCDMenuShow will display a certain Menu 
+ *    Input         : uint8_t Menu
+ *    Output        : none
+ *    Remarks       : none 
+ **************************************************************************************************/
+void LCDMenuShow( uint8_t Menu ){
+  //This will force a Message to be shown
+  //If the value is Zero it goes back to automode
+  displaymode=Menu;
+}
+
+//----------------------------------------------------------------------------------
+//As some parts in millis are nor ISR safe we need to 
+//use code that already is in RAM and ISR safe
+//----------------------------------------------------------------------------------
 
 
 /* Code fore reading milliseconds in isr */

@@ -61,7 +61,9 @@ void I2C_Sensors::begin( void ){
         DeviceOnBus[BME280]=true;
     } else {
         //No BME280 found....
+        #ifdef DEBUG_SERIAL
         Serial.println("No BME280 found");
+        #endif
         DeviceOnBus[BME280]=false;
     }
     //Next is to check for the WSEN-PAD
@@ -76,7 +78,9 @@ void I2C_Sensors::begin( void ){
             Serial.println("WSEN-PAD found @ 0x5C");
             DeviceOnBus[WSEN_PADS] = true;
         } else {
-            Serial.println("No WSEN-PAD found");
+            #ifdef DEBUG_SERIAL
+                Serial.println("No WSEN-PAD found");
+            #endif
             DeviceOnBus[WSEN_PADS] = false;
         }
     }
@@ -87,7 +91,9 @@ void I2C_Sensors::begin( void ){
         Serial.println("VEML6070 found @ 0x38");
         DeviceOnBus[VEML6070] = true;
     } else {
-        Serial.println("No VEML6070 found");
+        #ifdef DEBUG_SERIAL
+            Serial.println("No VEML6070 found");
+        #endif
         DeviceOnBus[VEML6070]=false;
     }
 
@@ -95,7 +101,9 @@ void I2C_Sensors::begin( void ){
         Serial.println("VEML6075 found @ 0x10");
         DeviceOnBus[VEML6075] = true;
     } else {
-        Serial.println("No VEML6075 found");
+        #ifdef DEBUG_SERIAL
+            Serial.println("No VEML6075 found");
+        #endif
         DeviceOnBus[VEML6070] = false;
     }
 
@@ -105,7 +113,9 @@ void I2C_Sensors::begin( void ){
         Serial.println("TSL2561 found @ 0x39");
         DeviceOnBus[TSL2561] = true;
     } else {
-       Serial.println("No TSL2561 found");
+        #ifdef DEBUG_SERIAL
+            Serial.println("No TSL2561 found");
+        #endif
        DeviceOnBus[TSL2561] = false;
     }
 
@@ -113,7 +123,9 @@ void I2C_Sensors::begin( void ){
          Serial.println("TSL2591. found @ 0x29");
          DeviceOnBus[TSL2591] = true;
     } else {
-         Serial.println("No TSL2591. found");
+         #ifdef DEBUG_SERIAL
+            Serial.println("No TSL2591. found");
+         #endif
          DeviceOnBus[TSL2591] = false;
     }
 

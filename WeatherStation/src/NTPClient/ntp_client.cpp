@@ -35,15 +35,19 @@ NTP.setInterval (50);
 void NTP_Client::SyncEvent(NTPSyncEvent_t event){
           switch(event){
           case noResponse:{
+              #ifdef DEBUG_SERIAL
                Serial.println(F("NTP No Response"));
+              #endif
           }
 
           break;
 
           case timeSyncd:{
           uint32_t ts = NTP.getLastNTPSync ();
-          Serial.print(F("Sync:"));
-          Serial.println (NTP.getLastNTPSync ());
+          #ifdef DEBUG_SERIAL
+            Serial.print(F("Sync:"));
+            Serial.println (NTP.getLastNTPSync ());
+          #endif
           if(ts>100){
             if(timeptr!=NULL){
               timeptr->SetUTC(ts,NTP_CLOCK);
@@ -52,7 +56,9 @@ void NTP_Client::SyncEvent(NTPSyncEvent_t event){
         } break;
 
         case invalidAddress :{
-          Serial.println(F("NTP invalid Address"));
+          #ifdef DEBUG_SERIAL
+            Serial.println(F("NTP invalid Address"));
+          #endif
         } break;
 
 	default:{
@@ -87,7 +93,9 @@ void NTP_Client::Sync(){
 
   /* We send a request and will get the result may in the event */
   if(true == Config.NTPEnable ){
-    Serial.println(F("Send NTP Request"));
+    #ifdef DEBUG_SERIAL
+      Serial.println(F("Send NTP Request"));
+    #endif
     NTP.getTime();
   } else {
     //Serial.println(F("NTP not active"));  

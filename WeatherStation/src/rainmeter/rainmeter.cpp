@@ -53,7 +53,9 @@ void Rainmeter::begin( int Pin ){
 void Rainmeter::CalculateRainAmount( Rainmeter* obj){
   uint16_t pulsecount = uxSemaphoreGetCount ( obj->xSemaphore );
   xQueueReset(obj->xSemaphore);
-  Serial.printf("Rain Pulsecount:%i\n\r", pulsecount);
+  #ifdef DEBUG_SERIAL
+    Serial.printf("Rain Pulsecount:%i\n\r", pulsecount);
+  #endif
 }
 
 

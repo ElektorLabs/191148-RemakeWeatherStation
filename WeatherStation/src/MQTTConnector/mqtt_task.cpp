@@ -136,8 +136,9 @@ void MQTT_Task( void* prarm ){
    uint32_t ulNotificationValue;
    int32_t last_message = millis();
    mqttsettings_t Settings = read_mqttsettings();
-                         
-   Serial.println("MQTT Thread Start");
+   #ifdef DEBUG_SERIAL                      
+    Serial.println("MQTT Thread Start");
+   #endif
    mqttclient.setCallback(callback);             // define Callback function
    bool IOBrokerMode = false;
    while(1==1){
@@ -146,16 +147,22 @@ void MQTT_Task( void* prarm ){
       if(Settings.enable != false){
         ulNotificationValue = ulTaskNotifyTake( pdTRUE, 0 );
       } else {
-        Serial.println("MQTT disabled, going to sleep");
+        #ifdef DEBUG_SERIAL
+          Serial.println("MQTT disabled, going to sleep");
+        #endif
         if(true == mqttclient.connected() ){
             mqttclient.disconnect();
         }
         ulNotificationValue = ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
-        Serial.println("MQTT awake from sleep");
+        #ifdef DEBUG_SERIAL
+          Serial.println("MQTT awake from sleep");
+        #endif
       }
 
    if( (ulNotificationValue&0x01) != 0 ){
-      Serial.println("Reload MQTT Settings");
+      #ifdef DEBUG_SERIAL
+        Serial.println("Reload MQTT Settings");
+      #endif
       /* we need to reload the settings and do a reconnect */
       if(true == mqttclient.connected() ){
         mqttclient.disconnect();
@@ -169,13 +176,19 @@ void MQTT_Task( void* prarm ){
             /* sainity check */
             if( (Settings.mqttserverport!=0) && (Settings.mqttservername[0]!=0) && ( Settings.enable != false ) ){
                   /* We try only every second to connect */
-                  Serial.print("Connecting to MQTT...");  // connect to MQTT
+                  #ifdef DEBUG_SERIAL
+                    Serial.print("Connecting to MQTT...");  // connect to MQTT
+                  #endif
                   mqttclient.setServer(Settings.mqttservername, Settings.mqttserverport); // Init MQTT     
                   if (mqttclient.connect(Settings.mqtthostname, Settings.mqttusername, Settings.mqttpassword)) {
-                    Serial.println("connected");          // successfull connected  
+                    #ifdef DEBUG_SERIAL
+                      Serial.println("connected");          // successfull connected  
+                    #endif
                     mqttclient.subscribe(Settings.mqtttopic);             // subscibe MQTT Topic
                   } else {
-                    Serial.println("failed");   // MQTT not connected       
+                     #ifdef DEBUG_SERIAL
+                      Serial.println("failed");   // MQTT not connected       
+                    #endif
                   }
             }
        } else{
@@ -190,18 +203,24 @@ void MQTT_Task( void* prarm ){
               {
               /* if we run in json mode we need to bulld the object */
                 if(Mapping != nullptr){
-                  Serial.println("Send JSON Payload");  
+                  #ifdef DEBUG_SERIAL
+                    Serial.println("Send JSON Payload");  
+                  #endif
                   JsonString="";
                   root.clear();
                   JsonArray data = root.createNestedArray("data");
                   for(uint8_t i=0;i<64;i++){
                       float value = NAN;
                       if(false == Mapping->ReadMappedValue(&value,i)){
-                          Serial.printf("MQTT Channel %i not mapped\n\r",i);                        
+                          #ifdef DEBUG_SERIAL
+                            Serial.printf("MQTT Channel %i not mapped\n\r",i);
+                          #endif                        
                       } else {
-                        Serial.printf("MQTT Channel %i Value %f",i,value );
                         String name = Mapping->GetSensorNameByChannel(i);
-                        Serial.println(name);
+                        #ifdef DEBUG_SERIAL
+                          Serial.printf("MQTT Channel %i Value %f",i,value );
+                          Serial.println(name);
+                        #endif
                         JsonObject dataobj = data.createNestedObject();
                         dataobj["channel"] = i;
                         dataobj["value"] = value;
@@ -213,19 +232,25 @@ void MQTT_Task( void* prarm ){
                   /* Every minute we send a new set of data to the mqtt channel */
                   serializeJson(root,JsonString);
                   if ( 0 == mqttclient.publish(Settings.mqtttopic, JsonString.c_str())){
-                      Serial.println("MQTT pub failed");  
+                      #ifdef DEBUG_SERIAL
+                        Serial.println("MQTT pub failed"); 
+                      #endif 
                   }
                 }
 
                 } else /* If we run in IO Broker mode */ {
                 if(Mapping != nullptr){
-                  Serial.println("Send for IOBroker");  
+                  #ifdef DEBUG_SERIAL
+                    Serial.println("Send for IOBroker");  
+                  #endif
                   MQTT_Value_t Tx_Value ;
                   Tx_Value.Type=vt_flt;
                     for(uint8_t i=0;i<64;i++){
                       float value = NAN;
                       if(false == Mapping->ReadMappedValue(&value,i)){
-                          Serial.printf("MQTT Channel %i not mapped\n\r",i);                        
+                            #ifdef DEBUG_SERIAL
+                             Serial.printf("MQTT Channel %i not mapped\n\r",i);
+                            #endif                        
                       } else {
                           Tx_Value.Value.flt = value;
                           String ChannelName = "/Weather/Channel"+String(i);
@@ -309,7 +334,9 @@ void SendIoBrokerSingleMSG(mqttsettings_t* settings,const char* subtopic, const 
   
   if( (error < 0)  || ( error > sizeof(valuestr ) ) ) {
     /* value is truncated ! */
-    Serial.printf("value string error: %i\n\r",error );  
+    #ifdef DEBUG_SERIAL
+      Serial.printf("value string error: %i\n\r",error );
+    #endif  
   } else {
     strncpy(mqttcombinedtopic, settings->mqtttopic, 1023);
     /* This is 'save' as if we have a size of zero the compile will / shall fail */
@@ -318,12 +345,16 @@ void SendIoBrokerSingleMSG(mqttsettings_t* settings,const char* subtopic, const 
     /* We need to get the lenght of the current string to limit the strncoy*/
     strncat(mqttcombinedtopic, subtopic, sizeof(mqttcombinedtopic)-len );
     if ( 0 == mqttclient.publish(mqttcombinedtopic,valuestr, true) ){ 
-        Serial.println("MQTT pub failed");  
+        #ifdef DEBUG_SERIAL
+          Serial.println("MQTT pub failed");
+        #endif  
     } else {
+        #ifdef DEBUG_SERIAL
          Serial.print("Published in "); 
          Serial.print(mqttcombinedtopic);
          Serial.print(" the Message:");
          Serial.println( valuestr );
+      #endif
     }
   }
 }

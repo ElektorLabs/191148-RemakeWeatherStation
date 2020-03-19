@@ -282,7 +282,9 @@ void WPS_Start(){
   if(true == WaitForReady ){
       while(-1==ScanResult ){
         /* We need to wait */
-        Serial.printf("Wait for Scan to be done %i\n\r",ScanResult);
+        #ifdef DEBUG_SERIAL
+         Serial.printf("Wait for Scan to be done %i\n\r",ScanResult);
+        #endif
         ScanResult = WiFi.scanComplete();
         vTaskDelay(1);
       }
@@ -698,6 +700,7 @@ void _ReconnectWiFi( bool ConnectToApOnly  ) {
  *    Remarks       : configure the access point of the esp
  **************************************************************************************************/
 void configureSoftAP( bool use_wifi_config ) {
+  uint8_t maxcon = 4; //Limited to 4 connections 
   uint8_t macAddr[6];
   char stringBufferAP[33]; 
   WiFi.mode(WIFI_AP);
@@ -709,12 +712,12 @@ void configureSoftAP( bool use_wifi_config ) {
     wifi_param_config_t settings = read_wifi_config();
     if(( strnlen(settings.ap_pass, sizeof(settings.ap_pass) >= 8 )) && settings.AP_Enc_Ena == true ){
       Serial.printf("AP Encryption enabled pass %s \n\r",settings.ap_pass);
-      WiFi.softAP(APSSID.c_str(), settings.ap_pass, 1, 0, 1);
+      WiFi.softAP(APSSID.c_str(), settings.ap_pass, 1, 0, maxcon);
     } else {
-      WiFi.softAP(APSSID.c_str(), NULL, 1, 0, 1);
+      WiFi.softAP(APSSID.c_str(), NULL, 1, 0, maxcon);
     }
   } else {
-    WiFi.softAP(APSSID.c_str(), NULL, 1, 0, 1);
+    WiFi.softAP(APSSID.c_str(), NULL, 1, 0, maxcon);
   }
   
   IPAddress ip = WiFi.softAPIP();

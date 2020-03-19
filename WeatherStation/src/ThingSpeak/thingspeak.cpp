@@ -61,6 +61,18 @@ void ThinkspeakUpload::begin(  bool usehttps ){
 }
 
 /**************************************************************************************************
+ *    Function      : InitConfig
+ *    Description   : Reads the current config
+ *    Input         : void
+ *    Output        : void
+ *    Remarks       : Read the config without starting any tasks
+ **************************************************************************************************/
+void ThinkspeakUpload::InitConfig(void){
+   ReadMapping();
+   ReadSettings();
+}
+
+/**************************************************************************************************
  *    Function      : RegisterDataAccess
  *    Description   : Register a function to access the mapped sensor values
  *    Input         : ThinkspeakUpload::DataAccesFnc Fnc
@@ -93,6 +105,7 @@ void ThinkspeakUpload::WriteMapping( void ){
     serializeJson(doc, JSONData);
     file.print(JSONData);
     file.close();
+    #ifdef DEBUG_SERIAL
     Serial.print("JSONData");
     Serial.println(JSONData);
     //We check the file content....
@@ -102,7 +115,9 @@ void ThinkspeakUpload::WriteMapping( void ){
       char ch = file.read();
       Serial.print(ch);
     }
+    file.close();
     Serial.println("End of File");
+    #endif
     xSemaphoreGive(TaskData.CfgSem);
 
 }
@@ -123,42 +138,54 @@ String JSONData="";
     //This makes mapping more complicated but will easen web access
     if(SPIFFS.exists("/ThingSpeakMapping.json")){
         File file = SPIFFS.open("/ThingSpeakMapping.json");
-        Serial.print("Filesize:");
-        Serial.print(file.available());
-        while(file.available()){
-          char ch = file.read();
-          Serial.print(ch);
-          JSONData=JSONData+ch;
-        }
-        Serial.println("");
-        Serial.print("JSON:");
-        Serial.println(JSONData);
+        #ifdef DEBUG_SERIAL
+          Serial.print("Filesize:");
+          Serial.print(file.available());
+        #endif
+          while(file.available()){
+            char ch = file.read();
+            #ifdef DEBUG_SERIAL
+             Serial.print(ch);
+            #endif
+            JSONData=JSONData+ch;
+          }
+          #ifdef DEBUG_SERIAL
+           Serial.println("");
+           Serial.print("JSON:");
+           Serial.println(JSONData);
+
+          #endif
         DeserializationError err = deserializeJson(doc, JSONData);
         if(err) {
-          Serial.print("ThingSpeakMapping ");
-          Serial.print(F(" deserializeJson() failed with code "));
-          Serial.println(err.c_str());         
+          #ifdef DEBUG_SERIAL
+            Serial.print("ThingSpeakMapping ");
+            Serial.print(F(" deserializeJson() failed with code "));
+            Serial.println(err.c_str());         
+          #endif
         } else {
           
         }
         JsonArray ThingspeakMapping = doc["Mapping"];
         if(ThingspeakMapping.isNull()==true){
-          Serial.println("Thingspeak dezerilize failed");
+          #ifdef DEBUG_SERIAL
+            Serial.println("Thingspeak dezerilize failed");
+          #endif
         }
         for(uint8_t i=0;i<( sizeof(Mapping) / sizeof( Mapping[0] ));i++){
 
             Mapping[i].enable =ThingspeakMapping[i]["Enabled"];
             Mapping[i].StationChannelIdx = ThingspeakMapping[i]["Channel"];
-          
-            Serial.print("Read form File for Thingspeak Channel");
-            Serial.println(i);
-            Serial.print("Mapped to Station Channel:");
-            Serial.println(Mapping[i].StationChannelIdx);
-            if(Mapping[i].enable==true){
-              Serial.println("Channel is Enabled");
-            } else {
-            Serial.println("Channel is Disabled");
-            }
+            #ifdef DEBUG_SERIAL
+              Serial.print("Read form File for Thingspeak Channel");
+              Serial.println(i);
+              Serial.print("Mapped to Station Channel:");
+              Serial.println(Mapping[i].StationChannelIdx);
+              if(Mapping[i].enable==true){
+                Serial.println("Channel is Enabled");
+              } else {
+              Serial.println("Channel is Disabled");
+              }
+            #endif
         }
     } else {
         //We need to create a blank mapping scheme
@@ -166,7 +193,9 @@ String JSONData="";
               Mapping[i].enable=false;
               Mapping[i].StationChannelIdx=0;
          }
-         Serial.println("ThingspeakUpload: Write blank config");
+         #ifdef DEBUG_SERIAL
+           Serial.println("ThingspeakUpload: Write blank config");
+         #endif
          WriteMapping();
     }
 
@@ -182,7 +211,9 @@ String JSONData="";
  *    Remarks       : void
  **************************************************************************************************/
 void ThinkspeakUpload::WriteSettings(){
+   #ifdef DEBUG_SERIAL
     Serial.println("Write to /ThingSpeakSetting.json");
+   #endif
     File file = SPIFFS.open("/ThingSpeakSetting.json", FILE_WRITE);
     const size_t capacity = JSON_ARRAY_SIZE(64) + JSON_OBJECT_SIZE(1) + 64*JSON_OBJECT_SIZE(3)+(64*16);
     DynamicJsonDocument doc(capacity);
@@ -212,9 +243,11 @@ void ThinkspeakUpload::ReadSettings(){
         File file = SPIFFS.open("/ThingSpeakSetting.json");
         DeserializationError err = deserializeJson(doc, file);
         if(err) {
-          Serial.print("/ThingSpeakSetting.json ");
-          Serial.print(F("deserializeJson() failed with code "));
-          Serial.println(err.c_str());
+          #ifdef DEBUG_SERIAL
+            Serial.print("/ThingSpeakSetting.json ");
+            Serial.print(F("deserializeJson() failed with code "));
+            Serial.println(err.c_str());
+          #endif
         }
         
         
@@ -266,11 +299,15 @@ bool ThinkspeakUpload::PostData(  ThinkspeakUpload* obj ) {
   String thingspeakApi = String(obj->Settings.ThingspealAPIKey);
 
   if(false == obj->Settings.Enabled){
-    Serial.println("ThingSpeak upload disabled");
+    #ifdef DEBUG_SERIAL
+      Serial.println("ThingSpeak upload disabled");
+    #endif
     return false;
   }
   if (0 == obj->Settings.ThingspealAPIKey[0]) {
-    Serial.println("ThingSpeak API Key not set");
+    #ifdef DEBUG_SERIAL
+      Serial.println("ThingSpeak API Key not set");
+    #endif
     return false;
   } 
   Serial.println("Start Uploading to ThingSpeak");
@@ -291,27 +328,36 @@ bool ThinkspeakUpload::PostData(  ThinkspeakUpload* obj ) {
            added_fields++;
         } else {
           //We have a mapping problem at all.....
-          Serial.printf(" ThigSpeak upload: Requested Channel %i : No Mapped  for Stationchanne %i", i, obj->Mapping[i].StationChannelIdx);
+          #ifdef DEBUG_SERIAL
+            Serial.printf(" ThigSpeak upload: Requested Channel %i : No Mapped  for Stationchanne %i", i, obj->Mapping[i].StationChannelIdx);
+          #endif
         }
       } else {
-        Serial.printf(" ThingSpeak upload: Requested Channel %i : no DataSource", i);
+        #ifdef DEBUG_SERIAL
+          Serial.printf(" ThingSpeak upload: Requested Channel %i : no DataSource", i);
+        #endif
       }
         
     }
 
   }
   //This is for debug only
+  #ifdef DEBUG_SERIAL
   Serial.println("Current URL String:");
   Serial.println(thingspeakUrl);
   Serial.println("# End of String #");
   //Sainity check if we have any data
+  #endif
   if (0 ==added_fields) {
-    Serial.println("ThingSpeak API: Channels all disabled or mapping broken");
+    #ifdef DEBUG_SERIAL
+      Serial.println("ThingSpeak API: Channels all disabled or mapping broken");
+    #endif
     return false;
   }
   
-  Serial.println("Uploading to ThingSpeak");  
- 
+  #ifdef DEBUG_SERIAL
+    Serial.println("Uploading to ThingSpeak");  
+  #endif
   if(true == obj->usesecure){
       clientptr=obj->clientS;
   } else {
@@ -326,10 +372,14 @@ bool ThinkspeakUpload::PostData(  ThinkspeakUpload* obj ) {
     String resp ="";
     if(true==obj->usesecure){
       resp = performRequest(clientptr, thingspeakHost, thingspeakUrl,443);
-      Serial.println("Try to use HTTPS@443 for Thingspeak");
+      #ifdef DEBUG_SERIAL
+        Serial.println("Try to use HTTPS@443 for Thingspeak");
+      #endif
     } else {
       resp = performRequest(clientptr, thingspeakHost, thingspeakUrl,80);
-      Serial.println("Try to use HTTP@80 for Thingspeak");
+      #ifdef DEBUG_SERIAL
+        Serial.println("Try to use HTTP@80 for Thingspeak");
+      #endif
     }
     ReleaseWiFiConnection();
     return (resp != "" && !resp.startsWith("0"));
@@ -345,23 +395,30 @@ bool ThinkspeakUpload::PostData(  ThinkspeakUpload* obj ) {
  *    Remarks       : void
  **************************************************************************************************/
 String ThinkspeakUpload::performRequest(WiFiClient* c , String host, String url, int port , String method , String headers , String data ) {
-  
-  Serial.println("Connecting to host '" + host + "' on port " + String(port));
+  #ifdef DEBUG_SERIAL
+    Serial.println("Connecting to host '" + host + "' on port " + String(port));
+  #endif
   c->connect(host.c_str(), port); //default ports: http: port 80, https: 443
   String request = method + " " + url + " HTTP/1.1\r\n" +
                    "Host: " + host + "\r\n" +
                    headers + "\r\n";
-  Serial.println("Requesting url: " + request);
+  #ifdef DEBUG_SERIAL
+    Serial.println("Requesting url: " + request);
+  #endif
   c->print(request);
   if (data != "") {
-    Serial.println("Data: " + data);
+    #ifdef DEBUG_SERIAL
+      Serial.println("Data: " + data);
+    #endif
     c->print(data + "\r\n");
   }
   
   unsigned long timeout = millis();
   while (c->available() == 0) {
     if (timeout + 5000 < millis()) {
+    #ifdef DEBUG_SERIAL
       Serial.println("Client timeout");
+    #endif
       c->stop();
       return "";
     }
@@ -378,7 +435,9 @@ String ThinkspeakUpload::performRequest(WiFiClient* c , String host, String url,
     delay(1);
 
   }
-  Serial.println("Response: " + response);
+  #ifdef DEBUG_SERIAL
+    Serial.println("Response: " + response);
+  #endif
   c->stop();
   return response;
 }
@@ -393,7 +452,9 @@ String ThinkspeakUpload::performRequest(WiFiClient* c , String host, String url,
 void ThinkspeakUpload::UploadTaskFnc(void* params){
   uint32_t WaitTime = portMAX_DELAY;
   TaskData_t* TaskData = (TaskData_t*) params;
-  Serial.println("Thinkspeak UploadTask started");
+  #ifdef DEBUG_SERIAL
+    Serial.println("Thinkspeak UploadTask started");
+  #endif
   while(1==1){
 
 
@@ -410,17 +471,22 @@ void ThinkspeakUpload::UploadTaskFnc(void* params){
     } else {
       WaitTime = portMAX_DELAY;
     }
-    Serial.print("Thingspeak will upload in ");
-    Serial.print(WaitTime);
-    Serial.println(" Ticks( ms )");
+    #ifdef DEBUG_SERIAL
+      Serial.print("Thingspeak will upload in ");
+      Serial.print(WaitTime);
+      Serial.println(" Ticks( ms )");
+    #endif
     if( false == xSemaphoreTake( TaskData->CfgSem, WaitTime ) ){
       //No Configchange at all we can simpy upload the data 
-      Serial.println("Thingspeak: Prepare Upload ( insert code here )");
+      #ifdef DEBUG_SERIAL
+        Serial.println("Thingspeak: Prepare Upload ( insert code here )");
+      #endif
       PostData(TaskData->obj);
     } else {
       //We have a configchange 
-      Serial.println("Thingspeak: Config changed, apply settings");
-
+      #ifdef DEBUG_SERIAL
+        Serial.println("Thingspeak: Config changed, apply settings");
+      #endif
     }
 
 
@@ -551,15 +617,17 @@ ThinkspeakUpload::ThinkspeakMapping_t ThinkspeakUpload::GetMapping(uint8_t Chann
    if( Channel >= ( sizeof(Mapping) / sizeof( Mapping[0] )  )  ){
     Channel = ( sizeof(Mapping) / sizeof( Mapping[0] )  ) - 1;
   }
-  Serial.print("Return Thingspeak Channel");
-  Serial.println(Channel);
-  Serial.print("Mapped to Station Channel:");
-  Serial.println(Mapping[Channel].StationChannelIdx);
-  if(Mapping[Channel].enable==true){
-    Serial.print("Channel is Enabled");
-  } else {
-   Serial.print("Channel is Disabled");
-  }
+  #ifdef DEBUG_SERIAL
+    Serial.print("Return Thingspeak Channel");
+    Serial.println(Channel);
+    Serial.print("Mapped to Station Channel:");
+    Serial.println(Mapping[Channel].StationChannelIdx);
+    if(Mapping[Channel].enable==true){
+      Serial.print("Channel is Enabled");
+    } else {
+    Serial.print("Channel is Disabled");
+    }
+  #endif
   return Mapping[Channel];
 
 }

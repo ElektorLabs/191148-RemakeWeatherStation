@@ -89,14 +89,17 @@ void setup_sdcard( int8_t sd_sck_pin , int8_t sd_miso_pin, int8_t sd_mosi_pin, i
  *    Remarks       : none
  **************************************************************************************************/
 void sdcard_umount(){
-    if (false == xSemaphoreTake(SDCardAccessSem, portMAX_DELAY ) ){
-      return;
-    } 
-    card_eject = true;
-    SD.end();
-     Serial.println("SD-Card ejected");
-    xSemaphoreGive(SDCardAccessSem);
-
+    if(nullptr!=SDCardAccessSem){
+      if (false == xSemaphoreTake(SDCardAccessSem, portMAX_DELAY ) ){
+        return;
+      } 
+      card_eject = true;
+      SD.end();
+        #ifdef DEBUG_SERIAL
+        Serial.println("SD-Card ejected");
+        #endif
+      xSemaphoreGive(SDCardAccessSem);
+    }
 }
 
 /**************************************************************************************************
@@ -107,18 +110,26 @@ void sdcard_umount(){
  *    Remarks       : none
  **************************************************************************************************/
 void sdcard_mount(){
+  if(nullptr!=SDCardAccessSem){
     if (false == xSemaphoreTake(SDCardAccessSem, portMAX_DELAY )){
       return;
     } 
     SD.end();
   if(false == SD.begin(CS_Pin, SDSPI) ){
-    Serial.println("SD-Card mount failed");
+      #ifdef DEBUG_SERIAL
+       Serial.println("SD-Card mount failed");
+      #endif
      card_eject = true;
   } else {
-    Serial.println("SD-Card mounted at '\\SD' ");
-    card_eject = false;
+
+    #ifdef DEBUG_SERIAL
+      Serial.println("SD-Card mounted at '\\SD' ");
+    #endif
+   
+   card_eject = false;
   }
   xSemaphoreGive(SDCardAccessSem);
+ }
 }
 
 /**************************************************************************************************
@@ -204,7 +215,9 @@ void sdcard_log_writesettings(bool ena, uint16_t interval){
  **************************************************************************************************/
 void SdCardLog_WriteConfig( void ){
     //This will just convert the Mapping to JSON and write it to the local filesystem
-    Serial.println("Write /sdcardlog.json ");
+    #ifdef DEBUG_SERIAL
+      Serial.println("Write /sdcardlog.json ");
+    #endif
     File file = SPIFFS.open("/sdcardlog.json", FILE_WRITE);
     const size_t capacity = JSON_ARRAY_SIZE(64) + JSON_OBJECT_SIZE(1) + 64*JSON_OBJECT_SIZE(3)+(64*16);
     DynamicJsonDocument doc(capacity);
@@ -225,25 +238,31 @@ String JSONData="";
     //This makes mapping more complicated but will easen web access
     if(SPIFFS.exists("/sdcardlog.json")){
         File file = SPIFFS.open("/sdcardlog.json");
-        
-        Serial.print("Filesize:");
-        Serial.println(file.available());
+          #ifdef DEBUG_SERIAL
+          Serial.print("Filesize:");
+          Serial.println(file.available());
+          #endif
         while(file.available()){
           char ch = file.read();
-          Serial.print(ch);
+          #ifdef DEBUG_SERIAL
+           Serial.print(ch);
+          #endif
           JSONData=JSONData+ch;
         }
-        Serial.println("");
-        Serial.print("JSON:");
-        Serial.println(JSONData);
-     
+          #ifdef DEBUG_SERIAL
+           Serial.println("");
+            Serial.print("JSON:");
+            Serial.println(JSONData);
+          #endif
         const size_t capacity = JSON_ARRAY_SIZE(64) + JSON_OBJECT_SIZE(1) + 64*JSON_OBJECT_SIZE(3) + 1580;
         DynamicJsonDocument doc(capacity);
         DeserializationError err =  deserializeJson(doc, JSONData);
         if(err) {
+          #ifdef DEBUG_SERIAL
           Serial.print("/sdcardlog.json ");
           Serial.print(F("deserializeJson() failed with code "));
           Serial.println(err.c_str());
+          #endif
         }
 
         LogEnable = doc["enabled"];
@@ -251,7 +270,9 @@ String JSONData="";
         file.close();
         
     } else {
+        #ifdef DEBUG_SERIAL
         Serial.println("Read for /sdcardlog.json failed");
+        #endif              
         LogEnable = false;
         LogInterval = 1;
         SdCardLog_WriteConfig();
@@ -273,7 +294,9 @@ uint32_t sdcard_GetCapacity( void ){
     return 0;
   }
   if (false == xSemaphoreTake(SDCardAccessSem, 5)){
-    Serial.println("SD Card Semaphore locked");
+    #ifdef DEBUG_SERIAL
+      Serial.println("SD Card Semaphore locked");
+    #endif
     return 0;
   } 
   if(true == sdcard_getmounted()){
@@ -299,7 +322,9 @@ uint32_t sdcard_GetFreeSpace( void  ){
     return 0;
   }
   if (false == xSemaphoreTake(SDCardAccessSem, 5)){
-    Serial.println("SD Card Semaphore locked");
+    #ifdef DEBUG_SERIAL
+      Serial.println("SD Card Semaphore locked");
+    #endif
     return 0;
   } 
   uint64_t BytesFree = SD.totalBytes() - SD.usedBytes() ;
@@ -340,17 +365,23 @@ void SDCardLoging( void* param){
       }
     } else {
       Interval = portMAX_DELAY;
-      Serial.println("SDLog: Entering Sleep");
+      #ifdef DEBUG_SERIAL
+        Serial.println("SDLog: Entering Sleep");
+      #endif
     }
-    Serial.print("Next SDLog in ");
-    Serial.print(Interval);
-    Serial.println(" Ticks (ms)");
+    #ifdef DEBUG_SERIAL
+      Serial.print("Next SDLog in ");
+      Serial.print(Interval);
+      Serial.println(" Ticks (ms)");
+    #endif
     if( false == xSemaphoreTake( SDCfgSem, Interval ) ){
       //No Configchange at all we can simpy upload the data 
       SDCardDataLog();
     } else {
       //We have a configchange 
-      Serial.println("SD Card: Config changed, apply settings");
+      #ifdef DEBUG_SERIAL
+        Serial.println("SD Card: Config changed, apply settings");
+      #endif
       SDCardLog_ReadConfig();
 
     }
@@ -377,18 +408,24 @@ void SDCardDataLog( void ){
     stored on the sd card 
   */
   if(nullptr == DataMapping){
-    Serial.println("No Datasource registred");
+    #ifdef DEBUG_SERIAL
+      Serial.println("No Datasource registred");
+    #endif
     return;
   }
 
   if (false == xSemaphoreTake(SDCardAccessSem, 5)){
-    Serial.println("SD Card Semaphore locked");
+    #ifdef DEBUG_SERIAL
+      Serial.println("SD Card Semaphore locked");
+    #endif
     return;
   } 
  
   if(true == card_eject){
       xSemaphoreGive(SDCardAccessSem);
-      Serial.println("SD Card not mounted");
+      #ifdef DEBUG_SERIAL
+        Serial.println("SD Card not mounted");
+      #endif
       return; //We won't try to mount the card!
   }
   
@@ -411,7 +448,9 @@ void SDCardDataLog( void ){
 
   if(false == CardMounted){
     xSemaphoreGive(SDCardAccessSem);
-    Serial.println("SD Card not connected, leave");
+    #ifdef DEBUG_SERIAL
+      Serial.println("SD Card not connected, leave");
+    #endif
     return; //That is all we can do for now 
   }
 
@@ -431,13 +470,17 @@ void SDCardDataLog( void ){
   uint64_t BytesFree = SD.totalBytes() - SD.usedBytes() ;
   uint32_t MBFree = ( BytesFree / 1024 / 1024 ); 
   if( MBFree > 5 ){   
-    Serial.print("SD Card start writing @");
-    Serial.println(TimeString);
-    Serial.print("Path:");
-    Serial.print(Path);
+    #ifdef DEBUG_SERIAL
+      Serial.print("SD Card start writing @");
+      Serial.println(TimeString);
+      Serial.print("Path:");
+      Serial.print(Path);
+    #endif
     if(true == SD.exists(Path) ){
       file = SD.open(Path, FILE_APPEND);
-      Serial.println(" - File exist, append data");
+      #ifdef DEBUG_SERIAL
+        Serial.println(" - File exist, append data");
+      #endif
     } else {
       file = SD.open(Path, FILE_WRITE);
       if(file){
@@ -456,7 +499,9 @@ void SDCardDataLog( void ){
             }
         }       
       } else {
-        Serial.println("Can't open file for write");
+        #ifdef DEBUG_SERIAL
+          Serial.println("Can't open file for write");
+        #endif
         xSemaphoreGive(SDCardAccessSem);
         sdcard_umount();
         return;    
@@ -489,15 +534,18 @@ void SDCardDataLog( void ){
       file.close();
     } else {
       xSemaphoreGive(SDCardAccessSem);
+      #ifdef DEBUG_SERIAL
        Serial.println("SD Card file error");
+      #endif
       return; //File error 
     }
   } else {
-    //Out of memory 
-    Serial.println("SD Card no space left on device");
-    Serial.print("MB Free:");
-    Serial.println(MBFree);
-
+    //Out of memory
+    #ifdef DEBUG_SERIAL
+      Serial.println("SD Card no space left on device");
+      Serial.print("MB Free:");
+      Serial.println(MBFree);
+    #endif
   }
   xSemaphoreGive(SDCardAccessSem);
 }

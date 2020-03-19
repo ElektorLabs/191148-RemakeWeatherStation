@@ -4,6 +4,7 @@
 #include <ArduinoJson.h>
 #include <SPIFFS.h>
 #include <Update.h>
+#include "version.h"
 
 WebServer* server = NULL;
 
@@ -13,6 +14,7 @@ void getWiFiSettings( void );
 void setWiFiSettings( void );
 void restart( void );
 void getSSIDList( void );
+void getInfo( void );
 
 //This will even work if the spiffs is not mounatable or empty
 const char* serverFirmwareIndex = "<form method='POST' action='/update/fimrware' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form>";
@@ -45,7 +47,9 @@ String getContentType(String filename) {
 
 
 void sendError404( void ){
-   Serial.println("File doesn't exist (404)");
+   #ifdef DEBUG_SERIAL
+    Serial.println("File doesn't exist (404)");
+   #endif
    server->send(404, "text/plain", "The requested file doesn't exist");
 }
 
@@ -58,12 +62,18 @@ void sendError404( void ){
  **************************************************************************************************/
 void sendFile() {
   String path = server->uri();
-  Serial.println("Got request for: " + path);
+  #ifdef DEBUG_SERIAL
+    Serial.println("Got request for: " + path);
+  #endif
   if (path.endsWith("/")) path += "index.html";
   String contentType = getContentType(path);
-  Serial.println("Content type: " + contentType);
+  #ifdef DEBUG_SERIAL
+    Serial.println("Content type: " + contentType);
+  #endif
   if (SPIFFS.exists(path)) {
-    Serial.println("File " + path + " found");
+    #ifdef DEBUG_SERIAL
+      Serial.println("File " + path + " found");
+    #endif
     File file = SPIFFS.open(path, "r");
     server->streamFile(file, contentType);
     file.close();
@@ -75,7 +85,7 @@ void sendFile() {
       server->send(200, "text/html", serverSPIFFSIndex);
     } else {
       Serial.println("File '" + path + "' doesn't exist");
-      server->send(404, "text/plain", "The requested file doesn't exist");
+      sendError404();
     }
   }
   
@@ -159,6 +169,7 @@ void SetupWebServer() {
   server->on("/getWiFiSettings", HTTP_GET, getWiFiSettings);
   server->on("/getSSIDList", HTTP_GET, getSSIDList);
   server->on("/restart", HTTP_GET, restart);
+  server->on("/info", HTTP_GET, getInfo);
 
 
   //This is for the Webupdate for the firmware
@@ -181,9 +192,11 @@ void SetupWebServer() {
     
     server->onNotFound(sendFile); //handle everything except the above things
     server->begin();
-    Serial.println("Webserver started");
+    Serial.println("Webserver started at port 80");
   } else {
+  #ifdef DEBUG_SERIAL    
     Serial.println("Webserver already running");
+  #endif
   }
 }
 
@@ -235,7 +248,9 @@ String WiFiStatusToString() {
  *    Remarks       : none
  **************************************************************************************************/
 void getSSIDList() {
-  Serial.println("SSID list requested");
+    #ifdef DEBUG_SERIAL
+      Serial.println("SSID list requested");
+    #endif
   sendData(SSIDList());
 }
 
@@ -249,7 +264,9 @@ void getSSIDList() {
  **************************************************************************************************/
 String SSIDList( void ) {
   String Result ="";
+  #ifdef DEBUG_SERIAL
   Serial.println("Scanning networks");
+  #endif
   ReScanNetworks(true);
   uint16_t n = LastScanWiFiNetworksFound();
   
@@ -315,7 +332,9 @@ String SSIDList( void ) {
 
 //send the wifi settings to the connected client of the webserver
 void getWiFiSettings() {
-  Serial.println("WiFi settings requested");
+  #ifdef DEBUG_SERIAL
+    Serial.println("WiFi settings requested");
+  #endif
   const size_t capacity = 500+ JSON_OBJECT_SIZE(4);
   DynamicJsonDocument doc(capacity);
   credentials_t c = read_credentials();  
@@ -342,19 +361,27 @@ void setWiFiSettings( void ) {
   credentials_t c;  
   String ssid ="";
   String pass="";
-  Serial.println("WiFi settings received");
+  #ifdef DEBUG_SERIAL
+    Serial.println("WiFi settings received");
+  #endif
   ssid = server->arg("ssid");
   pass = server->arg("pass");
   String response = "Attempting to connect to '" + ssid + "'. The WiFi module restarts and tries to connect to the network.";
   sendData(response);
+  #ifdef DEBUG_SERIAL
   Serial.println("Saving network credentials and restart.");
+  #endif 
   strncpy((char*)(c.ssid),(char*)(ssid.c_str()),128);
   strncpy((char*)(c.pass),(char*)(pass.c_str()),128);
-  Serial.printf("write ssid:%s ,pass:%s \n\r",c.ssid,c.pass);
+  #ifdef DEBUG_SERIAL
+    Serial.printf("write ssid:%s ,pass:%s \n\r",c.ssid,c.pass);
+  #endif
   write_credentials(c);
   
   c = read_credentials();
-  Serial.printf("read ssid:%s ,pass:%s \n\r",c.ssid,c.pass);
+  #ifdef DEBUG_SERIAL
+    Serial.printf("read ssid:%s ,pass:%s \n\r",c.ssid,c.pass);
+  #endif
   /* if we do this we end up in flashloader */
   delay(2000);
   ESP.restart();
@@ -362,6 +389,33 @@ void setWiFiSettings( void ) {
   
 }
 
+/**************************************************************************************************
+ *    Function      : setWiFiSettings
+ *    Description   : Applies the WiFi settings 
+ *    Input         : none
+ *    Output        : none
+ *    Remarks       : Store the wifi settings configured on the webpage and restart the esp to connect to this network
+ **************************************************************************************************/
+void getInfo( void ){
+
+  const size_t capacity = 250+ JSON_OBJECT_SIZE(4);
+  DynamicJsonDocument doc(capacity);
+  credentials_t c = read_credentials();  
+  String response;
+  doc["Version_Major"] = (uint8_t)( FW_VERSION_MAJOR ); 
+  doc["Version_Minor"] = (uint8_t)( FW_VERSION_MINOR ); 
+  serializeJson(doc, response);
+  sendData(response);
+
+}
+
+/**************************************************************************************************
+ *    Function      : WebserverLoopTask
+ *    Description   : Peridically to be called task for Webserver
+ *    Input         : none
+ *    Output        : none
+ *    Remarks       : needs to be called frequently
+ **************************************************************************************************/
 void WebserverLoopTask( void ){
    if (server != NULL){
     server->handleClient();

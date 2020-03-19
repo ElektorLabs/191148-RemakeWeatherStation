@@ -1,4 +1,6 @@
 //****************************************************************************
+// Firmware Version 1.1 - 18.03.2020
+//
 //
 //                        Elektor Weatherstation 191148 
 //
@@ -42,6 +44,19 @@
 //  - AdrduinoJson 6.x 
 //  - PubSubclient by Nick o'Leary
 //  - NTP Client Lib
+//
+//  Supported Sensors:
+//  WH-SP-WS02 ( https://www.elektor.com/professional-outdoor-weather-station-wh-sp-ws02 )  
+//  BME280 ( 0x77 / 0x76 ) ( https://www.elektor.com/bme280-mouser-intel-i2c-version-160109-91 )
+//  Wuerth WSEN-PAD ( 0x5C / 0x5D )
+//  Veml6070 ( 0x38 )
+//  TSL2561 ( 0x29 / 0x39 / 0x49 )
+//  VEML6075 (0x10)
+//  TSL2591 ( 0x29 )
+//  Honneywell HPMA115S0-XXX
+//  SDS011
+// 
+//
 //****************************************************************************
 #include <Arduino.h>
 #include <ESPmDNS.h>
@@ -196,11 +211,58 @@ void StartOTA(){
 
 }
 
+/**************************************************************************************************
+ *    Function      : NTP_Task
+ *    Description   : Task for the NTP Sync 
+ *    Input         : none 
+ *    Output        : none
+ *    Remarks       : none 
+ **************************************************************************************************/
+void NTP_Task( void * param){
+  #ifdef DEBUG_SERIAL
+    Serial.println(F("Start NTP Task now"));
+  #endif
+  NTPC.ReadSettings();
+  NTPC.begin( &TimeCore );
+  NTPC.Sync();
+
+  /* As we are in a sperate thread we can run in an endless loop */
+  while( 1==1 ){
+    /* This will send the Task to sleep for one second */
+    vTaskDelay( 1000 / portTICK_PERIOD_MS );  
+    NTPC.Tick();
+    NTPC.Task();
+  }
+}
+
 void StartUDPServer(){
   
+  UDPServer.SetTXInervall(1);
   UDPServer.begin();
 
 }
+
+void StartCloudServices( void ){
+  //Now we set up the connectors 
+  ThinkSpeak.begin(false); 
+  SenseBox.begin();
+  MQTTTaskStart();
+  
+}
+
+void StartNTP( void ){
+    //This is a dedecated Task for the NTP Service 
+  xTaskCreatePinnedToCore(
+      NTP_Task,       /* Function to implement the task */
+      "NTP_Task",  /* Name of the task */
+      10000,          /* Stack size in words */
+      NULL,           /* Task input parameter */
+      1,              /* Priority of the task */
+      NULL,           /* Task handle. */
+      1); 
+}
+
+
 
 
 /**************************************************************************************************
@@ -224,56 +286,55 @@ void setup() {
   IntSensors.begin(INPUT_WINDDIR, INPUT_WINDSPEED, INPUT_RAIN );
   /* Next is to collect the I²C-Zoo of supported sensor */
   TwoWireSensors.begin();
-  LCDMenu( USERBTN0, USERBTN1 );
+  LCDMenu( USERBTN0, USERBTN1 ,1);
   //This sould trigger autodetect
   PMSensor.begin( Serial1 , UART_PM_Sensors::SerialSensorDriver_t::NONE );
   //Next step is to setup wifi and check if the configured AP is in range
   WiFiClientEnable(true); //Force WiFi on 
   WiFiForceAP(false); //Diable Force AP
-  Serial.println("Continue boot");
+  #ifdef DEBUG_SERIAL
+    Serial.println("Continue boot");
+  #endif
   TimeCore.begin(true);
-  
   //This will register the driver for the sensors we support
   SensorMapping.RegisterInternalSensors(&IntSensors);
   SensorMapping.RegisterI2CBus(&TwoWireSensors);
   SensorMapping.RegisterUartSensors(&PMSensor);
   SensorMapping.begin();
   
-  //Now we set up the connectors 
-  ThinkSpeak.begin(false); 
-  SenseBox.begin();
   SenseBox.RegisterDataAccess( ReadSensorData );
   ThinkSpeak.RegisterDataAccess( ReadSensorData );
   UDPServer.RegisterMappingAccess(&SensorMapping);
-  UDPServer.SetTXINtervall(1);
-  
 
+  SenseBox.InitConfig();
+  ThinkSpeak.InitConfig();
+  
   RegisterWiFiConnectedCB(StartOTA);
   RegisterWiFiConnectedCB(StartUDPServer);
- 
+  RegisterWiFiConnectedCB(StartCloudServices);
+  RegisterWiFiConnectedCB(StartNTP);
+  
+  Serial.println("Initialize WiFi");
   //If the USERBTN is pressed we will force the system into AP Mode
   //the button is low active
-  if(0 != digitalRead(USERBTN0 )){
+  if(0 == ReadButtonPressCnt() ){
     initWiFi( false, false );
   } else {
     Serial.println("Force System to AP");
     initWiFi( false , true );   
   }
+  LCDMenuShow(0); 
+  
   //As the system with all active componentes draws more than 500mA 
   //we first start the WIFi 
-  Serial.println("Reduce powerusage for WiFi(10s)");
-  for(uint32_t i=0;i<10000;i++){
-    vTaskDelay(1);
-    NetworkLoopTask();
-  } 
-  //This will start the MQTT Connector
-  MQTTTaskStart();
 
   //We start to register all the added functions for the webserver
   Webserver_Time_FunctionRegisterTimecore(&TimeCore);
   Webserver_Time_FunctionRegisterNTPClient(&NTPC);
+  
   Webserver_SenseBox_RegisterSensebox(&SenseBox);
   Webserver_Thinkspeak_RegisterThinkspeak(&ThinkSpeak);
+  
   SDCardRegisterMappingAccess(&SensorMapping);
   SDCardRegisterTimecore(&TimeCore);
  
@@ -281,17 +342,8 @@ void setup() {
   setup_sdcard(SD_SCK ,SD_MISO, SD_MOSI, SD_CS0 );
   sdcard_mount();
 
+}
 
-  //This is a dedecated Task for the NTP Service 
-  xTaskCreatePinnedToCore(
-      NTP_Task,       /* Function to implement the task */
-      "NTP_Task",  /* Name of the task */
-      10000,          /* Stack size in words */
-      NULL,           /* Task input parameter */
-      1,              /* Priority of the task */
-      NULL,           /* Task handle. */
-      1); 
- }
 
 /**************************************************************************************************
  *    Function      : loop
@@ -306,24 +358,4 @@ void loop() {
   NetworkLoopTask();
 }
 
-/**************************************************************************************************
- *    Function      : NTP_Task
- *    Description   : Task for the NTP Sync 
- *    Input         : none 
- *    Output        : none
- *    Remarks       : none 
- **************************************************************************************************/
-void NTP_Task( void * param){
-  Serial.println(F("Start NTP Task now"));
-  NTPC.ReadSettings();
-  NTPC.begin( &TimeCore );
-  NTPC.Sync();
 
-  /* As we are in a sperate thread we can run in an endless loop */
-  while( 1==1 ){
-    /* This will send the Task to sleep for one second */
-    vTaskDelay( 1000 / portTICK_PERIOD_MS );  
-    NTPC.Tick();
-    NTPC.Task();
-  }
-}

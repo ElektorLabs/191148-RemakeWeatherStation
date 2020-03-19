@@ -105,7 +105,9 @@ datum_t Timecore::ConvertToDatum( uint32_t timestamp ){
 *    Remarks       : none
 **************************************************************************************************/
 void Timecore::SetConfig(timecoreconf_t conf){
-  Serial.println("Copy Conf to MEM");
+  #ifdef DEBUG_SERIAL
+    Serial.println("Copy Conf to MEM");
+  #endif
   memcpy(&local_config,&conf,sizeof(timecoreconf_t));
   LoadTimezone(local_config.TimeZone);
 }
@@ -167,7 +169,9 @@ void Timecore::SetUTC( uint32_t time, source_t source ){
         }
       }   
     } else {
-      Serial.printf("TS: %i from %i, lower prio as %i",time,source,CurrentMasterSource);
+      #ifdef DEBUG_SERIAL
+        Serial.printf("TS: %i from %i, lower prio as %i",time,source,CurrentMasterSource);
+      #endif
     }
 }
 
@@ -409,7 +413,9 @@ void Timecore::SetLocalTime( datum_t d){
   uint32_t localtimestamp = TimeStructToTimeStamp( d );
   bool northTZ = (dstEnd>dstStart)?1:0; // Northern or Southern hemisphere TZ?
   /* we need to fix the offset */
- Serial.printf("TS:%i \n\r",localtimestamp);
+#ifdef DEBUG_SERIAL
+  Serial.printf("TS:%i \n\r",localtimestamp);
+#endif 
  if(local_config.TimeZoneOverride==true){
    localtimestamp = localtimestamp-(local_config.GMTOffset*60);
  } else {
@@ -419,22 +425,26 @@ void Timecore::SetLocalTime( datum_t d){
  
   if(dstYear!=d.year+30)
      {
-      Serial.printf("Year: %i", d.year);
+      
       dstYear=d.year+30;
       dstStart = calcTime(&TimeZoneRam.StartRule);
       dstEnd = calcTime(&TimeZoneRam.EndRule);
-   
+    #ifdef DEBUG_SERIAL
+      Serial.printf("Year: %i", d.year);
       Serial.println("\nDST Rules Updated:");
       Serial.print("DST Start: ");
       Serial.print(ctime(&dstStart));
       Serial.print("DST End:   ");
       Serial.println(ctime(&dstEnd));
+    #endif
   }
 
   if(local_config.AutomaticDLTS_Ena==true){
     if ( (northTZ && ( (localtimestamp >= dstStart) && (localtimestamp < dstEnd) ) ) || ( !northTZ && ( (localtimestamp < dstEnd) || (localtimestamp >= dstStart)) )){
       localtimestamp -= TimeZoneRam.StartRule.offset;
-      Serial.printf(" Removed DLS Offset  ");
+      #ifdef DEBUG_SERIAL
+        Serial.printf(" Removed DLS Offset  ");
+      #endif
     } else {
       
     }
@@ -470,7 +480,9 @@ void Timecore::SetLocalTime( datum_t d){
     }
     }
   }
-  Serial.printf("TS_UTC:%i \n\r",localtimestamp);
+  #ifdef DEBUG_SERIAL
+    Serial.printf("TS_UTC:%i \n\r",localtimestamp);
+  #endif
   SetUTC(localtimestamp, USER_DEFINED);
  
 }
@@ -506,15 +518,21 @@ time_t Timecore::GetLocalTime( void )
       now = now + TimeZoneRam.Offset;
    }  
   } else {
+    #ifdef DEBUG_SERIAL
     Serial.println("MANOFFSET");
+    #endif
     now+=local_config.GMTOffset*60;
   }
 
  
   if(local_config.AutomaticDLTS_Ena==false){
+    #ifdef DEBUG_SERIAL
     Serial.println("NOAUTODLS");
+    #endif
     if(local_config.ManualDLSEna==true){
+      #ifdef DEBUG_SERIAL
        Serial.println("MANDLSENA");
+      #endif
       switch(local_config.DLTS_OffsetIDX){
         case DLST_OFFSET_MINUS_60:{ 
           now-=(60*60);          
@@ -559,12 +577,13 @@ time_t Timecore::GetLocalTime( void )
       dstYear=year;
       dstStart = calcTime(&TimeZoneRam.StartRule);
       dstEnd = calcTime(&TimeZoneRam.EndRule);
-       
+      #ifdef DEBUG_SERIAL
       Serial.println("\nDST Rules Updated:");
       Serial.print("DST Start: ");
       Serial.print(ctime(&dstStart));
       Serial.print("DST End:   ");
       Serial.println(ctime(&dstEnd));
+      #endif
       northTZ = (dstEnd>dstStart)?1:0; // Northern or Southern hemisphere TZ?
   }
    

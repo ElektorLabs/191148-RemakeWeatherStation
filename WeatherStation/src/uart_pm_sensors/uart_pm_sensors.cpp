@@ -171,7 +171,9 @@ bool UART_PM_Sensors::GetParticleCount( float* value, UART_PM_Sensors::ParticleS
             } break;
 
             default:{
-                Serial.println("Invaild driver selected");
+                #ifdef DEBUG_SERIAL
+                    Serial.println("Invaild driver selected");
+                #endif
             }
         }
         if(true == reading_ok){
@@ -218,7 +220,9 @@ void UART_PM_Sensors::suspend( void ){
         } break;
 
         default:{
+            #ifdef DEBUG_SERIAL
             Serial.println("Invaild driver selected");
+            #endif
         } break;
     }
      xSemaphoreGive( xUARTSemaphore );
@@ -248,7 +252,9 @@ void UART_PM_Sensors::wakeup( void ){
         } break;
 
         default:{
+            #ifdef DEBUG_SERIAL
             Serial.println("Invaild driver selected");
+            #endif
         } break;
     }
      xSemaphoreGive( xUARTSemaphore );
@@ -328,7 +334,9 @@ bool UART_PM_Sensors::GetConnectedSensorList( SensorUnitInfo_t* List, uint8_t ca
                  *used_elements=0; 
                 for(uint8_t i=0;i< ( sizeof(SDSSensorInfo) / sizeof( SDSSensorInfo[0] )) ; i++){
                     if( *used_elements >= capacity ){
-                        Serial.println("UART SENSORLIST OUT OF MEMORY");
+                        #ifdef DEBUG_SERIAL
+                            Serial.println("UART SENSORLIST OUT OF MEMORY");
+                        #endif
                         return false;
                     }
                     List[i] = SDSSensorInfo[i];
@@ -340,7 +348,9 @@ bool UART_PM_Sensors::GetConnectedSensorList( SensorUnitInfo_t* List, uint8_t ca
                  *used_elements=0;
                 for(uint8_t i=0;i< ( sizeof(HMP115SSensorInfo) / sizeof( HMP115SSensorInfo[0] ) ); i++){
                     if( *used_elements >= capacity ){
-                        Serial.println("UART SENSORLIST OUT OF MEMORY");
+                        #ifdef DEBUG_SERIAL
+                            Serial.println("UART SENSORLIST OUT OF MEMORY");
+                        #endif
                         return false;
                     }
                     List[i] = HMP115SSensorInfo[i];
@@ -349,7 +359,9 @@ bool UART_PM_Sensors::GetConnectedSensorList( SensorUnitInfo_t* List, uint8_t ca
             } break;
 
             default:{
+                #ifdef DEBUG_SERIAL
                 Serial.println("Invaild driver selected");
+                #endif
                 *used_elements=0;
                 return false;
             } break;
@@ -385,7 +397,9 @@ String UART_PM_Sensors::GetChannelName(SensorType_t Sensor, uint8_t channel){
             } break;
 
             default:{
-                Serial.println("Invaild driver selected");
+                #ifdef DEBUG_SERIAL
+                 Serial.println("Invaild driver selected");
+                #endif
                 return "N/A";
             } break;
     }
@@ -420,7 +434,9 @@ String UART_PM_Sensors::GetChannelName( DATAUNITS::MessurmentValueType_t Type, u
                 } break;
 
                 default:{
-                    Serial.println("Invaild driver selected");
+                    #ifdef DEBUG_SERIAL
+                        Serial.println("Invaild driver selected");
+                    #endif
                     return "N/A";
                 } break;
         }
@@ -457,12 +473,14 @@ void UART_PM_Sensors::SDS011_TEST( void ){
   SDS011device->getWorkingPeriod(&per);
   delay(100);
   SDS011device->getFirmwareVersion(ver);
+#ifdef DEBUG_SERIAL
 
   Serial.println("mode: " + String(mode));
   Serial.println("data: p2.5: " + String(p25) + ", p10: " + String(p10));
   Serial.println("sleepmode: " + String(sleepMode));
   Serial.println("period: " + String(per));
   Serial.println("version: " + String(ver[2]) + "/" + String(ver[1]) + "/" + String(ver[0]));
+#endif
   delay(5000);
 
 }

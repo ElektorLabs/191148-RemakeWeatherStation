@@ -286,7 +286,9 @@ bool VALUEMAPPING::ReadMappedValue( float* Value, uint8_t Channel ){
                 value = IntSensors->GetValue(MappingTable[Channel].ValueType, MappingTable[Channel].ChannelIDX);
             } else {
                 //This is an error !
+                #ifdef DEBUG_SERIAL
                 Serial.printf("Internal Sensor, no driver registred\n\r");
+                #endif
                 return false;
             }
         } break;
@@ -295,8 +297,10 @@ bool VALUEMAPPING::ReadMappedValue( float* Value, uint8_t Channel ){
             if(nullptr!=I2CSensorBus){
                 value = I2CSensorBus->GetValue(MappingTable[Channel].ValueType, MappingTable[Channel].ChannelIDX);
             } else {
-                //This is an error !
+                //This is an error 
+                #ifdef DEBUG_SERIAL
                 Serial.printf("I2C Sensor, no driver registred\n\r");
+                #endif
                 return false;
             }
         } break;
@@ -306,7 +310,9 @@ bool VALUEMAPPING::ReadMappedValue( float* Value, uint8_t Channel ){
                 value = PMSensors->GetValue(MappingTable[Channel].ValueType, MappingTable[Channel].ChannelIDX);
             } else {
                 //This is an error !
+                #ifdef DEBUG_SERIAL
                 Serial.printf("UART Sensor, no driver registred\n\r");
+                #endif
                 return false;
             }
         } break;
@@ -329,7 +335,9 @@ bool VALUEMAPPING::ReadMappedValue( float* Value, uint8_t Channel ){
  *    Remarks       : None
  **************************************************************************************************/
 void VALUEMAPPING::PrintElementData( SensorElementEntry_t Element ){
-    Serial.printf("Element: Bus=%i, ValueType=%i, Channel=%i\n\r",Element.Bus,Element.ValueType,Element.ChannelIDX);
+    #ifdef DEBUG_SERIAL
+        Serial.printf("Element: Bus=%i, ValueType=%i, Channel=%i\n\r",Element.Bus,Element.ValueType,Element.ChannelIDX);
+    #endif
 }
 
 /**************************************************************************************************
@@ -348,7 +356,9 @@ void VALUEMAPPING::SetMappingForChannel( uint8_t MappedChannelIndex, SensorEleme
         //PrintElementData(MappingTable[MappedChannelIndex]);
         WriteConfig();
     } else {
+        #ifdef DEBUG_SERIAL
         Serial.println("Mapping Channel out of Range");
+        #endif
     }
 }
 
@@ -464,7 +474,9 @@ String VALUEMAPPING::GetSensorNameByChannel(uint8_t Channel){
                 value = IntSensors->GetValue(Element.ValueType, Element.ChannelIDX);
             } else {
                 //This is an error !
+                #ifdef DEBUG_SERIAL
                 Serial.printf("Internal Sensor, no driver registred\n\r");
+                #endif
                 return false;
             }
         } break;
@@ -474,7 +486,9 @@ String VALUEMAPPING::GetSensorNameByChannel(uint8_t Channel){
                 value = I2CSensorBus->GetValue(Element.ValueType, Element.ChannelIDX);
             } else {
                 //This is an error !
+                #ifdef DEBUG_SERIAL
                 Serial.printf("I2C Sensor, no driver registred\n\r");
+                #endif
                 return false;
             }
         } break;
@@ -484,7 +498,9 @@ String VALUEMAPPING::GetSensorNameByChannel(uint8_t Channel){
                 value = PMSensors->GetValue(Element.ValueType, Element.ChannelIDX);
             } else {
                 //This is an error !
-                Serial.printf("UART Sensor, no driver registred\n\r");
+                #ifdef DEBUG_SERIAL
+                    Serial.printf("UART Sensor, no driver registred\n\r");
+                #endif
                 return false;
             }
         } break;
@@ -578,8 +594,9 @@ void VALUEMAPPING::ReadConfig( void ){
         MappingTable[5].Bus = VALUEMAPPING::SensorBus_t::I2C;
         MappingTable[5].ValueType = DATAUNITS::PRESSURE;
         MappingTable[5].ChannelIDX = 0;
-         
-        Serial.println("Write new Mapping");
+        #ifdef DEBUG_SERIAL
+            Serial.println("Write new Mapping");
+        #endif
         WriteConfig();
 
     }

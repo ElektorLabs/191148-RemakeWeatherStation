@@ -13,6 +13,10 @@
 #include <LiquidCrystal_I2C.h>
 
 
-  void LCDMenu( int16_t btn, int16_t btn2 );
+  void LCDMenu( int16_t btn, int16_t btn2, uint8_t menuitem );
+  void LCDMenuShow( uint8_t Menu ); 
+  uint32_t ReadButtonPressCnt( void );
+  void ResetButtonPressCnt( void );
+  
 
 #endif

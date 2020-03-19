@@ -31,7 +31,7 @@
             } TaskData_t;
 
          
-
+            void InitConfig( void );
             void begin( bool usehttps=true);
             bool PostData( void );
             void RegisterDataAccess(DataAccesFnc Fnc);
@@ -56,9 +56,8 @@
         SensBoxMapping_t Mapping[16];
         SenseBoxSettings_t Settings;
         DataAccesFnc DaFnc=nullptr;
-
        
-
+       
         TaskData_t TaskData;
         void configureClient();
         //We write the whole mapping to disk( why not ....)

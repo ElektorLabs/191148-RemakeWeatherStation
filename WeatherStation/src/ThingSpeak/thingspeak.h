@@ -36,6 +36,7 @@
 
 
             void begin( bool usehttps=true );
+            void InitConfig( void );
             bool PostData( void );
             void RegisterDataAccess(DataAccesFnc Fnc);
 

@@ -37,11 +37,11 @@ void WindDirSensor::determineWindDir( WindDirSensor* obj ) {
 
 
   /* This is for debug only */
-  /*
+  #ifdef DEBUG_SERIAL
   Serial.printf("Dir-ADC Value:%i\n\r", dir);
   Serial.printf("U8 Value:%i\n\r", u8_dir);
   Serial.printf("Enum Value:%i\n\r", WindDir);
-  */
+ #endif
   
   obj->AddToAverage_10Sec(WindDir);
 

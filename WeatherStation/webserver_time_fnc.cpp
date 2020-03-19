@@ -211,8 +211,9 @@ void timezone_update( ){ /*needs to handel timezoneid */
   if( ! WebTimeSvr->hasArg("timezoneid") || WebTimeSvr->arg("timezoneid") == NULL ) { // If the POST request doesn't have username and password data
     /* we are missong something here */
   } else {
-   
+    #ifdef DEBUG_SERIAL
     Serial.printf("New TimeZoneID: %s\n\r",WebTimeSvr->arg("timezoneid").c_str());
+    #endif
     uint32_t timezoneid = WebTimeSvr->arg("timezoneid").toInt();
     TimeCorePtr->SetTimeZone( (TIMEZONES_NAMES_t)timezoneid );   
   }

@@ -106,9 +106,13 @@ void UpdateSettings( void ){
         bool value = false;
         if(server->arg("SDLOG_ENA")=="true"){
             value = true;
-            Serial.print("New SDCard Log  enabled");
+            #ifdef DEBUG_SERIAL
+             Serial.print("New SDCard Log  enabled");
+            #endif
         } else {
+            #ifdef DEBUG_SERIAL
              Serial.print("New SDCard Log  disabled");
+            #endif
         }
         sdcard_log_enable( value );
        
@@ -120,8 +124,10 @@ void UpdateSettings( void ){
         uint32_t value = server->arg("SDLOG_INT").toInt();
         if( (value >=0 ) && ( value < UINT16_MAX )){
                sdcard_log_int( value );
-            Serial.print("New SDCard Log  interval:");
-            Serial.println(value);
+            #ifdef DEBUG_SERIAL
+             Serial.print("New SDCard Log  interval:");
+             Serial.println(value);
+            #endif
         }
     }
     server->send(200); 

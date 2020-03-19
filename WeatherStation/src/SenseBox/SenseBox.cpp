@@ -46,7 +46,7 @@ void SenseBoxUpload::begin( bool usehttps){
   
   TaskData.obj=this;
   TaskData.CfgSem = xSemaphoreCreateMutex();
-  
+
   ReadMapping();
   ReadSettings();
 
@@ -65,6 +65,20 @@ void SenseBoxUpload::begin( bool usehttps){
                     NULL);            /* Task handle */
 
 }
+
+/**************************************************************************************************
+ *    Function      : InitConfig
+ *    Description   : Reads the current config
+ *    Input         : void
+ *    Output        : void
+ *    Remarks       : Read the config without starting any tasks
+ **************************************************************************************************/
+ void SenseBoxUpload::InitConfig( void ){
+   //This will only load the config but not start the task itself
+   //usefull for STA mode 
+  ReadMapping();
+  ReadSettings();
+ }
 
 /**************************************************************************************************
  *    Function      : RegisterDataAccess
@@ -106,16 +120,18 @@ void SenseBoxUpload::WriteMapping( void ){
     serializeJson(doc, JSONData);
     file.print(JSONData);
     file.close();
-    Serial.print("JSONData");
-    Serial.println(JSONData);
-    file = SPIFFS.open("/SenseBoxMapping.json");
-    Serial.print("File content:");
-    while(file.available()){
-      char ch = file.read();
-      Serial.print(ch);
-    }
-    Serial.println("End of File");
-    file.close();
+    #ifdef DEBUG_SERIAL
+      Serial.print("JSONData");
+      Serial.println(JSONData);
+      file = SPIFFS.open("/SenseBoxMapping.json");
+      Serial.print("File content:");
+      while(file.available()){
+        char ch = file.read();
+        Serial.print(ch);
+      }
+      Serial.println("End of File");
+      file.close();
+    #endif
 
 }
 
@@ -133,29 +149,41 @@ String JSONData ="";
     //This makes mapping more complicated but will easen web access
     if(SPIFFS.exists("/SenseBoxMapping.json")){
         File file = SPIFFS.open("/SenseBoxMapping.json");
-        Serial.print("Filesize:");
-        Serial.println(file.available());
+        #ifdef DEBUG_SERIAL
+         Serial.print("Filesize:");
+         Serial.println(file.available());
+        #endif
+     
         while(file.available()){
           char ch = file.read();
-          Serial.print(ch);
+          #ifdef DEBUG_SERIAL
+            Serial.print(ch);
+          #endif
           JSONData=JSONData+ch;
         }
-        Serial.println("");
-        Serial.print("JSON:");
-        Serial.println(JSONData);
      
+        #ifdef DEBUG_SERIAL
+         Serial.println("");
+         Serial.print("JSON:");
+         Serial.println(JSONData);
+        #endif
         const size_t capacity = JSON_ARRAY_SIZE(64) + JSON_OBJECT_SIZE(1) + 64*JSON_OBJECT_SIZE(3) + 1580;
         DynamicJsonDocument doc(capacity);
         DeserializationError err =  deserializeJson(doc, JSONData);
         if(err) {
-          Serial.print("/SenseBoxMapping.json ");
-          Serial.print(F("deserializeJson() failed with code "));
-          Serial.println(err.c_str());
+          #ifdef DEBUG_SERIAL
+            Serial.print("/SenseBoxMapping.json ");
+            Serial.print(F("deserializeJson() failed with code "));
+            Serial.println(err.c_str());
+          #endif
         }
         JsonArray SenseboxMapping = doc["Mapping"];
         if(SenseboxMapping.isNull()==true){
-          Serial.println("Dezerialize Sensebox failed");
+          #ifdef DEBUG_SERIAL
+            Serial.println("Dezerialize Sensebox failed");
+          #endif
         }
+        
         for(uint8_t i=0;i<( sizeof(Mapping) / sizeof( Mapping[0] ));i++){
             JsonObject MappingObj = SenseboxMapping[i];
            
@@ -173,14 +201,18 @@ String JSONData ="";
         file.close();
     } else {
         //We need to create a blank mapping scheme
+   
         for(uint32_t i=0;i<( sizeof(Mapping) / sizeof( Mapping[0] )  );i++){
               Mapping[i].enable=false;
               Mapping[i].StationChannelIdx=0;
-            for(uint8_t i=0; i< sizeof(Mapping[i].SenseBoxSensorID);i++){
-              Mapping[i].SenseBoxSensorID[i]=0;
+            for(uint32_t x=0; x< sizeof(Mapping[0].SenseBoxSensorID);x++){
+              Mapping[i].SenseBoxSensorID[x]=0;
             }
          }
-         Serial.println("SenseBoxUpload: Write blank config");
+        
+         #ifdef DEBUG_SERIAL
+          Serial.println("SenseBoxUpload: Write blank config");
+         #endif
          WriteMapping();
     }
 
@@ -225,9 +257,11 @@ void SenseBoxUpload::ReadSettings(){
         File file = SPIFFS.open("/SenseBoxSetting.json");
          DeserializationError err =  deserializeJson(doc, file);
         if(err) {
-          Serial.print("/SenseBoxSetting.json ");
-          Serial.print(F("deserializeJson() failed with code "));
-          Serial.println(err.c_str());
+          #ifdef DEBUG_SERIAL
+            Serial.print("/SenseBoxSetting.json ");
+            Serial.print(F("deserializeJson() failed with code "));
+            Serial.println(err.c_str());
+          #endif
         }
         
         const char* SenseboxID = doc["SenseboxID"]; 
@@ -275,15 +309,20 @@ void SenseBoxUpload::ReadSettings(){
 bool SenseBoxUpload::PostData(  SenseBoxUpload* obj ) {
   WiFiClient* clientptr=nullptr;
   if(false == obj->Settings.Enabled){
-    Serial.println("SenseBox upload disabled");
+    #ifdef DEBUG_SERIAL
+      Serial.println("SenseBox upload disabled");
+    #endif
     return false;
   }
   if (0 == obj->Settings.SenseBoxID[0]) {
-    Serial.println("SenseBoxID not set");
+    #ifdef DEBUG_SERIAL
+      Serial.println("SenseBoxID not set");
+    #endif
     return false;
   }
-  Serial.println("Start Uploading to SenseBox");
-  
+  #ifdef DEBUG_SERIAL
+    Serial.println("Start Uploading to SenseBox");
+  #endif
   //As we still use the HTTP POST we need to generate the POST String
   String csv;
   
@@ -297,22 +336,29 @@ bool SenseBoxUpload::PostData(  SenseBoxUpload* obj ) {
           csv+= String(obj->Mapping[i].SenseBoxSensorID)+","+String(value)+"\n\r";
         } else {
           //We have a mapping problem at all.....
-          Serial.printf("SensBox upload: Requested Channel %i : No Mapped  for Stationchanne %i", i, obj->Mapping[i].StationChannelIdx);
+          #ifdef DEBUG_SERIAL
+            Serial.printf("SensBox upload: Requested Channel %i : No Mapped  for Stationchanne %i", i, obj->Mapping[i].StationChannelIdx);
+          #endif
         }
       } else {
-        Serial.printf("SensBox upload: Requested Channel %i : no DataSource", i);
+        #ifdef DEBUG_SERIAL
+          Serial.printf("SensBox upload: Requested Channel %i : no DataSource", i);
+        #endif
       }
         
     }
 
   }
-  //This is for debug only
-  Serial.println("Current CSV String:");
-  Serial.println(csv);
-  Serial.println("# End of String #");
+  #ifdef DEBUG_SERIAL  
+    Serial.println("Current CSV String:");
+    Serial.println(csv);
+    Serial.println("# End of String #");
+  #endif
   //Sainity check if we have any data
   if (csv == "") {
-    Serial.println("Sensor API: Keys not set, Channels all disabled or mapping broken");
+    #ifdef DEBUG_SERIAL
+      Serial.println("Sensor API: Keys not set, Channels all disabled or mapping broken");
+    #endif
     return false;
   }
   
@@ -351,7 +397,9 @@ bool SenseBoxUpload::PostData(  SenseBoxUpload* obj ) {
  *    Remarks       : Returns the response from the other system
  **************************************************************************************************/
 String SenseBoxUpload::performRequest(WiFiClient* c , String host, String url, int port , String method , String headers , String data ) {
-  Serial.println("Connecting to host '" + host + "' on port " + String(port));
+  #ifdef DEBUG_SERIAL
+    Serial.println("Connecting to host '" + host + "' on port " + String(port));
+  #endif
   if(false == c->connect(host.c_str(), port)){
     //Something went wrong.....
     return "";
@@ -359,17 +407,24 @@ String SenseBoxUpload::performRequest(WiFiClient* c , String host, String url, i
   String request = method + " " + url + " HTTP/1.1\r\n" +
                    "Host: " + host + "\r\n" +
                    headers + "\r\n";
-  Serial.println("Requesting url: " + request);
+  #ifdef DEBUG_SERIAL
+    Serial.println("Requesting url: " + request);
+  #endif
+ 
   c->print(request);
   if (data != "") {
-    Serial.println("Data: " + data);
+    #ifdef DEBUG_SERIAL
+      Serial.println("Data: " + data);
+    #endif
     c->print(data + "\r\n");
   }
   
   unsigned long timeout = millis();
   while (c->available() == 0) {
     if (timeout + 5000 < millis()) {
-      Serial.println("Client timeout");
+      #ifdef DEBUG_SERIAL
+        Serial.println("Client timeout");
+      #endif
       c->stop();
       return "";
     }
@@ -380,7 +435,9 @@ String SenseBoxUpload::performRequest(WiFiClient* c , String host, String url, i
   while(c->available()) {
     response = c->readStringUntil('\r');
   }
-  Serial.println("Response: " + response);
+  #ifdef DEBUG_SERIAL
+    Serial.println("Response: " + response);
+  #endif
   c->stop();
   return response;
 }
@@ -396,7 +453,9 @@ String SenseBoxUpload::performRequest(WiFiClient* c , String host, String url, i
 void SenseBoxUpload::UploadTaskFnc(void* params){
   uint32_t WaitTime = portMAX_DELAY;
   TaskData_t* TaskData = (TaskData_t*) params;
-  Serial.println("Sensbox UploadTask started");
+  #ifdef DEBUG_SERIAL
+    Serial.println("Sensbox UploadTask started");
+  #endif
   while(1==1){
 
 
@@ -413,18 +472,24 @@ void SenseBoxUpload::UploadTaskFnc(void* params){
     } else {
       WaitTime = portMAX_DELAY;
     }
-    Serial.print("Sensebox will upload in ");
-    Serial.print(WaitTime);
-    Serial.println(" Ticks( ms )");
+    #ifdef DEBUG_SERIAL
+      
+      Serial.print("Sensebox will upload in ");
+      Serial.print(WaitTime);
+      Serial.println(" Ticks( ms )");
+    #endif
     if( false == xSemaphoreTake( TaskData->CfgSem, WaitTime ) ){
       //No Configchange at all we can simpy upload the data 
       //If WiFi is in Start-Stop-mode activate it now.......
-      Serial.println("SenseBox: Prepare Upload ( enter code here )");
+      #ifdef DEBUG_SERIAL
+        Serial.println("SenseBox: Prepare Upload ( enter code here )");
+      #endif
       PostData(TaskData->obj);
     } else {
       //We have a configchange 
-      Serial.println("SenseBox: Config changed, apply settings");
-
+      #ifdef DEBUG_SERIAL
+        Serial.println("SenseBox: Config changed, apply settings");
+      #endif
     }
 
 

@@ -102,8 +102,10 @@ void SetThinkspeakServerSettings( void ){
     } else { 
         String value = server->arg("APIKEY");
         Thsp->SetThinkspeakAPIKey( value );
-        Serial.print("New Thinkspeak Key:");
-        Serial.println(value);
+        #ifdef DEBUG_SERIAL
+         Serial.print("New Thinkspeak Key:");
+         Serial.println(value);
+        #endif
        
     }
 
@@ -113,9 +115,13 @@ void SetThinkspeakServerSettings( void ){
         bool value = false;
         if(server->arg("THINKSPEAK_ENA")=="true"){
             value = true;
-            Serial.println("Thinkspeak enable");
+            #ifdef DEBUG_SERIAL
+             Serial.println("Thinkspeak enable");
+            #endif
         } else {
-            Serial.println("Thinkspeak disable");
+            #ifdef DEBUG_SERIAL
+             Serial.println("Thinkspeak disable");
+            #endif
         }
         Thsp->SetThinkspeakEnable( value );
     }
@@ -126,8 +132,10 @@ void SetThinkspeakServerSettings( void ){
         uint32_t value = server->arg("THINKSPEAK_TXINTERVALL").toInt();
         if( (value >=0 ) && ( value < UINT16_MAX )){
             Thsp->SetThinkspeakUploadInterval( value );
-            Serial.print("New Thinkspeak TX interva:");
-            Serial.println(value);
+            #ifdef DEBUG_SERIAL
+             Serial.print("New Thinkspeak TX interva:");
+             Serial.println(value);
+            #endif
         }
     }
      server->send(200); 
@@ -215,12 +223,13 @@ void SetThinkspeakChMapping( void ){
             Mapping.StationChannelIdx = value;
         }
     }
-
+   #ifdef DEBUG_SERIAL
     Serial.print("Channel:");
     Serial.print(Ch);
     Serial.print(" @ STA CH");
     Serial.print(Mapping.StationChannelIdx );
     Serial.print( " is ");
+   #endif
     if(Mapping.enable==0){
         Serial.println( "disabled");
     } else {

@@ -98,9 +98,10 @@ void SetSensboxServerSettings( void ){
     } else { 
         String value = server->arg("SENSEBOX_ID");
         Sbxptr->SetSensBoxID( value );
+        #ifdef DEBUG_SERIAL
         Serial.print("New SenseboxID:");
         Serial.println(value);
-       
+       #endif
     }
 
     if( ! server->hasArg("SENSEBOX_ENA") || server->arg("SENSEBOX_ENA") == NULL ) { 
@@ -109,9 +110,13 @@ void SetSensboxServerSettings( void ){
         bool value = false;
         if(server->arg("SENSEBOX_ENA")=="true"){
             value = true;
+            #ifdef DEBUG_SERIAL
             Serial.println("Sensebox enable");
+            #endif
         } else {
+            #ifdef DEBUG_SERIAL
             Serial.println("Sensebox disable");
+            #endif
         }
         Sbxptr->SetSensBoxEnable( value );
     }
@@ -122,8 +127,10 @@ void SetSensboxServerSettings( void ){
         uint32_t value = server->arg("SENSEBOX_TXINTERVALL").toInt();
         if( (value >=0 ) && ( value < UINT16_MAX )){
             Sbxptr->SetSensBoxUploadInterval( value );
-            Serial.print("New Sensebox TX interva:");
+            #ifdef DEBUG_SERIAL
+            Serial.print("New Sensebox TX intervall:");
             Serial.println(value);
+            #endif
         }
     }
      server->send(200); 
@@ -221,13 +228,15 @@ void SetSenseboxChMapping( void ){
         String value = server->arg("SENSEBOX_CH_ID");
         strncpy(Mapping.SenseBoxSensorID, value.c_str(),32);
     }
-    Serial.print("Channel:");
-    Serial.print(Ch);
-    Serial.print(" with ID: ");
-    Serial.print(Mapping.SenseBoxSensorID);
-    Serial.print(" @ STA CH");
-    Serial.print(Mapping.StationChannelIdx );
-    Serial.print( " is ");
+    #ifdef DEBUG_SERIAL
+        Serial.print("Channel:");
+        Serial.print(Ch);
+        Serial.print(" with ID: ");
+        Serial.print(Mapping.SenseBoxSensorID);
+        Serial.print(" @ STA CH");
+        Serial.print(Mapping.StationChannelIdx );
+        Serial.print( " is ");
+    #endif
     if(Mapping.enable==0){
         Serial.println( "disabled");
     } else {
