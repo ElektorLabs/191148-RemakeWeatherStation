@@ -1,5 +1,5 @@
 //****************************************************************************
-// Firmware Version 1.1 - 18.03.2020
+// Firmware Version 1.2 - 14.07.2020
 //
 //
 //                        Elektor Weatherstation 191148 
@@ -56,6 +56,15 @@
 //  Honneywell HPMA115S0-XXX
 //  SDS011
 // 
+//
+//
+//  Version Histroy:
+//
+//  Version 1.2
+//  - Fixed a bug with VEML6075 and VEML6070 driver stack, not correctly reporting the sensors
+//
+//  Version 1.1
+//  - Initial release
 //
 //****************************************************************************
 #include <Arduino.h>
