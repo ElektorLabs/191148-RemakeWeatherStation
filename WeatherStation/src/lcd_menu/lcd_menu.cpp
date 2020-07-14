@@ -239,6 +239,13 @@ void DefaultDisplay( void ){
 
 }
 
+/**************************************************************************************************
+ *    Function      : DisplayBootToSTA
+ *    Description   : 
+ *    Input         : none
+ *    Output        : none
+ *    Remarks       : none 
+ **************************************************************************************************/
 void DisplayBootToSTA(){
           lcd.setCursor(0,0);
           lcd.print("Press Button to ");
@@ -246,6 +253,13 @@ void DisplayBootToSTA(){
           lcd.print("force AP mode   ");
 }
 
+/**************************************************************************************************
+ *    Function      : DisplayBootToAP
+ *    Description   : Displays message that AP mode will be choosen
+ *    Input         : none
+ *    Output        : none
+ *    Remarks       : none 
+ **************************************************************************************************/
 void DisplayBootToAP(){
           lcd.setCursor(0,0);
           lcd.print("AP mode is now ");
@@ -253,7 +267,13 @@ void DisplayBootToAP(){
           lcd.print("forced         ");
 }
 
-
+/**************************************************************************************************
+ *    Function      : DisplayDefault
+ *    Description   : Defautl display if the station is running
+ *    Input         : none
+ *    Output        : none
+ *    Remarks       : none 
+ **************************************************************************************************/
 void DisplayDefault( bool reset ){
   static bool displayoff = false;
   static uint8_t timeout=0;
@@ -319,7 +339,13 @@ void DisplayDefault( bool reset ){
     }
 }
 
-
+/**************************************************************************************************
+ *    Function      : DisplayBootToAPorSTA
+ *    Description   : Will display if boot to AP is forced
+ *    Input         : none
+ *    Output        : none
+ *    Remarks       : none 
+ **************************************************************************************************/
 void DisplayBootToAPorSTA(bool changed){
   if(true == changed ){
     EnableLCD();
@@ -378,6 +404,13 @@ void LCDisplayTask( void* param){
 }
 
 
+/**************************************************************************************************
+ *    Function      : NoneDisplayDefault
+ *    Description   : If no display is connected this is the default "menu"
+ *    Input         : none
+ *    Output        : none
+ *    Remarks       : none 
+ **************************************************************************************************/
 void NoneDisplayDefault( bool reset ){
   wifi_connection_info_t ConnectionInfo;
   if(true == reset ){
@@ -427,6 +460,13 @@ void NoneDisplayDefault( bool reset ){
       }
 }
 
+/**************************************************************************************************
+ *    Function      : ButtonPressCounter
+ *    Description   : Will count button presses
+ *    Input         : none
+ *    Output        : none
+ *    Remarks       : none 
+ **************************************************************************************************/
 void ButtonPressCounter( void ){
   
   if ( false == xSemaphoreTake( xBtnSemaphore, 1000 ) ){

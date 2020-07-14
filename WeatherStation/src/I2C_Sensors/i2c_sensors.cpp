@@ -104,7 +104,7 @@ void I2C_Sensors::begin( void ){
         #ifdef DEBUG_SERIAL
             Serial.println("No VEML6075 found");
         #endif
-        DeviceOnBus[VEML6070] = false;
+        DeviceOnBus[VEML6075] = false;
     }
 
 

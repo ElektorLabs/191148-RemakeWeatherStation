@@ -315,8 +315,7 @@ void setup() {
   RegisterWiFiConnectedCB(StartNTP);
   
   Serial.println("Initialize WiFi");
-  //If the USERBTN is pressed we will force the system into AP Mode
-  //the button is low active
+ //If the button is pressed during start we will go to the AP Mode
   if(0 == ReadButtonPressCnt() ){
     initWiFi( false, false );
   } else {
