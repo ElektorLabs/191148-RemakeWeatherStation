@@ -1,5 +1,5 @@
 //****************************************************************************
-// Firmware Version 1.2 - 14.07.2020
+// Firmware Version 1.3 - 20.07.2020
 //
 //
 //                        Elektor Weatherstation 191148 
@@ -59,6 +59,9 @@
 //
 //
 //  Version Histroy:
+//
+//  Version 1.3
+//   - Fixed a bug inside the particle sensors not returning the messurment vlaues, only NaN
 //
 //  Version 1.2
 //  - Fixed a bug with VEML6075 and VEML6070 driver stack, not correctly reporting the sensors
