@@ -193,6 +193,7 @@ bool UART_PM_Sensors::GetParticleCount( float* value, UART_PM_Sensors::ParticleS
         }
         xSemaphoreGive( xUARTSemaphore );
     }
+    *value = result;
     return reading_ok;
 
  }
