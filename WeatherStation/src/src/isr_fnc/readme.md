@@ -1,0 +1,1 @@
+Code in this folder is considered ISR safe, meaning that it can be called form an ISR and is placed into RAM
