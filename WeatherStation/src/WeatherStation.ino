@@ -89,6 +89,13 @@
 //
 //  Version Histroy:
 //
+//  Version 1.5
+//  - Fixed a bug where the MQTT component had no access to inernal sensordata
+//  - Updated TLS2591 library and worked arround a bug inside
+//  - Fixed the accumulation of rain and rain per hour
+//  - Preparation for M5Stack support
+//
+//
 //  Version 1.2
 //  - Fixed a bug with VEML6075 and VEML6070 driver stack, not correctly reporting the sensors
 //
@@ -392,6 +399,7 @@ void setup() {
   SenseBox.RegisterDataAccess( ReadSensorData );
   ThinkSpeak.RegisterDataAccess( ReadSensorData );
   UDPServer.RegisterMappingAccess(&SensorMapping);
+  MQTTRegisterMappingAccess(&SensorMapping);
 
   SenseBox.InitConfig();
   ThinkSpeak.InitConfig();

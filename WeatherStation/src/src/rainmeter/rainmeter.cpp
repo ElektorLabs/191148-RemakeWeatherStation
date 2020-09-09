@@ -57,6 +57,11 @@ void Rainmeter::CalculateRainAmount( Rainmeter* obj){
   #ifdef DEBUG_SERIAL
     Serial.printf("Rain Pulsecount:%i\n\r", pulsecount);
   #endif
+  if(pulsecount>=255){
+    obj->Add10MinuteValue(255);
+  } else {
+    obj->Add10MinuteValue( (uint8_t)(pulsecount&0x00FF));
+  }
 }
 
 

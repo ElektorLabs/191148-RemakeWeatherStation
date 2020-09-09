@@ -390,17 +390,16 @@ void setWiFiSettings( void ) {
 }
 
 /**************************************************************************************************
- *    Function      : setWiFiSettings
- *    Description   : Applies the WiFi settings 
+ *    Function      : getInfo
+ *    Description   : Will read the firmware infromation 
  *    Input         : none
  *    Output        : none
- *    Remarks       : Store the wifi settings configured on the webpage and restart the esp to connect to this network
+ *    Remarks       : Send the curren Fimrwareinformation arround
  **************************************************************************************************/
 void getInfo( void ){
 
   const size_t capacity = 250+ JSON_OBJECT_SIZE(4);
   DynamicJsonDocument doc(capacity);
-  credentials_t c = read_credentials();  
   String response;
   doc["Version_Major"] = (uint8_t)( FW_VERSION_MAJOR ); 
   doc["Version_Minor"] = (uint8_t)( FW_VERSION_MINOR ); 

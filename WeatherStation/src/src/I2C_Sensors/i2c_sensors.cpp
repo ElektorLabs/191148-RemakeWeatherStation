@@ -118,7 +118,9 @@ void I2C_Sensors::begin( void ){
        DeviceOnBus[TSL2561] = false;
     }
 
-    if( true == tsl2591.begin( )){
+    //Modified to work arround a bug in the Adafrut Library ( & Wire ) usually not requiered
+    //but we need to use a overloaded function that is not bug affected
+    if( true == tsl2591.begin( &Wire )){
          Serial.println("TSL2591. found @ 0x29");
          DeviceOnBus[TSL2591] = true;
     } else {

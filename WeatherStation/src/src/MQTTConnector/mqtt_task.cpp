@@ -236,6 +236,10 @@ void MQTT_Task( void* prarm ){
                         Serial.println("MQTT pub failed"); 
                       #endif 
                   }
+                } else {
+                   #ifdef DEBUG_SERIAL
+                        Serial.println("MQTT not registred to Mapper"); 
+                    #endif 
                 }
 
                 } else /* If we run in IO Broker mode */ {
@@ -258,6 +262,10 @@ void MQTT_Task( void* prarm ){
                           mqttclient.loop();                            // loop on client
                       }
                 }
+              } else {
+                   #ifdef DEBUG_SERIAL
+                        Serial.println("MQTT not registred to Mapper"); 
+                    #endif 
               }
               
             }

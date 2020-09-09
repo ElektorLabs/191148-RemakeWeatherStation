@@ -285,7 +285,7 @@ void DisplayDefault( bool reset ){
   wifi_connection_info_t ConnectionInfo;
   if(true == reset ){
     displayoff = false;
-    uint8_t timeout=0;
+    timeout=0;
     EnableLCD();
   }
   if ( false == xSemaphoreTake( xBtnSemaphore, 1000 ) ){
