@@ -5,6 +5,7 @@
 #include <WiFiClientSecure.h>
 #include "../ValueMapping/ValueMapping.h"
 #include "../../datastore.h" //May this also is moved to a file in JSON format on SPIFFS
+#include "../../version.h"
 
 
 /* on header as last one */
@@ -142,7 +143,7 @@ void MQTT_Task( void* prarm ){
    mqttclient.setCallback(callback);             // define Callback function
    bool IOBrokerMode = false;
    while(1==1){
-
+       vTaskDelay( 100/portTICK_PERIOD_MS );
       /* if settings have changed we need to inform this task that a reload and reconnect is requiered */ 
       if(Settings.enable != false){
         ulNotificationValue = ulTaskNotifyTake( pdTRUE, 0 );
@@ -191,11 +192,12 @@ void MQTT_Task( void* prarm ){
                     #endif
                   }
             }
+            mqttclient.loop();                            // loop on client
        } else{
             mqttclient.loop();                            // loop on client
             IOBrokerMode = Settings.useIoBrokerMsgStyle;
             /* Check if we need to send data to the MQTT Topic, currently hardcode intervall */
-            uint32_t intervall_end = last_message +( Settings.mqtttxintervall * 1000 );
+            uint32_t intervall_end = last_message +( Settings.mqtttxintervall * 1000 * 60 );
             if( ( Settings.mqtttxintervall > 0) && ( intervall_end  <  millis() ) ){
               last_message=millis();
 
@@ -218,7 +220,7 @@ void MQTT_Task( void* prarm ){
                       } else {
                         String name = Mapping->GetSensorNameByChannel(i);
                         #ifdef DEBUG_SERIAL
-                          Serial.printf("MQTT Channel %i Value %f",i,value );
+                          Serial.printf("MQTT Channel %i Value %f , Name:",i,value );
                           Serial.println(name);
                         #endif
                         JsonObject dataobj = data.createNestedObject();
@@ -273,7 +275,6 @@ void MQTT_Task( void* prarm ){
       
    } 
   }
-  vTaskDelay( 100/portTICK_PERIOD_MS );
  }
 }
 
