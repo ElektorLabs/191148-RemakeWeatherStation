@@ -1,4 +1,4 @@
-#include "Valuemapping.h"
+#include "ValueMapping.h"
 #include "SPIFFS.h"
 #include <ArduinoJson.h>
 #include "../I2C_Sensors/i2c_sensors.h"

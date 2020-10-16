@@ -1,5 +1,5 @@
-#include "../TimeCore/TimeCore.h"
-#include "../ValueMapping/Valuemapping.h"
+#include "../TimeCore/timecore.h"
+#include "../ValueMapping/ValueMapping.h"
 /**************************************************************************************************
  *    Function      : setup_sdcard
  *    Description   : This will prepare the sd-card interface
