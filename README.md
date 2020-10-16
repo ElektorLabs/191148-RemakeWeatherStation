@@ -22,9 +22,9 @@ You requiere to have the following librarys at hand:
 * Adafruit TSL2591 Library
 * Adafruit BusIO
 * Time by Michael Margolis
-* AdrduinoJson 6.x 
+* ArduinoJson 6.x 
 * PubSubclient by Nick o'Leary
-* NTP Client Lib
+* NTP Client Lib by German Martin
 
 ### Prerequisites
 
