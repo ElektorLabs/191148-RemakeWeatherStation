@@ -921,7 +921,7 @@ function showMQTT(){
 
 function mqtt_pass_onclick(){
     document.getElementById("MQTT_PASS").value = "";
-    document.getElementById("MQTT_PASS").type == "text";
+    document.getElementById("MQTT_PASS").type = "text";
 }
 
 function read_mqttsettings( msg ){
