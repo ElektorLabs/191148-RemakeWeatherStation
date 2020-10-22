@@ -6,7 +6,7 @@
         Still remember there is no cloud, just someone else computer out there
     */ 
     #include <Arduino.h>
-    #include <Wifi.h>
+    #include <WiFi.h>
     #include <WiFiClientSecure.h>
 
     class ThinkspeakUpload{

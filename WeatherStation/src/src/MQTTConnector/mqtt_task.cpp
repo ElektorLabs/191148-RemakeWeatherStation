@@ -141,6 +141,7 @@ void MQTT_Task( void* prarm ){
     Serial.println("MQTT Thread Start");
    #endif
    mqttclient.setCallback(callback);             // define Callback function
+   mqttclient.setBufferSize(1024);
    bool IOBrokerMode = false;
    while(1==1){
        vTaskDelay( 100/portTICK_PERIOD_MS );

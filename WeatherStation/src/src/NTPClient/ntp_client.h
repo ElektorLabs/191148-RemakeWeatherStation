@@ -1,8 +1,8 @@
 #ifndef NTP_CLIENT_H
  #define NTP_CLIENT_H
 
-#include "..\TimeCore\timecore.h"
-#include "..\..\datastore.h"
+#include "../TimeCore/timecore.h"
+#include "../../datastore.h"
 #include <NtpClientLib.h>
 
 class NTP_Client {

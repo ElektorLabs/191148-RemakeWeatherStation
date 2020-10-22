@@ -1,6 +1,6 @@
 #include <ArduinoJson.h>
 #include <SPIFFS.h>
-#include "./src/ValueMapping/Valuemapping.h"
+#include "./src/ValueMapping/ValueMapping.h"
 #include "webserver_map_fnc.h"
 
 
