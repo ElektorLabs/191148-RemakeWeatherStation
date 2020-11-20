@@ -3,6 +3,12 @@
 class WindSpeedSensor{
 
     private:
+
+    typedef struct{
+        uint32_t PulseDelta;
+        uint32_t lastupdate;
+    } SpeedPulse_t;
+
     uint8_t PIN;
     SemaphoreHandle_t xSemaphore;
 
@@ -11,7 +17,9 @@ class WindSpeedSensor{
     uint16_t _10SecondAVG[10]={0,};
     uint16_t _60SecondAVG[6]={0,};
     uint16_t _3600SecondAVG[60]={0,};
-
+    uint16_t _CurrentSpeed=0;
+    SpeedPulse_t _WindSpeed={.PulseDelta=0,.lastupdate=0};
+    
     void AddToPulses_10Sec(uint32_t pulses );
     void AddToPulses_60Sec(uint32_t pulses );
     void AddToPulses_3600Sec(uint32_t pulses );
@@ -32,5 +40,6 @@ class WindSpeedSensor{
         void begin( int _speedPin );
         void WindSpeedPinISR( void );
         float GetAverageSpeed( SpeedAVG_t type );
+        float GetWindSpeed( void );
   
 };

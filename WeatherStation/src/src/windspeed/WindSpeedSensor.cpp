@@ -221,7 +221,23 @@ float WindSpeedSensor::GetAverageSpeed( SpeedAVG_t type ){
   return speed ;
 }
 
-
+/**************************************************************************************************
+ *    Function      : GetWindspeed 
+ *    Description   : Gets current windspeed
+ *    Input         : void
+ *    Output        : float
+ *    Remarks       : None
+ **************************************************************************************************/
+float WindSpeedSensor::GetWindSpeed( void  ){
+  float speed = 0;
+  float diff = ( millis() - _WindSpeed.lastupdate ) + _WindSpeed.PulseDelta ; //sensor pulses twice per rotation
+  if (diff > 10) { //diff > 0.01 s -> 100 hz -> 34 m/s -> 122.4 km/h
+        diff /= 1000;
+        float hz = 1.0/diff;
+        speed = hz * 0.66; //2.4km/h for 1 rot/s -> 2.4/3.6=0.66m/s
+  }
+  return speed;
+}
 
 
 
@@ -237,6 +253,8 @@ void IRAM_ATTR WindSpeedSensor::WindSpeedPinISR(){
     uint32_t millis = isr_millis();
     if(millis - last_millis > 3 ){
       last_millis = millis;
+      _WindSpeed.PulseDelta=millis - last_millis;
+      _WindSpeed.lastupdate=millis;
       //We count +1 for the pulses 
       if( xSemaphore != NULL ){
           xSemaphoreGiveFromISR( xSemaphore, NULL );

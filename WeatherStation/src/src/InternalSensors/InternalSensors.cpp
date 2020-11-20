@@ -38,6 +38,11 @@ InternalSensors::~InternalSensors( void ){
  *    Remarks       : none
  **************************************************************************************************/
 void InternalSensors::begin( int pin_winddir , int pin_windspeed, int pin_rainmeter ){
+        //This is a sainty check if the tables are okay 
+        uint32_t size_strings = (uint32_t)( sizeof(SensorNames)/sizeof(*SensorNames) );
+        uint32_t size_entrys  = (uint32_t)( sizeof(SensorInfo) / sizeof(SensorInfo[0] ) );
+        assert(size_strings == size_entrys );
+
         WindDirection.begin(pin_winddir);
         WindSpeed.begin(pin_windspeed);
         RainMeter.begin(pin_rainmeter);
@@ -87,7 +92,10 @@ float InternalSensors::GetValue( DATAUNITS::MessurmentValueType_t Type, uint8_t 
                     case 2:{
                         value = WindSpeed.GetAverageSpeed(WindSpeedSensor::SpeedAVG_t::_3600Seconds);
                     } break;
-                       
+
+                    case 3:{
+                        value = WindSpeed.GetWindSpeed();
+                    }
                     default:{
                          value = NAN;
                     }
@@ -111,6 +119,10 @@ float InternalSensors::GetValue( DATAUNITS::MessurmentValueType_t Type, uint8_t 
                     case 3:{
                         value = RainMeter.GetRainAmount(Rainmeter::RainAmountTimespan_t::_1440Minutes);
                     } break;
+
+                    case 4:{
+                        value = RainMeter.GetRainAmountAccumulated( );
+                    }
                        
                     default:{
                          value = NAN;
@@ -174,53 +186,42 @@ bool InternalSensors::GetSensorList( SensorUnitInfo_t* List, uint8_t capacity, u
  *    Remarks       : none
  **************************************************************************************************/
 String InternalSensors::GetChannelName(SensorType_t Sensor, uint8_t channel){
-
-     switch(Sensor){
+    uint8_t offset=0;
+    uint8_t count=0;
+    uint8_t maxelements =(uint8_t)( sizeof(SensorNames)/sizeof(*SensorNames) );
+    switch(Sensor){
          case GPIO_SPEED:{
-            if(channel>2){
-                 return "N/A";
-             } else {
-                 if(2+channel>=10){
-                     return "N/A";
-                 } else {
-                    return SensorNames[0+channel];
-                 }
-                 
-             }
+            offset=0;
+            count=4;
          } break;
 
          
          case GPIO_DIRECTION:{
-             if(channel>2){
-                 return "N/A";
-             } else {
-                 if(2+channel>=10){
-                     return "N/A";
-                 } else {
-                    return SensorNames[3+channel];
-                 }
-             }
+            offset=4;
+            count=3;
          } break;
 
          case GPIO_RAINAMOUNT:{
-             if(channel>3){
-                 return "N/A";
-             } else {
-                 //Boundary check
-                 if(6+channel>=10){
-                     return "N/A";
-                 } else {
-                     return SensorNames[6+channel];
-                 }
-                 
-             }
+            offset=7;
+            count=5;
          }break;
 
          default:{
-            return "N/A";
+            offset=0;
+            count=0;
          } break;
      
      }
+
+     if(channel>=count){
+        return "N/A";
+     } else {
+        if(offset+channel>=maxelements){
+           return "N/A";
+        } else {
+           return SensorNames[offset+channel];
+        }
+    }
     return "N/A";
  }
 

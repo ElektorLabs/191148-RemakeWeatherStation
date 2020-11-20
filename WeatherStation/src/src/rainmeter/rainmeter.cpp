@@ -15,7 +15,8 @@ Ticker RainMeterCapture;
  *    Remarks       : none
  **************************************************************************************************/
 Rainmeter::Rainmeter( void){
-    xSemaphore = xSemaphoreCreateCounting( 100, 0 );   
+    xSemaphore = xSemaphoreCreateCounting( 100, 0 );  
+    xPulseCountSemaphore =  xSemaphoreCreateCounting( INT32_MAX , 0 ); //We can count up to 2147483647
 }
 
 /**************************************************************************************************
@@ -39,6 +40,7 @@ Rainmeter::~Rainmeter( ){
 void Rainmeter::begin( int Pin ){
     PIN = Pin;
     pinMode(PIN, INPUT);
+    RainAmountAccumulated = 0;
     RainMeterCapture.attach(600, CalculateRainAmount , this ); // Every 10 minute is fast enough for this
     attachInterrupt( digitalPinToInterrupt(PIN), std::bind(&Rainmeter::RainBucketISR,this), CHANGE );
 
@@ -63,7 +65,6 @@ void Rainmeter::CalculateRainAmount( Rainmeter* obj){
     obj->Add10MinuteValue( (uint8_t)(pulsecount&0x00FF));
   }
 }
-
 
 /**************************************************************************************************
  *    Function      : Add10MinuteValue
@@ -115,17 +116,40 @@ float Rainmeter::GetRainAmount( RainAmountTimespan_t Span){
         startidx=0;
     }
 
-    for(uint8_t i=0;i<valuecount;i++){
-        rainpulses+= RainAmount24h[startidx];
-        startidx++;
-        if(startidx>= ( sizeof( RainAmount24h ) / sizeof( RainAmount24h[0] ) ) ){
-            startidx=0;
+    /* Change submitted by t3hoe , see https://github.com/ElektorLabs/191148-RemakeWeatherStation/issues/14 */
+    for (uint8_t i = 0; i < valuecount; i++)
+    {
+        if (startidx > 0){
+            startidx--;
+        } else {
+            startidx = (sizeof(RainAmount24h) / sizeof(RainAmount24h[0])) - 1; // 1st index is 0!!!
         }
-
+        rainpulses += RainAmount24h[startidx];
     }
+    
     RainAmount = (float)rainpulses*0.33; //0.33mm per pulse
     return RainAmount;
     
+}
+
+
+/**************************************************************************************************
+ *    Function      : GetRainAmountAccumulated
+ *    Description   : Will calculate a floating value of the rain amount since the last read
+ *    Input         : void
+ *    Output        : float
+ *    Remarks       : none
+ **************************************************************************************************/
+float Rainmeter::GetRainAmountAccumulated( void ){
+    /* Still the question is if we want to do an auto reste after this function has been called */
+    float RainAmount=0;
+    uint32_t pulsecount = uxSemaphoreGetCount( xPulseCountSemaphore );
+    xQueueReset(xPulseCountSemaphore);
+    if(pulsecount>INT32_MAX){
+        pulsecount = INT32_MAX;
+    }
+    RainAmount = (float)pulsecount*0.33; //0.33mm per pulse
+    return RainAmount;
 }
 
 /**************************************************************************************************
@@ -146,6 +170,7 @@ void IRAM_ATTR Rainmeter::RainBucketISR( void ){
         last_isr=milli;
         if( xSemaphore != NULL ){
           xSemaphoreGiveFromISR( xSemaphore, NULL );
+          xSemaphoreGiveFromISR( xPulseCountSemaphore, NULL);
         }
 
     }

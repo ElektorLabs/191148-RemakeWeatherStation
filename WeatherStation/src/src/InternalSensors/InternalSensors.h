@@ -35,8 +35,9 @@ class InternalSensors{
 
     private:
        
-        const String  SensorNames[10]={
+        const String  SensorNames[12]={
 
+            String ("Windspeed"),
             String ("WINDSPEED(10S)"),
             String ("WINDSPEED(60S)"),
             String ("WINDSPEEED(3600S)"),
@@ -47,9 +48,11 @@ class InternalSensors{
             String ("RAINAMOUNT(60M)"),
             String ("RAINAMOUNT(720M)"),
             String ("RAINAMOUNT(1440M)"),
+            String ("RAINAMOUNT ACCUMULATED")
         };
 
-        const SensorUnitInfo_t SensorInfo[10]={
+        const SensorUnitInfo_t SensorInfo[12]={
+            {.Sensor=GPIO_SPEED, .Type=DATAUNITS::MessurmentValueType_t::SPEED,.ChannelID=3 },
             {.Sensor=GPIO_SPEED, .Type=DATAUNITS::MessurmentValueType_t::SPEED,.ChannelID=0 },
             {.Sensor=GPIO_SPEED, .Type=DATAUNITS::MessurmentValueType_t::SPEED,.ChannelID=1 },
             {.Sensor=GPIO_SPEED, .Type=DATAUNITS::MessurmentValueType_t::SPEED,.ChannelID=2 },
@@ -59,7 +62,8 @@ class InternalSensors{
             {.Sensor=GPIO_RAINAMOUNT, .Type=DATAUNITS::MessurmentValueType_t::RAINAMOUNT,.ChannelID=0 },
             {.Sensor=GPIO_RAINAMOUNT, .Type=DATAUNITS::MessurmentValueType_t::RAINAMOUNT,.ChannelID=1 },
             {.Sensor=GPIO_RAINAMOUNT, .Type=DATAUNITS::MessurmentValueType_t::RAINAMOUNT,.ChannelID=2 },
-            {.Sensor=GPIO_RAINAMOUNT, .Type=DATAUNITS::MessurmentValueType_t::RAINAMOUNT,.ChannelID=3 }
+            {.Sensor=GPIO_RAINAMOUNT, .Type=DATAUNITS::MessurmentValueType_t::RAINAMOUNT,.ChannelID=3 },
+            {.Sensor=GPIO_RAINAMOUNT, .Type=DATAUNITS::MessurmentValueType_t::RAINAMOUNT,.ChannelID=4 }
         };
 
 };
