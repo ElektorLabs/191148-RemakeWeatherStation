@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+
+<html>
+	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" charset="UTF-8">
+		<title>Weatherstation MkII</title>
+        <link rel="stylesheet" href="css/basic.css"/>
+         <!-- 
+        <script src="js/dashbrd.js" async defer></script>
+        <script src="js/basics.js"  async defer></script>
+        <script src="js/wififnc.js" async defer></script> 
+        <script src="js/mapping.js" async defer></script> 
+        <script src="js/sensebox.js" async defer></script>
+        <script src="js/thinkspeak.js" async defer></script> 
+        <script src="js/gauge.min.js" async defer></script>
+        <script src="js/mqtt.js" async defer></script>
+        <script src="js/timesettings.js" async defer></script>
+        <script src="js/sdcard.js" async defer></script>
+         -->
+         <script src="js/combined.js" async defer></script>
+	</head>
+    <body>
+		<a href="javascript:openMenu()" class="menuOpenBtn">&#9776;</a>
+		<div id="menu" class="menu">
+			<a href="javascript:closeMenu()" class="menuCloseBtn">x</a>
+			<h1 class="menuLbl">Menu</h1>
+            <a class="menuBtn" id="MainPageBtn" href="javascript:showDashboard()">Dashboard</a>
+            <a class="menuBtn" id="WiFiSettingsBtn" href="javascript:showWiFiSettings()">WiFi settings</a>
+            <a class="menuBtn" id="SensorMappingBtn" href="javascript:showSensorMapping()">Sensormapping</a>
+            <a class="menuBtn" id="SenseBoxBtn" href="javascript:showSenseBox()">SenseBox</a>
+            <a class="menuBtn" id="ThinkspeakBtn" href="javascript:showThinkspeak()">ThingSpeak</a>
+            <a class="menuBtn" id="MQTTBtn" href="javascript:showMQTT()">MQTT</a>
+            <a class="menuBtn" id="TimeSettingsBtn" href="javascript:showTimeSettings()">Time settings</a>
+            <a class="menuBtn" id="SDCARDBtn" href="javascript:showSDCARD()">SD-Card</a>
+            <h1 class="menuLbl">ESP32</h1>
+            <a class="menuBtn" id="restartBtn" href="javascript:showUpdateFirmware()">Update Firmware</a>
+            <a class="menuBtn" id="restartBtn" href="javascript:showUpdateWebpages()">Update Webpages</a> 
+            <a class="menuBtn" id="restartBtn" href="javascript:restart()">Restart</a>
+       </div>
+		
+		<div id="PageFrame" class="content">
+            <div id="MainPage" class="views grid">
+        
+                <H1><label style="/*! margin-left:50%; */display: block;text-align: center;">Weatherstation MkII</label></H1><br>
+                <table>
+                    <thead>
+                        <tr>
+                            <th colspan="3">Overview</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <canvas id="cvs_windspeed"
+                                data-type="radial-gauge"
+                                data-width="200"
+                                data-height="200"
+                                data-units="Km/h"
+                                data-min-value="0"
+                                data-max-value="120"
+                                data-value-int="0"
+                                data-value-dec="2"
+                                data-value="0"
+                                data-title="Windspeed"
+                                data-animate-on-init="false"
+                                data-major-ticks="10,20,30,40,50,60,70,80,90,100,100,120"
+                                data-minor-ticks="10"
+                                data-stroke-ticks="true"
+                                data-highlights='[{"from": 50, "to": 90, "color": "rgba(255, 102, 0, 0.90)"},{"from": 90, "to": 120, "color": "rgba(200, 50, 50, 0.90)"}]'
+
+                                data-color-needle-start="rgba(240, 128, 128, 1)"
+                                data-color-needle-end="rgba(255, 160, 122, .9)"
+                                data-value-box="true"
+                                data-font-value="Repetition"
+                                data-font-numbers="Repetition"
+                                data-animated-value="true"
+                                data-needle-type="arrow"
+                                data-needle-width="2"
+                                data-needle-circle-size="7"
+                                data-needle-circle-outer="true"
+                                data-needle-circle-inner="false"
+                                data-animation-duration="1500"
+                                data-animation-rule="linear"
+                                data-ticks-angle="250"
+                                data-start-angle="55"
+                                data-color-needle-shadow-down="#333"
+                                data-value-box-width="45"
+                                ></canvas>
+                            </td>
+                            <td>
+                                <canvas id="cvs_winddirection"
+                                data-type="radial-gauge"
+                                data-width="200"
+                                data-height="200"
+                                data-min-value="0"
+                                data-max-value="360"
+                                data-major-ticks="N,NE,E,SE,S,SW,W,NW,N"
+                                data-minor-ticks="22"
+                                data-ticks-angle="360"
+                                data-start-angle="180"
+                                data-stroke-ticks="false"
+                                data-highlights="false"
+                                data-color-plate="#222"
+                                data-color-major-ticks="#f5f5f5"
+                                data-color-minor-ticks="#ddd"
+                                data-color-numbers="#ccc"
+                                data-color-needle="rgba(240, 128, 128, 1)"
+                                data-color-needle-end="rgba(255, 160, 122, .9)"
+                                data-value-box="false"
+                                data-value-text-shadow="false"
+                                data-color-circle-inner="#fff"
+                                data-color-needle-circle-outer="#ccc"
+                                data-needle-circle-size="15"
+                                data-needle-circle-outer="false"
+                                data-animation-rule="linear"
+                                data-needle-type="line"
+                                data-needle-start="75"
+                                data-needle-end="99"
+                                data-needle-width="3"
+                                data-borders="true"
+                                data-border-inner-width="0"
+                                data-border-middle-width="0"
+                                data-border-outer-width="10"
+                                data-color-border-outer="#ccc"
+                                data-color-border-outer-end="#ccc"
+                                data-color-needle-shadow-down="#222"
+                                data-border-shadow-width="0"
+                                data-font-value="Led"
+                                ></canvas>
+                            </td>
+                            <td>
+                                
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <canvas id="cvs_humidity"
+                                data-type="radial-gauge"
+                                data-major-ticks="0,10,20,30,40,50,60,70,80,90,100"
+                                data-type="radial-gauge"
+                                data-title="Humidity"
+                                data-units="%rH"
+                                data-width="200"
+                                data-height="200"
+                                data-value-int="0"
+                                data-value-dec="0"
+                                data-width="200"
+                                data-height="200"
+                                data-min-value="0"
+                                data-max-value="100"
+                                data-highlights="false"
+                                ></canvas>
+                            </td>
+                            <td>
+                                <canvas id="cvs_temperature"
+                                        data-type="radial-gauge"
+                                        data-major-ticks="-30,-25,-20,-10,0,10,20,30,50"
+                                        data-type="radial-gauge"
+                                        data-title="Temperature"
+                                        data-units="°C"
+                                        data-width="200"
+                                        data-height="200"
+                                        data-value-int="0"
+                                        data-value-dec="0"
+                                        data-width="200"
+                                        data-height="200"
+                                        data-min-value="-30"
+                                        data-max-value="40"
+                                        data-highlights="false"
+                                ></canvas>
+                            </td>
+                            <td>
+                                <canvas canvas id="cvs_pressure"
+                                data-type="radial-gauge"
+                                data-major-ticks="950, 960, 970, 980, 990, 1000, 1010, 1020, 1030, 1040, 1050"
+                                data-type="radial-gauge"
+                                data-title="Barometer"
+                                data-units="mBar"
+                                data-width="200"
+                                data-height="200"
+                                data-value-int="0"
+                                data-value-dec="0"
+                                data-width="200"
+                                data-height="200"
+                                data-min-value="950"
+                                data-max-value="1050"
+                                data-highlights="false"
+                                ></canvas>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="3">
+                                <a id="dashbaord_sensorinfo"> Data will be taken from the first avalable Sensors that deliver the appropriate values</a>
+                                <!-- We use for the BME280 -->
+                            </td>
+                        </tr>
+
+                        
+                    </tbody>
+                </table> 
+        </div><!-- End Div Main     -->
+            <!--  WIFI Section     -->
+			<div id="WiFiSettings" class="views grid"><!--  End DiV WiFi    -->
+				<div>
+					<table>
+						<thead>
+							<tr>
+								<th colspan="2">Network settings</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td>SSID</td><td><select id="ssid"></select><br><button onclick="getSSIDList()">Refresh</button></td>
+							</tr>
+							<tr>
+								<td>Password</td><td><input type="password" id="pass"></td>
+							</tr>
+							<tr>
+								<td colspan="1"><button onclick="setWiFiSettings(); return false;">Connect</button></td><td><button onclick="clearWiFiSettings(); return false;">Clear WiFi Settings</button></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+				<div>
+					<table>
+						<thead>
+							<tr>
+								<th>Current network configuration</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td id="currentSSID"></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div><!--  End DiV WiFi    -->
+        <!--  Mapping Section     -->
+        <div id="SensorMapping" class="views grid">
+            <div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th colspan="2">Sensor Mapping</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ChannelMappingTableBtn">
+                        <tr>
+                            <td>Channel 0</td>
+                            <td id="CH1_TD">
+                                <select id="Mapping_CH0">
+                                    <option value="none">none</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Channel 1</td>
+                            <td>
+                                <select id="Mapping_CH0">
+                                    <option value="none">none</option>
+                                </select>
+                            </td>
+                        </tr>              
+                    </tbody>
+                </table>
+            </div>
+        </div> <!--  END Div Mapping Section     -->
+
+        <div id="SenseBox" class="views grid">
+                <div>
+                        <table>
+                                <thead>
+                                    <tr>
+                                        <th colspan="3">Sensebox Settings</th>
+                                    </tr>
+                                </thead>
+
+                                <tbody id="SenseboxMappingTableStg">
+                                        <tr>
+                                            <td colspan="1"><a>Upload Enabled</a></td>
+                                            <td colspan="2" id="CH1_TD">
+                                                <select id="SenseboxUploadEnable" onchange="SenseboxUploadEnableChanged()">
+                                                        <option value="true">True</option>
+                                                        <option value="false">False</option>
+                                                </select>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td  colspan="1">Upload interval</td>
+                                            <td colspan="2">
+                                                    <input type="number" id="SenseboxUploadInterval" name="SenseboxUploadInterval" min="1" max="2500" onchange="SenseBoxUploadIntervalChanged()"> Minutes
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td  colspan="1">SenseboxID</td>
+                                            <td colspan="2">
+                                                SenseboxID <input type="text" onchange="SensboxIDChanged()"  onblur="SensboxIDMayChanged()" id="SenseboxID">
+                                            </td>
+                                        </tr>
+                                       
+                                    </tbody>
+
+                                    <thead>
+                                            <tr>
+                                                <th colspan="3">Sensebox Mapping</th>
+                                            </tr>
+                                        </thead>
+                               
+                                    <tbody id="SenseboxMappingTableBtn">
+                                            <tr>
+                                                <td>ID Key X<input type="text" id="thingspeakApi"> </td>
+                                                <td id="CH1_TD">
+                                                  Channel <select id="Mapping_CH0">
+                                                            <option value="none">none</option>
+                                                    </select>
+                                                </td>
+                                                <td id="CH1_TD">
+                                                        Enabled <select id="Mapping_CH0">
+                                                                  <option value="ChEnaTrue">True</option>
+                                                                  <option value="ChEnaTrue">False</option>
+                                                          </select>
+                                                      </td>
+                                            </tr>
+                                            <tr>
+                                                    <td>ID Key X<input type="text" id="thingspeakApi"> </td>
+                                                    <td id="CH1_TD">
+                                                      Channel <select id="Mapping_CH0">
+                                                                <option value="none">none</option>
+                                                        </select>
+                                                    </td>
+                                                    <td id="CH1_TD">
+                                                            Enabled <select id="Mapping_CH0">
+                                                                      <option value="ChEnaTrue">True</option>
+                                                                      <option value="ChEnaTrue">False</option>
+                                                              </select>
+                                                          </td>
+                                                </tr>
+                                            
+                                           
+                                        </tbody>
+                            </table>
+                </div>
+            </div> <!--  END Div Sensebox Section     -->
+
+            <div id="Thinkspeak" class="views grid">
+                <div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th colspan="3">ThingSpeak Settings</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="ThinkspeakMappingTableStg">
+                            <tr>
+                                <td colspan="1">Upload Enabled</td>
+                                <td colspan="2" id="CH1_TD">
+                                    <select id="ThinkspeakUploadEnable" onchange="ThinkspeakUploadEnableChanged">
+                                        <option value="true">True</option>
+                                        <option value="false">False</option>
+                                    </select>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td  colspan="1">Upload interval</td>
+                                <td colspan="2">
+                                    <input type="number" id="ThinkspeakUploadInterval" name="ThinkspeakUploadInterval" min="1" max="2500" onchange="ThinkspeakUploadIntervalChanged"> Minutes
+                                </td>
+                            </tr>
+                            <tr>
+                                <td  colspan="1">Write API Key</td>
+                                <td colspan="2">
+                                    <input type="text" onchange="ThingSpeakAPIKeyChanged()"  onblur="ThingSpeakAPIKeyMayChanged()" id="ThingspeakAPIWriteKey">
+                                </td>
+                            </tr>
+                        </tbody>
+                        <thead>
+                            <tr>
+                                <th colspan="3">ThinkSpeak Mapping</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ThinkspeakMappingTableBtn">
+                            <tr>
+                                <td>Field 0</td>
+                                <td id="CH1_TD">
+                                    Channel <select id="Mapping_CH0">
+                                                <option value="none">none</option>
+                                            </select>
+                                </td>
+                                <td id="CH1_TD">
+                                    Enabled <select id="Mapping_CH0">
+                                                <option value="ChEnaTrue">True</option>
+                                                <option value="ChEnaTrue">False</option>
+                                            </select>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div> <!-- End of Thinkspeak -->
+            <!-- MQTT Settings -->
+            <div id="MQTTView" class="views grid">
+                <table>
+                       <thead>
+                           <tr>
+                               <th colspan="3">MQTT settings</th>
+                           </tr>
+                       </thead>
+                       
+                       <tbody>
+                           <tr>
+                               <td>
+                                Enable MQTT Client
+                               </td>
+                               <td colspan="2"> 
+                                <select id="MQTT_ENA">
+                                    <option value="true">True</option>
+                                    <option value="false">False</option>
+                                </select>
+                               </td>
+                           </tr>
+                           <tr>
+                            <td>
+                                Upload Interval (Minutes)
+                               </td>
+                            <td colspan="2">
+                                <input style="width:60px" type="number" id="MQTT_UPDATE_INT" name="MQTT_UPDATE_INT" min="0" max="65535" value="10"> 
+                            </td>   
+                           
+                                
+                           </tr>
+                           <tr>
+                               <td>
+                                    ioBroker compatibility
+                               </td>
+                               <td colspan="2">
+                                    <select id="MQTT_IOBROKER">
+                                            <option value="true">True</option>
+                                            <option value="false">False</option>
+                                    </select>
+                               </td>
+                           </tr>
+                           <tr>
+                            <td>
+                                MQTT Hostname
+                               </td>
+                                <td colspan="2">
+                                    <input type="text" id="MQTT_HOST" name="MQTT_HOST" value=""> <br><br> 
+                                </td>   
+                           </tr>
+                           <tr>
+                            <td>
+                                MQTT Server 
+                            </td>   
+                            <td colspan="2">
+                                <input type="text" id="MQTT_SERVER" name="MQTT_SERVER" value="0.0.0.0"> 
+                            </td>   
+                       </tr>
+                       <tr>
+                        <td>
+                            Port
+                        </td>  
+                        <td colspan="2">
+                            <input style="width:60px" type="number" id="MQTT_PORT" name="ntp_update_delta" min="0" max="65535" value="1833">
+                        </td>   
+                       </tr>
+                       <tr>
+                        <td>
+                            MQTT Topic 
+                            </td>  
+                            <td colspan="2">
+                            <input type="text" id="MQTT_TOPIC" name="MQTT_TOPIC" value=""> 
+                            </td>   
+                        </tr>
+                        <tr>
+                            <td>
+                                MQTT User  
+                            </td>   
+                                <td colspan="2">
+                                    <input type="text" id="MQTT_USER" name="MQTT_USER" value=""> 
+                                </td>   
+                           </tr>
+                           <tr>
+                            <td>
+                                MQTT Password 
+                            </td>   
+                            <td colspan="2">
+                                <input type="text" id="MQTT_PASS" name="MQTT_PASS" value="" onclick="mqtt_pass_onclick()">
+                            </td>   
+                       </tr>
+                       <tr>
+                        <td colspan="3">
+                            <button type="button" onclick="SubmitMQTT(); return false;">Submit</button>
+                        </td>   
+                   </tr>                   
+                       </tbody>   
+                           
+                   </table>
+           
+           </div> <!-- End of MQTT Settings -->
+
+           <div id="SDCARDView" class="views grid">
+            <div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th colspan="3">SD-Card Settings</th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="SDCardSettingsHd">
+                        <tr>
+                            <td colspan="1">Logging Enabled</td>
+                            <td colspan="2" id="SDULENA">
+                                <select id="SDCardLoggingEnable" onchange="SDCardEnaChanged()">
+                                    <option value="true">True</option>
+                                    <option value="false">False</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td  colspan="1">Logging interval</td>
+                            <td colspan="2">
+                                <input type="number" id="SDcardLoggingInterval" name="SDcardLoggingInterval" min="1" max="60" onchange="SDCardLogIntChanged()"> Minutes
+                            </td>
+                        </tr>
+                    </tbody>
+                    <thead>
+                        <tr>
+                            <th colspan="3">SDCard Info</th>
+                        </tr>
+                    </thead>
+                    <tbody id="SDCArdInfoTbl">
+                        <tr>
+                            <td>Capacity</td>
+                            <td id="SDCapacity">
+                                0 MB Total
+                            </td>
+                            <td id="SDCapacityUsed">
+                                0 MB Free
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <button type="button" onclick="SDCardMount(); return false;">Mount SD-Card</button>
+                            </td>
+                            <td> <a id="SDMountStatus"> ? </a></td>
+                            <td>
+                                <button type="button" onclick="SDCardUMount(); return false;">Unmount SD-Card</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div> <!-- End of Thinkspeak -->
+        <!-- TimeSettings -->
+        <div id="TimeSettings" class="views grid">
+            <table>
+                <thead>
+                    <tr>
+                        <th colspan="2">Time settings</th>
+                    </tr>
+                </thead>
+                
+                <tbody>
+                    <tr>
+                    <td>
+    
+    
+                <div id="inputfields">
+
+                <form action="settime.dat"  method="post">
+                 <fieldset>
+                 <legend>Local Time</legend>
+
+
+                    <label for="time">Current Local Time</label>
+                    <input type="time" id="time" name="time" value="00:01:01" step=1>
+
+                    <label for="date">Current Date</label>
+                    <input type="date" id="date" name="date" value="1970-01-01">
+                 
+                    <button type="button" onclick="SubmitDateTime(); return false;">Submit</button>
+                 </fieldset>
+                 
+                </form>
+
+                <form>
+                 <fieldset>
+                  <legend>NTP Settings</legend>
+
+                 <input type="checkbox" id="NTP_ON" name="NTP_ON" value="0" >Use NTP <br>
+                  NTP Server <input type="text" id="NTPServerName" name="NTPServerName" value="0.0.0.0"> 
+                 
+                 <label class="label" for="NTP_UPDTAE_SPAN">NTP Update every </label>
+                 <input style="width:60px" type="number" id="NTP_UPDTAE_SPAN" name="ntp_update_delta" min="1" max="1440" value="60"> Minutes
+
+                 
+                 <button type="button" onclick="SubmitNTP(); return false;">Submit</button>
+                 </fieldset>
+                 </form>
+
+                <form action="timezone.dat"  method="post">
+                 <fieldset>
+                  <legend>Timezone</legend>
+                <select name="timezoneid" id="timezoneid" >
+                <option value="0">Africa/Abidjan</option>
+                <option value="1">Africa/Accra</option>
+                <option value="2">Africa/Addis_Ababa</option>
+                <option value="3">Africa/Algiers</option>
+                <option value="4">Africa/Asmera</option>
+                <option value="5">Africa/Bamako</option>
+                <option value="6">Africa/Bangui</option>
+                <option value="7">Africa/Banjul</option>
+                <option value="8">Africa/Bissau</option>
+                <option value="9">Africa/Blantyre</option>
+                <option value="10">Africa/Brazzaville</option>
+                <option value="11">Africa/Bujumbura</option>
+                <option value="12">Africa/Cairo</option>
+                <option value="13">Africa/Casablanca</option>
+                <option value="14">Africa/Ceuta</option>
+                <option value="15">Africa/Conakry</option>
+                <option value="16">Africa/Dakar</option>
+                <option value="17">Africa/Dar_es_Salaam</option>
+                <option value="18">Africa/Djibouti</option>
+                <option value="19">Africa/Douala</option>
+                <option value="20">Africa/El_Aaiun</option>
+                <option value="21">Africa/Freetown</option>
+                <option value="22">Africa/Gaborone</option>
+                <option value="23">Africa/Harare</option>
+                <option value="24">Africa/Johannesburg</option>
+                <option value="25">Africa/Kampala</option>
+                <option value="26">Africa/Khartoum</option>
+                <option value="27">Africa/Kigali</option>
+                <option value="28">Africa/Kinshasa</option>
+                <option value="29">Africa/Lagos</option>
+                <option value="30">Africa/Libreville</option>
+                <option value="31">Africa/Lome</option>
+                <option value="32">Africa/Luanda</option>
+                <option value="33">Africa/Lubumbashi</option>
+                <option value="34">Africa/Lusaka</option>
+                <option value="35">Africa/Malabo</option>
+                <option value="36">Africa/Maputo</option>
+                <option value="37">Africa/Maseru</option>
+                <option value="38">Africa/Mbabane</option>
+                <option value="39">Africa/Mogadishu</option>
+                <option value="40">Africa/Monrovia</option>
+                <option value="41">Africa/Nairobi</option>
+                <option value="42">Africa/Ndjamena</option>
+                <option value="43">Africa/Niamey</option>
+                <option value="44">Africa/Nouakchott</option>
+                <option value="45">Africa/Ouagadougou</option>
+                <option value="46">Africa/Porto-Novo</option>
+                <option value="47">Africa/Sao_Tome</option>
+                <option value="48">Africa/Timbuktu</option>
+                <option value="49">Africa/Tripoli</option>
+                <option value="50">Africa/Tunis</option>
+                <option value="51">Africa/Windhoek</option>
+                <option value="52">America/Adak</option>
+                <option value="53">America/Anchorage</option>
+                <option value="54">America/Anguilla</option>
+                <option value="55">America/Antigua</option>
+                <option value="56">America/Araguaina</option>
+                <option value="57">America/Aruba</option>
+                <option value="58">America/Asuncion</option>
+                <option value="59">America/Barbados</option>
+                <option value="60">America/Belem</option>
+                <option value="61">America/Belize</option>
+                <option value="62">America/Boa_Vista</option>
+                <option value="63">America/Bogota</option>
+                <option value="64">America/Boise</option>
+                <option value="65">America/Buenos_Aires</option>
+                <option value="66">America/Cambridge_Bay</option>
+                <option value="67">America/Cancun</option>
+                <option value="68">America/Caracas</option>
+                <option value="69">America/Catamarca</option>
+                <option value="70">America/Cayenne</option>
+                <option value="71">America/Cayman</option>
+                <option value="72">America/Chicago</option>
+                <option value="73">America/Chihuahua</option>
+                <option value="74">America/Cordoba</option>
+                <option value="75">America/Costa_Rica</option>
+                <option value="76">America/Cuiaba</option>
+                <option value="77">America/Curacao</option>
+                <option value="78">America/Danmarkshavn</option>
+                <option value="79">America/Dawson</option>
+                <option value="80">America/Dawson_Creek</option>
+                <option value="81">America/Denver</option>
+                <option value="82">America/Detroit</option>
+                <option value="83">America/Dominica</option>
+                <option value="84">America/Edmonton</option>
+                <option value="85">America/Eirunepe</option>
+                <option value="86">America/El_Salvador</option>
+                <option value="87">America/Fortaleza</option>
+                <option value="88">America/Glace_Bay</option>
+                <option value="89">America/Godthab</option>
+                <option value="90">America/Goose_Bay</option>
+                <option value="91">America/Grand_Turk</option>
+                <option value="92">America/Grenada</option>
+                <option value="93">America/Guadeloupe</option>
+                <option value="94">America/Guatemala</option>
+                <option value="95">America/Guayaquil</option>
+                <option value="96">America/Guyana</option>
+                <option value="97">America/Halifax</option>
+                <option value="98">America/Havana</option>
+                <option value="99">America/Hermosillo</option>
+                <option value="100">America/Indiana/Indianapolis</option>
+                <option value="101">America/Indiana/Knox</option>
+                <option value="102">America/Indiana/Marengo</option>
+                <option value="103">America/Indiana/Vevay</option>
+                <option value="104">America/Indianapolis</option>
+                <option value="105">America/Inuvik</option>
+                <option value="106">America/Iqaluit</option>
+                <option value="107">America/Jamaica</option>
+                <option value="108">America/Jujuy</option>
+                <option value="109">America/Juneau</option>
+                <option value="110">America/Kentucky/Louisville</option>
+                <option value="111">America/Kentucky/Monticello</option>
+                <option value="112">America/La_Paz</option>
+                <option value="113">America/Lima</option>
+                <option value="114">America/Los_Angeles</option>
+                <option value="115">America/Louisville</option>
+                <option value="116">America/Maceio</option>
+                <option value="117">America/Managua</option>
+                <option value="118">America/Manaus</option>
+                <option value="119">America/Martinique</option>
+                <option value="120">America/Mazatlan</option>
+                <option value="121">America/Mendoza</option>
+                <option value="122">America/Menominee</option>
+                <option value="123">America/Merida</option>
+                <option value="124">America/Mexico_City</option>
+                <option value="125">America/Miquelon</option>
+                <option value="126">America/Monterrey</option>
+                <option value="127">America/Montevideo</option>
+                <option value="128">America/Montreal</option>
+                <option value="129">America/Montserrat</option>
+                <option value="130">America/Nassau</option>
+                <option value="131">America/New_York</option>
+                <option value="132">America/Nipigon</option>
+                <option value="133">America/Nome</option>
+                <option value="134">America/Noronha</option>
+                <option value="135">America/North_Dakota/Center</option>
+                <option value="136">America/Panama</option>
+                <option value="137">America/Pangnirtung</option>
+                <option value="138">America/Paramaribo</option>
+                <option value="139">America/Phoenix</option>
+                <option value="140">America/Port-au-Prince</option>
+                <option value="141">America/Port_of_Spain</option>
+                <option value="142">America/Porto_Velho</option>
+                <option value="143">America/Puerto_Rico</option>
+                <option value="144">America/Rainy_River</option>
+                <option value="145">America/Rankin_Inlet</option>
+                <option value="146">America/Recife</option>
+                <option value="147">America/Regina</option>
+                <option value="148">America/Rio_Branco</option>
+                <option value="149">America/Rosario</option>
+                <option value="150">America/Santiago</option>
+                <option value="151">America/Santo_Domingo</option>
+                <option value="152">America/Sao_Paulo</option>
+                <option value="153">America/Scoresbysund</option>
+                <option value="154">America/Shiprock</option>
+                <option value="155">America/St_Johns</option>
+                <option value="156">America/St_Kitts</option>
+                <option value="157">America/St_Lucia</option>
+                <option value="158">America/St_Thomas</option>
+                <option value="159">America/St_Vincent</option>
+                <option value="160">America/Swift_Current</option>
+                <option value="161">America/Tegucigalpa</option>
+                <option value="162">America/Thule</option>
+                <option value="163">America/Thunder_Bay</option>
+                <option value="164">America/Tijuana</option>
+                <option value="165">America/Tortola</option>
+                <option value="166">America/Vancouver</option>
+                <option value="167">America/Whitehorse</option>
+                <option value="168">America/Winnipeg</option>
+                <option value="169">America/Yakutat</option>
+                <option value="170">America/Yellowknife</option>
+                <option value="171">Antarctica/Casey</option>
+                <option value="172">Antarctica/Davis</option>
+                <option value="173">Antarctica/DumontDUrville</option>
+                <option value="174">Antarctica/Mawson</option>
+                <option value="175">Antarctica/McMurdo</option>
+                <option value="176">Antarctica/Palmer</option>
+                <option value="177">Antarctica/South_Pole</option>
+                <option value="178">Antarctica/Syowa</option>
+                <option value="179">Antarctica/Vostok</option>
+                <option value="180">Arctic/Longyearbyen</option>
+                <option value="181">Asia/Aden</option>
+                <option value="182">Asia/Almaty</option>
+                <option value="183">Asia/Amman</option>
+                <option value="184">Asia/Anadyr</option>
+                <option value="185">Asia/Aqtau</option>
+                <option value="186">Asia/Aqtobe</option>
+                <option value="187">Asia/Ashgabat</option>
+                <option value="188">Asia/Baghdad</option>
+                <option value="189">Asia/Bahrain</option>
+                <option value="190">Asia/Baku</option>
+                <option value="191">Asia/Bangkok</option>
+                <option value="192">Asia/Beirut</option>
+                <option value="193">Asia/Bishkek</option>
+                <option value="194">Asia/Brunei</option>
+                <option value="195">Asia/Calcutta</option>
+                <option value="196">Asia/Choibalsan</option>
+                <option value="197">Asia/Chongqing</option>
+                <option value="198">Asia/Colombo</option>
+                <option value="199">Asia/Damascus</option>
+                <option value="200">Asia/Dhaka</option>
+                <option value="201">Asia/Dili</option>
+                <option value="202">Asia/Dubai</option>
+                <option value="203">Asia/Dushanbe</option>
+                <option value="204">Asia/Gaza</option>
+                <option value="205">Asia/Harbin</option>
+                <option value="206">Asia/Hong_Kong</option>
+                <option value="207">Asia/Hovd</option>
+                <option value="208">Asia/Irkutsk</option>
+                <option value="209">Asia/Istanbul</option>
+                <option value="210">Asia/Jakarta</option>
+                <option value="211">Asia/Jayapura</option>
+                <option value="212">Asia/Jerusalem</option>
+                <option value="213">Asia/Kabul</option>
+                <option value="214">Asia/Kamchatka</option>
+                <option value="215">Asia/Karachi</option>
+                <option value="216">Asia/Kashgar</option>
+                <option value="217">Asia/Katmandu</option>
+                <option value="218">Asia/Krasnoyarsk</option>
+                <option value="219">Asia/Kuala_Lumpur</option>
+                <option value="220">Asia/Kuching</option>
+                <option value="221">Asia/Kuwait</option>
+                <option value="222">Asia/Macao</option>
+                <option value="223">Asia/Macau</option>
+                <option value="224">Asia/Magadan</option>
+                <option value="225">Asia/Makassar</option>
+                <option value="226">Asia/Manila</option>
+                <option value="227">Asia/Muscat</option>
+                <option value="228">Asia/Nicosia</option>
+                <option value="229">Asia/Novosibirsk</option>
+                <option value="230">Asia/Omsk</option>
+                <option value="231">Asia/Oral</option>
+                <option value="232">Asia/Phnom_Penh</option>
+                <option value="233">Asia/Pontianak</option>
+                <option value="234">Asia/Pyongyang</option>
+                <option value="235">Asia/Qyzylorda</option>
+                <option value="236">Asia/Qatar</option>
+                <option value="237">Asia/Rangoon</option>
+                <option value="238">Asia/Riyadh</option>
+                <option value="239">Asia/Saigon</option>
+                <option value="240">Asia/Sakhalin</option>
+                <option value="241">Asia/Samarkand</option>
+                <option value="242">Asia/Seoul</option>
+                <option value="243">Asia/Shanghai</option>
+                <option value="244">Asia/Singapore</option>
+                <option value="245">Asia/Taipei</option>
+                <option value="246">Asia/Tashkent</option>
+                <option value="247">Asia/Tbilisi</option>
+                <option value="248">Asia/Tehran</option>
+                <option value="249">Asia/Thimphu</option>
+                <option value="250">Asia/Tokyo</option>
+                <option value="251">Asia/Ujung_Pandang</option>
+                <option value="252">Asia/Ulaanbaatar</option>
+                <option value="253">Asia/Urumqi</option>
+                <option value="254">Asia/Vientiane</option>
+                <option value="255">Asia/Vladivostok</option>
+                <option value="256">Asia/Yakutsk</option>
+                <option value="257">Asia/Yekaterinburg</option>
+                <option value="258">Asia/Yerevan</option>
+                <option value="259">Atlantic/Azores</option>
+                <option value="260">Atlantic/Bermuda</option>
+                <option value="261">Atlantic/Canary</option>
+                <option value="262">Atlantic/Cape_Verde</option>
+                <option value="263">Atlantic/Faeroe</option>
+                <option value="264">Atlantic/Jan_Mayen</option>
+                <option value="265">Atlantic/Madeira</option>
+                <option value="266">Atlantic/Reykjavik</option>
+                <option value="267">Atlantic/South_Georgia</option>
+                <option value="268">Atlantic/St_Helena</option>
+                <option value="269">Atlantic/Stanley</option>
+                <option value="270">Australia/Adelaide</option>
+                <option value="271">Australia/Brisbane</option>
+                <option value="272">Australia/Broken_Hill</option>
+                <option value="273">Australia/Darwin</option>
+                <option value="274">Australia/Hobart</option>
+                <option value="275">Australia/Lindeman</option>
+                <option value="276">Australia/Lord_Howe</option>
+                <option value="277">Australia/Melbourne</option>
+                <option value="278">Australia/Perth</option>
+                <option value="279">Australia/Sydney</option>
+                <option value="280">Europe/Amsterdam</option>
+                <option value="281">Europe/Andorra</option>
+                <option value="282">Europe/Athens</option>
+                <option value="283">Europe/Belfast</option>
+                <option value="284">Europe/Belgrade</option>
+                <option value="285">Europe/Berlin</option>
+                <option value="286">Europe/Bratislava</option>
+                <option value="287">Europe/Brussels</option>
+                <option value="288">Europe/Bucharest</option>
+                <option value="289">Europe/Budapest</option>
+                <option value="290">Europe/Chisinau</option>
+                <option value="291">Europe/Copenhagen</option>
+                <option value="292">Europe/Dublin</option>
+                <option value="293">Europe/Gibraltar</option>
+                <option value="294">Europe/Helsinki</option>
+                <option value="295">Europe/Istanbul</option>
+                <option value="296">Europe/Kaliningrad</option>
+                <option value="297">Europe/Kiev</option>
+                <option value="298">Europe/Lisbon</option>
+                <option value="299">Europe/Ljubljana</option>
+                <option value="300">Europe/London</option>
+                <option value="301">Europe/Luxembourg</option>
+                <option value="302">Europe/Madrid</option>
+                <option value="303">Europe/Malta</option>
+                <option value="304">Europe/Minsk</option>
+                <option value="305">Europe/Monaco</option>
+                <option value="306">Europe/Moscow</option>
+                <option value="307">Europe/Nicosia</option>
+                <option value="308">Europe/Oslo</option>
+                <option value="309">Europe/Paris</option>
+                <option value="310">Europe/Prague</option>
+                <option value="311">Europe/Riga</option>
+                <option value="312">Europe/Rome</option>
+                <option value="313">Europe/Samara</option>
+                <option value="314">Europe/San_Marino</option>
+                <option value="315">Europe/Sarajevo</option>
+                <option value="316">Europe/Simferopol</option>
+                <option value="317">Europe/Skopje</option>
+                <option value="318">Europe/Sofia</option>
+                <option value="319">Europe/Stockholm</option>
+                <option value="320">Europe/Tallinn</option>
+                <option value="321">Europe/Tirane</option>
+                <option value="322">Europe/Uzhgorod</option>
+                <option value="323">Europe/Vaduz</option>
+                <option value="324">Europe/Vatican</option>
+                <option value="325">Europe/Vienna</option>
+                <option value="326">Europe/Vilnius</option>
+                <option value="327">Europe/Warsaw</option>
+                <option value="328">Europe/Zagreb</option>
+                <option value="329">Europe/Zaporozhye</option>
+                <option value="330">Europe/Zurich</option>
+                <option value="331">Indian/Antananarivo</option>
+                <option value="332">Indian/Chagos</option>
+                <option value="333">Indian/Christmas</option>
+                <option value="334">Indian/Cocos</option>
+                <option value="335">Indian/Comoro</option>
+                <option value="336">Indian/Kerguelen</option>
+                <option value="337">Indian/Mahe</option>
+                <option value="338">Indian/Maldives</option>
+                <option value="339">Indian/Mauritius</option>
+                <option value="340">Indian/Mayotte</option>
+                <option value="341">Indian/Reunion</option>
+                <option value="342">Pacific/Apia</option>
+                <option value="343">Pacific/Auckland</option>
+                <option value="344">Pacific/Chatham</option>
+                <option value="345">Pacific/Easter</option>
+                <option value="346">Pacific/Efate</option>
+                <option value="347">Pacific/Enderbury</option>
+                <option value="348">Pacific/Fakaofo</option>
+                <option value="349">Pacific/Fiji</option>
+                <option value="350">Pacific/Funafuti</option>
+                <option value="351">Pacific/Galapagos</option>
+                <option value="352">Pacific/Gambier</option>
+                <option value="353">Pacific/Guadalcanal</option>
+                <option value="354">Pacific/Guam</option>
+                <option value="355">Pacific/Honolulu</option>
+                <option value="356">Pacific/Johnston</option>
+                <option value="357">Pacific/Kiritimati</option>
+                <option value="358">Pacific/Kosrae</option>
+                <option value="359">Pacific/Kwajalein</option>
+                <option value="360">Pacific/Majuro</option>
+                <option value="361">Pacific/Marquesas</option>
+                <option value="362">Pacific/Midway</option>
+                <option value="363">Pacific/Nauru</option>
+                <option value="364">Pacific/Niue</option>
+                <option value="365">Pacific/Norfolk</option>
+                <option value="366">Pacific/Noumea</option>
+                <option value="367">Pacific/Pago_Pago</option>
+                <option value="368">Pacific/Palau</option>
+                <option value="369">Pacific/Pitcairn</option>
+                <option value="370">Pacific/Ponape</option>
+                <option value="371">Pacific/Port_Moresby</option>
+                <option value="372">Pacific/Rarotonga</option>
+                <option value="373">Pacific/Saipan</option>
+                <option value="374">Pacific/Tahiti</option>
+                <option value="375">Pacific/Tarawa</option>
+                <option value="376">Pacific/Tongatapu</option>
+                <option value="377">Pacific/Truk</option>
+                <option value="378">Pacific/Wake</option>
+                <option value="379">Pacific/Wallis</option>
+                <option value="380">Pacific/Yap</option> 
+                </select>
+                <button type="button" onclick="SubmitTimeZone(); return false;">Submit</button>
+                </fieldset>
+                </form>
+
+
+                <form>
+                <fieldset>
+                <legend>Manual adjust</legend>
+                 
+                   <input type="checkbox" id="DLSOverrid" name="DLSOverrid" value="1">
+                   <label class="label" for="DLSOverrid">Disable automatic daylight saving</label>
+                   <br>
+                  <input type="checkbox" id="ManualDLS" name="ManualDLS" value="1"/>
+                <label class="label" for="ManualDLS">Manual daylight saving</label>
+                <select name="dls_offset" id="dls_offset">
+                <option value="0">-01:00</option> 
+                <option value="1">-00:30</option>
+                <option value="2">+00:00</option>
+                <option value="3">+00:30</option> 
+                <option value="4">+01:00</option>
+                </select>
+                <br>
+                  <input type="checkbox" id="ZONE_OVERRRIDE" name="ZONE_OVERRRIDE" value="DLS_OFF">Override Timezone<br>
+                  <input style="width:60px" type="number" id="GMT_OFFSET" name="gmt_offset" min="-1440" max="1440" value="0"> GMT Offset ( Minutes )
+                  <br>
+                   <br>                        
+                   <button type="button" onclick="SubmitOverrides(); return false;">Submit</button>
+                  </fieldset>
+                </form>
+
+                </div>
+                </td>
+                </tr>
+             </tbody>
+             </table>
+    
+        
+    </div><!-- End of TimeSettings -->
+    <div id="FirmwareUpdate" class="views grid">
+        <form method='POST' action='/update/fimrware' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update Firmware'></form>
+    </div>
+
+    <div id="WebpageUpdate" class="views grid">
+            <form method='POST' action='/update/fimrware' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update Webpages(SPIFFS)'></form>
+    </div>
+
+
+            <div id="notification" class="notification">
+		    </div>
+</div>
+
+            
+<script>
+    window.onload = onpageload;
+    function onpageload() {
+        if(showDashboard==undefined){
+            //try in 500ms again
+            setTimeout(function(){ onpageload(); }, 500);
+        } else {
+            showDashboard();
+        }
+    }
+
+    function showUpdateFirmware(){
+        showView("FirmwareUpdate");
+    }
+
+    function showUpdateWebpages(){
+        showView("WebpageUpdate");
+    }
+
+  
+</script>
+        
+	</body>     
+</html>

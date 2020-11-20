@@ -1,0 +1,1 @@
+type *.js > combined.js
