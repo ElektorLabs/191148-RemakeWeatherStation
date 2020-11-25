@@ -190,7 +190,7 @@ float WindSpeedSensor::GetAverageSpeed( SpeedAVG_t type ){
     case SpeedAVG_t::_10Seconds:{
 
       pulses = GetPulses_10Sec();
-      speed = (float)(pulses) *0.33; // m/s
+      speed = (float)(pulses) *0.66; // m/s
       speed = speed / 10;
 
     } break;
@@ -198,7 +198,7 @@ float WindSpeedSensor::GetAverageSpeed( SpeedAVG_t type ){
     case SpeedAVG_t::_60Seconds:{
       
       pulses = GetPulses_60Sec();
-      speed = (float)(pulses) *0.33; // m/s
+      speed = (float)(pulses) *0.66; // m/s
       speed = speed / 60;
 
     } break;
@@ -207,7 +207,7 @@ float WindSpeedSensor::GetAverageSpeed( SpeedAVG_t type ){
     case SpeedAVG_t::_3600Seconds:{
 
       pulses = GetPulses_3600Sec();
-      speed = (float)(pulses) *0.33; // m/s
+      speed = (float)(pulses) *0.66; // m/s
       speed = speed / 3600;
 
     } break;
