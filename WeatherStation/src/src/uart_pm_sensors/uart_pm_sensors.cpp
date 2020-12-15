@@ -168,7 +168,7 @@ bool UART_PM_Sensors::GetParticleCount( float* value, UART_PM_Sensors::ParticleS
                 if(HPMA115S0device != nullptr){
                     reading_ok=HPMA115S0device->ReadMesurement(&up25, &up10);
 					p25 = up25;
-                    p10 = up25;
+                    p10 = up10;
                 }
             } break;
 
