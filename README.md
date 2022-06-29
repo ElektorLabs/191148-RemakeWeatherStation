@@ -1,19 +1,21 @@
-# 191148-RemakeWeatherStation
+# 191148-Remake Weather Station
 
-This is the software to be used with the Elektor weatherstation remake of 2020
-The core of the station is a ESP32 Pico Kit V4.x arround the WH-SP-WS02 ( https://www.elektor.de/professional-outdoor-weather-station-wh-sp-ws02 )
-The software and also some parts of the webpage got an overhaul or are compleatly rewritten. 
+This is the software to be used with the Elektor weather station remake of 2020.
 
-The new modular design should allow to add later new sensors or features with less hassle than with the former one.
+The core of the station is a ESP32 Pico Kit V4.x designed around the WH-SP-WS02 ( https://www.elektor.de/professional-outdoor-weather-station-wh-sp-ws02 )
+The software and also some parts of the webpage have been overhauled or completely rewritten. 
+
+The new modular design should allow for the later addition of new sensors or features with less hassle than currently.
 
 ## Getting Started
 
-Use your current Arduino IDE to compile the Code and also the ESP32 Arduino Core installed.
+Use your current Arduino IDE to compile the Code. Also, the ESP32 Arduino Core board library must be installed.
 Have a look at : https://www.elektormagazine.com/labs/esp32-getting-started for a getting started guide.
-You requiere to have the following librarys at hand:
+
+You will need the following libraries:
 
 * LiquidCrystal_I2C ( https://github.com/johnrickman/LiquidCrystal_I2C )
-* eHaJo Absolut Pressure AddOn by Hannes Jochriem ( https://github.com/ehajo/WSEN-PADS )
+* eHaJo Absolute Pressure AddOn by Hannes Jochriem ( https://github.com/ehajo/WSEN-PADS )
 * Adafruit Unified Sensors
 * Adafruit BME280 Library
 * Adafruit VEML6070 Library
@@ -26,14 +28,14 @@ You requiere to have the following librarys at hand:
 * PubSubclient by Nick o'Leary
 * NTP Client Lib by German Martin
 
-### Prerequisites
+### Pre-requisites
 
-If you try to programm the ESP32 Pico Kit be aware that the use of more modern USB3.x ports may cause the board
-NOT to enter the programming mode. Use a USB2.0 Port or at least a USB2.0 Hub to get arround this. 
+If you try to program the ESP32 Pico Kit, be aware that using more modern USB3.x ports for data transfer may cause the board
+to fail to enter programming mode. Use a USB2.0 port or at least a USB2.0 Hub to get around this. 
 
-## Pinmapping
+## Pin Mappings
 
-Currently the following Pinmapping is used for the software
+Currently the following pin map is used:
 
 * IO02 : RES  ( RFM95 )
 * IO14 : SCKL ( RFM95 )
@@ -54,4 +56,3 @@ Currently the following Pinmapping is used for the software
 * IO05 : CS0  ( SD-CARD )
 * IO09 : TX1 ( Particle Sensor )
 * IO10 : RX1 ( Particle Sensor )
-
